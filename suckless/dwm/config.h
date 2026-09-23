@@ -4,7 +4,6 @@
 static const unsigned int borderpx  = 2;        /* border pixel of windows */
 static const unsigned int gappx     = 10;        /* gaps between windows */
 static const unsigned int snap      = 32;       /* snap pixel */
-static const int swallowfloating    = 1;        /* 1 means swallow floating windows by default */
 static const int showbar            = 1;        /* 0 means no bar */
 static const int topbar             = 1;        /* 0 means bottom bar */
 static const char *fonts[]          = { "JetBrainsMono Nerd Font:size=10" };
@@ -29,11 +28,8 @@ static const Rule rules[] = {
 	 *	WM_CLASS(STRING) = instance, class
 	 *	WM_NAME(STRING) = title
 	 */
-	/* class     instance  title           tags mask  isfloating  isterminal  noswallow  monitor */
-	{ "St",      NULL,     NULL,           0,         0,          1,           0,        -1 },
-	{ "st",      NULL,     NULL,           0,         0,          1,           0,        -1 },
-	{ "feh",     NULL,     NULL,           0,         1,          0,           0,        -1 },
-	{ NULL,      NULL,     "Event Tester", 0,         0,          0,           1,        -1 }, /* xev */
+	/* class     instance  title           tags mask  isfloating  monitor */
+	{ "feh",     NULL,     NULL,           0,         1,          -1 },
  };
 
 /* layout(s) */
@@ -62,22 +58,13 @@ static const Layout layouts[] = {
 /* commands */
 static char dmenumon[2] = "0";
 static const char *dmenucmd[] = { "dmenu_run", NULL };
-static const char *screenshotcmd[] = { "sh", "-c", "maim -su | xclip -selection clipboard -t image/png -i", NULL };
 static const char *termcmd[] = { "st", NULL };
-static const char *browsercmd[] = { "firefox", NULL };
-static const char *thuncmd[] = { "thunar", NULL };
-static const char *githubcmd[] = { "github-desktop", NULL };
-static const char *pavucmd[] = { "pavucontrol", NULL };
 
 static const Key keys[] = {
 	/* modifier                     key        function        argument */
 	{ MODKEY,                       XK_r,      spawn,          {.v = dmenucmd } },
 	{ MODKEY,                       XK_x,      spawn,          {.v = termcmd } },
-	{ MODKEY,                       XK_p,      spawn,          {.v = screenshotcmd } },
-	{ MODKEY,                       XK_b,      spawn,          {.v = browsercmd } },
-	{ MODKEY,                       XK_e,      spawn,          {.v = thuncmd } },
-	{ MODKEY,                       XK_g,      spawn,          {.v = githubcmd } },
-	{ MODKEY,                       XK_v,      spawn,          {.v = pavucmd } },
+	{ MODKEY,                       XK_b,      togglebar,      {0} },
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
 	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
 	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
@@ -105,7 +92,7 @@ static const Key keys[] = {
 	TAGKEYS(                        XK_9,                      8)
 	{ MODKEY|ShiftMask,             XK_q,      quit,           {0} },
 	{ MODKEY|ShiftMask,             XK_w,      quit,           {1} }, 
-	{ MODKEY,                       XK_r,      resetmfact,     {0} },
+	{ MODKEY|ShiftMask,             XK_r,      resetmfact,     {0} },
   { 0,                            XF86XK_MonBrightnessUp,    spawn,          SHCMD ("brightnessctl set +10%")},
   { 0,                            XF86XK_MonBrightnessDown,  spawn,          SHCMD ("brightnessctl set 10%-")},
   { 0,                            XF86XK_AudioLowerVolume,   spawn,          SHCMD ("amixer sset Master 5%- unmute")},

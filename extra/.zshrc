@@ -18,8 +18,6 @@ setopt INC_APPEND_HISTORY
 setopt HIST_IGNORE_DUPS
 setopt HIST_REDUCE_BLANKS
 
-eval "$(zoxide init zsh)"
-
 # essentials
 alias cc='claude --dangerously-skip-permissions'
 alias grep='grep --color=auto'
@@ -27,7 +25,6 @@ alias ff='clear && fastfetch'
 alias c='clear'
 alias rm='rm -rf'
 alias vim='nvim'
-alias debloat='~/Documents/debloat.sh'
 alias chmod='chmod +x'
 alias mpv='mpv --keep-open'
 alias record='mkdir -p ~/recordings && ffmpeg -f x11grab -r 60 -s 2560x1440 -i :0.0 -c:v libx264 -preset fast -crf 23 -pix_fmt yuv420p -vf "scale=2560:1440" -threads 0 ~/recordings/$(date +"%Y-%m-%d-%H-%M-%S").mp4'
@@ -53,7 +50,7 @@ export BROWSER='firefox'
 
 # projects
 alias hfj='z ~/build/hfj && nvim && c'
-alias dwme='z ~/archbyte && nvim suckless/dwm/config.h && z suckless/dwm/'
+alias dwme='z ~/FDWM && nvim suckless/dwm/config.h && z suckless/dwm/'
 alias nvime='z ~/.config/nvim && nvim && z && c'
 alias moon='clear && ssh goldgrasp@192.168.1.2'
 alias notes='z ~/build/notes && nvim && z && c'
@@ -155,5 +152,5 @@ ZSH_HIGHLIGHT_STYLES[arg0]='fg=#cdd6f4'
 ZSH_HIGHLIGHT_STYLES[default]='fg=#cdd6f4'
 ZSH_HIGHLIGHT_STYLES[cursor]='fg=#cdd6f4'
 
-source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 export PATH="$HOME/.local/bin:$PATH"
