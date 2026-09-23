@@ -4,7 +4,7 @@ A minimal dwm, st and dmenu setup for Fedora.
 
 ## Quick install
 
-`install.sh` runs steps 1 to 4 for you and never overwrites an existing `~/.xinitrc`; run it as your normal user.
+`install.sh` runs steps 1 to 5 for you and never overwrites an existing `~/.xinitrc`; run it as your normal user.
 
 ```shell
 sudo dnf install -y git
@@ -21,21 +21,34 @@ To do it by hand instead, follow the steps below.
 Installs git, the compiler, the X server, xinit, a fallback font, and the libraries dwm, st and dmenu link against.
 
 ```shell
-sudo dnf install git gcc make pkgconf-pkg-config \
+sudo dnf install git gcc make pkgconf-pkg-config tar xz \
     xorg-x11-server-Xorg xorg-x11-xinit xorg-x11-drv-libinput \
     libX11-devel libXft-devel libXinerama-devel libXrender-devel \
     fontconfig-devel freetype-devel \
     dejavu-sans-mono-fonts
 ```
 
-## 2. Clone the repo
+## 2. Install the font
+
+The configs use JetBrainsMono Nerd Font, which Fedora doesn't package, so this fetches and checks the upstream release.
+
+```shell
+curl -fLO https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/JetBrainsMono.tar.xz
+echo "04d5e8f903693f9dd13e16f867e994834e681eb3c72c0d337a770dcda09010cf  JetBrainsMono.tar.xz" | sha256sum -c -
+sudo mkdir -p /usr/local/share/fonts/JetBrainsMonoNerdFont
+sudo tar -xJf JetBrainsMono.tar.xz -C /usr/local/share/fonts/JetBrainsMonoNerdFont JetBrainsMonoNerdFont-{Regular,Bold,Italic,BoldItalic}.ttf
+sudo fc-cache -f
+rm JetBrainsMono.tar.xz
+```
+
+## 3. Clone the repo
 
 ```shell
 git clone https://github.com/zachbyte/FDWM
 cd FDWM
 ```
 
-## 3. Build and install
+## 4. Build and install
 
 ```shell
 cd suckless/dwm && sudo make clean install && cd ../..
@@ -43,7 +56,7 @@ cd suckless/st && sudo make clean install && cd ../..
 cd suckless/dmenu && sudo make clean install && cd ../..
 ```
 
-## 4. Start dwm
+## 5. Start dwm
 
 Once dwm is running, `Alt + X` opens st and `Alt + R` opens dmenu.
 
@@ -52,7 +65,7 @@ echo "exec dwm" > ~/.xinitrc
 startx
 ```
 
-## 5. Extras (optional)
+## 6. Extras (optional)
 
 Install the programs the configs in `extra/` are for, then copy each config to where its program looks for it.
 

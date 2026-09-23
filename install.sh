@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installs FDWM on Fedora: packages, dwm/st/dmenu, and ~/.xinitrc.
+# Installs FDWM on Fedora: packages, the Nerd Font, dwm/st/dmenu, and ~/.xinitrc.
 # Safe to run again; it only rebuilds and never overwrites an existing ~/.xinitrc.
 set -euo pipefail
 trap 'echo "install.sh: failed on line $LINENO: $BASH_COMMAND" >&2' ERR
@@ -12,7 +12,7 @@ fi
 cd "$(dirname "$(readlink -f "$0")")"
 
 packages=(
-    git gcc make pkgconf-pkg-config
+    git gcc make pkgconf-pkg-config tar xz
     xorg-x11-server-Xorg xorg-x11-xinit xorg-x11-drv-libinput
     libX11-devel libXft-devel libXinerama-devel libXrender-devel
     fontconfig-devel freetype-devel
@@ -21,6 +21,25 @@ packages=(
 
 echo "==> Installing packages"
 sudo dnf install -y "${packages[@]}"
+
+# JetBrainsMono Nerd Font isn't packaged by Fedora; fetch the pinned upstream release.
+font_url=https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/JetBrainsMono.tar.xz
+font_sha256=04d5e8f903693f9dd13e16f867e994834e681eb3c72c0d337a770dcda09010cf
+font_dir=/usr/local/share/fonts/JetBrainsMonoNerdFont
+
+echo "==> Installing JetBrainsMono Nerd Font"
+if fc-list -q "JetBrainsMono Nerd Font"; then
+    echo "Already installed"
+else
+    tmp=$(mktemp -d)
+    curl -fL -o "$tmp/font.tar.xz" "$font_url"
+    echo "$font_sha256  $tmp/font.tar.xz" | sha256sum -c -
+    sudo mkdir -p "$font_dir"
+    sudo tar -xJf "$tmp/font.tar.xz" -C "$font_dir" \
+        JetBrainsMonoNerdFont-{Regular,Bold,Italic,BoldItalic}.ttf
+    sudo fc-cache -f "$font_dir"
+    rm -rf "$tmp"
+fi
 
 for tool in dwm st dmenu; do
     echo "==> Building and installing $tool"
