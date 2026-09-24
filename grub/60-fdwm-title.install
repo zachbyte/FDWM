@@ -1,0 +1,10 @@
+#!/bin/sh
+# kernel-install hook from FDWM: give a kernel's boot menu entry a short title,
+# "Fedora 6.16.7" instead of "Fedora Linux (6.16.7-200.fc44.x86_64) 44 (...)".
+# It runs after 20-grub.install, which writes the entry.
+[ "$1" = add ] || exit 0
+kver=$2
+for entry in /boot/loader/entries/*-"$kver".conf; do
+    [ -f "$entry" ] && sed -i "s/^title .*/title Fedora ${kver%%-*}/" "$entry"
+done
+exit 0

@@ -1,10 +1,10 @@
 # FDWM
 
-A minimal dwm, st, dmenu and slock setup for Fedora.
+A minimal dwm, st and dmenu setup for Fedora.
 
 ## Quick install
 
-`install.sh` runs steps 1 to 6 for you; run it as your normal user. Any existing `~/.xinitrc`, `~/.bashrc` or `~/.config/nvim` that differs is moved to a `.bak.<time>` copy first.
+`install.sh` runs steps 1 to 7 for you; run it as your normal user. Any existing `~/.xinitrc`, `~/.bashrc` or `~/.config/nvim` that differs is moved to a `.bak.<time>` copy first.
 
 ```shell
 sudo dnf install -y git
@@ -17,7 +17,7 @@ Then log out and back in on tty1, and dwm starts.
 
 ## Updating
 
-`update.sh` installs any packages that are missing, reclones the repo, and rebuilds dwm, st, dmenu and slock; press `Alt + Shift + W` afterwards to restart dwm on the new build. It stops without changing anything if you have uncommitted changes or unpushed commits, and it doesn't touch your dotfiles or the GRUB theme (run `./install.sh` for those).
+`update.sh` installs any packages that are missing, reclones the repo, and rebuilds dwm, st and dmenu; press `Alt + Shift + W` afterwards to restart dwm on the new build. It stops without changing anything if you have uncommitted changes or unpushed commits, and it doesn't touch your dotfiles or the GRUB theme (run `./install.sh` for those).
 
 ```shell
 ./update.sh
@@ -29,13 +29,13 @@ To do it by hand instead, follow the steps below.
 
 ### 1. Install dependencies
 
-Installs git, the compiler, the X server, xinit, a fallback font, and the libraries dwm, st, dmenu and slock link against.
+Installs git, the compiler, the X server, xinit, a fallback font, and the libraries dwm, st and dmenu link against.
 
 ```shell
 sudo dnf install git gcc make pkgconf-pkg-config tar xz \
     xorg-x11-server-Xorg xorg-x11-xinit xorg-x11-drv-libinput \
-    libX11-devel libXft-devel libXinerama-devel libXrender-devel \
-    fontconfig-devel freetype-devel libXext-devel libXrandr-devel libxcrypt-devel \
+    libX11-devel libXft-devel libXrender-devel \
+    fontconfig-devel freetype-devel \
     dejavu-sans-mono-fonts
 ```
 
@@ -65,15 +65,14 @@ cd FDWM
 cd suckless/dwm && sudo make clean install && cd ../..
 cd suckless/st && sudo make clean install && cd ../..
 cd suckless/dmenu && sudo make clean install && cd ../..
-cd suckless/slock && sudo make clean install && cd ../..
 ```
 
 ### 5. Set up the session
 
-`dotfiles/.xinitrc` starts the keyring, the polkit agent, the battery charge and clock in the bar, and a screen lock after 15 minutes idle or on suspend before dwm; PipeWire gives you sound and the media keys.
+`dotfiles/.xinitrc` starts the keyring, the polkit agent, and the battery charge and clock in the bar before dwm; PipeWire gives you sound and the media keys.
 
 ```shell
-sudo dnf install xsetroot xset xss-lock gnome-keyring mate-polkit \
+sudo dnf install xsetroot gnome-keyring mate-polkit \
     pipewire wireplumber pipewire-pulseaudio brightnessctl playerctl
 cp dotfiles/.xinitrc ~/.xinitrc
 ```
@@ -93,7 +92,6 @@ cp dotfiles/.bashrc ~/.bashrc
 | Keys | Action |
 | --- | --- |
 | `Alt + X` / `Alt + R` | Open st / dmenu |
-| `Alt + Shift + L` | Lock the screen (also locks itself after 15 minutes idle) |
 | `Alt + T` / `F` / `M` | Tiled / floating / monocle layout |
 | `Alt + Space` | Switch to the previous layout |
 | `Alt + Return` | Move the focused window into the master area |
@@ -109,19 +107,31 @@ mkdir -p ~/.config
 cp -r dotfiles/.config/nvim ~/.config/
 ```
 
-The GRUB theme needs graphical output, and Fedora hides the menu when only one OS is installed.
+The GRUB theme needs graphical output, and Fedora hides the menu when only one OS is installed. The rest removes the rescue entry and gives each kernel a short title such as `Fedora 6.16.7`, including future kernel updates.
 
 ```shell
 sudo cp -r grub/catppuccin-mocha-grub /boot/grub2/themes/
 sudo sed -i '/^GRUB_THEME=/d; /^GRUB_TERMINAL_OUTPUT=/d' /etc/default/grub
 printf 'GRUB_TERMINAL_OUTPUT="gfxterm"\nGRUB_THEME="/boot/grub2/themes/catppuccin-mocha-grub/theme.txt"\n' | sudo tee -a /etc/default/grub
 sudo grub2-editenv - unset menu_auto_hide
+sudo dnf remove dracut-config-rescue
+sudo rm -f /boot/loader/entries/*-0-rescue.conf /boot/vmlinuz-0-rescue-* /boot/initramfs-0-rescue-*.img
+sudo install -m 755 grub/60-fdwm-title.install /etc/kernel/install.d/
+sudo sh -c 'for e in /boot/loader/entries/*.conf; do /etc/kernel/install.d/60-fdwm-title.install add "$(sed -n "s/^version //p" "$e")"; done'
 sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+```
+
+### 7. File manager
+
+`nnn` is a terminal file manager: run `nnn`, press `?` for its keys, and text files open in Neovim.
+
+```shell
+sudo dnf install nnn
 ```
 
 ## Applied patches
 
-The source already includes these, so there is nothing to apply. slock is unpatched upstream 1.5.
+The source already includes these, so there is nothing to apply.
 
 - dwm: activetagindicatorbar, actualfullscreen, alwayscenter, attachbottom, centretitle, colorbar, dragmfact, noborderflicker, preserveonrestart, resizehere, restartsig, tiledmove, togglefloatingcenter, uselessgap
 - st: anysize, scrollback, scrollback-mouse

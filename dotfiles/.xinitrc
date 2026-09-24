@@ -12,10 +12,6 @@ export GNOME_KEYRING_CONTROL
 
 /usr/libexec/polkit-mate-authentication-agent-1 &
 
-# lock with slock after 15 minutes idle, and before the machine suspends
-xset s 900 0
-xss-lock -- slock &
-
 while true; do
     # battery charge, e.g. "85%"; stays empty on machines without a battery
     bat=""

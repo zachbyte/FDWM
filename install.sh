@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installs FDWM on Fedora: packages, the Nerd Font, dwm/st/dmenu/slock, dotfiles and the GRUB theme.
+# Installs FDWM on Fedora: packages, the Nerd Font, dwm/st/dmenu, dotfiles and the GRUB theme.
 # Safe to run again. Existing dotfiles that differ are backed up first, never silently replaced.
 set -euo pipefail
 trap 'echo "install.sh: failed on line $LINENO: $BASH_COMMAND" >&2' ERR
@@ -35,7 +35,7 @@ else
     rm -rf "$tmp"
 fi
 
-for tool in dwm st dmenu slock; do
+for tool in dwm st dmenu; do
     echo "==> Building and installing $tool"
     sudo make -C "suckless/$tool" clean install
 done
@@ -96,6 +96,18 @@ if [[ -f /etc/default/grub ]] && command -v grub2-mkconfig >/dev/null; then
         | sudo tee -a /etc/default/grub >/dev/null
     # Fedora hides the boot menu when only one OS is installed; show it so the theme is visible.
     sudo grub2-editenv - unset menu_auto_hide
+
+    # Drop the rescue entry (titled with the machine id) and stop new ones being made.
+    if rpm -q dracut-config-rescue >/dev/null; then
+        sudo dnf remove -y dracut-config-rescue
+    fi
+    sudo rm -f /boot/loader/entries/*-0-rescue.conf /boot/vmlinuz-0-rescue-* /boot/initramfs-0-rescue-*.img
+
+    # Short "Fedora <kernel version>" titles, now and for every kernel update.
+    sudo install -m 755 grub/60-fdwm-title.install /etc/kernel/install.d/60-fdwm-title.install
+    sudo sh -c 'for entry in /boot/loader/entries/*.conf; do
+        /etc/kernel/install.d/60-fdwm-title.install add "$(sed -n "s/^version //p" "$entry")"
+    done'
     sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 else
     echo "GRUB 2 not found, skipped"

@@ -47,8 +47,8 @@ alias log='git log'
 # env's
 export EDITOR='nvim'
 export VISUAL='nvim'
+export NNN_OPTS='e' # nnn opens text files in $EDITOR
 export TERMINAL='st'
-export BROWSER='firefox'
 
 # stashes changes before pulling and then releases the changes
 pull() {

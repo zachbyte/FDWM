@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Updates FDWM: installs any missing packages, reclones the repo and rebuilds
-# dwm, st, dmenu and slock. It stops before touching the repo if you have
+# dwm, st and dmenu. It stops before touching the repo if you have
 # uncommitted changes or unpushed commits, so nothing of yours is lost.
 set -euo pipefail
 trap 'echo "update.sh: failed on line $LINENO: $BASH_COMMAND" >&2' ERR
@@ -53,7 +53,7 @@ main() {
     cd "$repo"
 
     local tool
-    for tool in dwm st dmenu slock; do
+    for tool in dwm st dmenu; do
         echo "==> Building and installing $tool"
         sudo make -C "suckless/$tool" clean install
     done
