@@ -41,7 +41,8 @@ static const int lockfullscreen = 1; /* 1 will force focus on the fullscreen win
 static const Layout layouts[] = {
     /* symbol     arrange function */
     { "",      tile },
-    { "",      NULL },
+    { "",      NULL },    /* no layout function means floating behavior */
+    { "",      monocle },
 };
 
 /* key definitions */
@@ -59,6 +60,7 @@ static const Layout layouts[] = {
 static char dmenumon[2] = "0";
 static const char *dmenucmd[] = { "dmenu_run", NULL };
 static const char *termcmd[] = { "st", NULL };
+static const char *slockcmd[] = { "slock", NULL };
 
 static const Key keys[] = {
 	/* modifier                     key        function        argument */
@@ -71,8 +73,13 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
 	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
 	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
+	{ MODKEY,                       XK_Return, zoom,           {0} },
 	{ MODKEY,                       XK_Tab,    view,           {0} },
 	{ MODKEY,                       XK_q,      killclient,     {0} },
+	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
+	{ MODKEY,                       XK_f,      setlayout,      {.v = &layouts[1]} },
+	{ MODKEY,                       XK_m,      setlayout,      {.v = &layouts[2]} },
+	{ MODKEY,                       XK_space,  setlayout,      {0} },
 	{ MODKEY|ShiftMask,             XK_space,  togglefloating, {0} },
 	{ MODKEY|ShiftMask,             XK_f,      togglefullscr,  {0} },
 	{ MODKEY,                       XK_0,      view,           {.ui = ~0 } },
@@ -93,11 +100,12 @@ static const Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_q,      quit,           {0} },
 	{ MODKEY|ShiftMask,             XK_w,      quit,           {1} }, 
 	{ MODKEY|ShiftMask,             XK_r,      resetmfact,     {0} },
+	{ MODKEY|ShiftMask,             XK_l,      spawn,          {.v = slockcmd } },
   { 0,                            XF86XK_MonBrightnessUp,    spawn,          SHCMD ("brightnessctl set +10%")},
   { 0,                            XF86XK_MonBrightnessDown,  spawn,          SHCMD ("brightnessctl set 10%-")},
-  { 0,                            XF86XK_AudioLowerVolume,   spawn,          SHCMD ("amixer sset Master 5%- unmute")},
-  { 0,                            XF86XK_AudioMute,          spawn,          SHCMD ("amixer sset Master $(amixer get Master | grep -q '\\[on\\]' && echo 'mute' || echo 'unmute')")},
-  { 0,                            XF86XK_AudioRaiseVolume,   spawn,          SHCMD ("amixer sset Master 5%+ unmute")},
+  { 0,                            XF86XK_AudioLowerVolume,   spawn,          SHCMD ("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-")},
+  { 0,                            XF86XK_AudioMute,          spawn,          SHCMD ("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")},
+  { 0,                            XF86XK_AudioRaiseVolume,   spawn,          SHCMD ("wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+")},
   { 0,                            XF86XK_AudioPlay,          spawn,          SHCMD ("playerctl play-pause")},
   { 0,                            XF86XK_AudioNext,          spawn,          SHCMD ("playerctl next")},
   { 0,                            XF86XK_AudioPrev,          spawn,          SHCMD ("playerctl previous")},
