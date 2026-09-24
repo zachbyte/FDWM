@@ -85,6 +85,18 @@ else
     echo "Added the tty1 autostart to ~/.bash_profile"
 fi
 
+# Log in on tty1 without a password prompt; .bash_profile then runs startx.
+echo "==> Setting up autologin on tty1"
+autologin=/etc/systemd/system/getty@tty1.service.d/autologin.conf
+sudo mkdir -p "${autologin%/*}"
+sudo tee "$autologin" >/dev/null <<EOF
+[Service]
+ExecStart=
+ExecStart=-/sbin/agetty -o '-p -f -- \\\\u' --noreset --noclear --autologin $USER - \${TERM}
+EOF
+sudo systemctl daemon-reload
+echo "tty1 now logs in $USER automatically"
+
 echo "==> Installing the GRUB theme"
 if [[ -f /etc/default/grub ]] && command -v grub2-mkconfig >/dev/null; then
     theme=/boot/grub2/themes/catppuccin-mocha-grub

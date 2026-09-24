@@ -13,7 +13,7 @@ cd FDWM
 ./install.sh
 ```
 
-Then log out and back in on tty1, and dwm starts.
+Then reboot: tty1 logs you in automatically and dwm starts.
 
 ## Updating
 
@@ -81,6 +81,14 @@ Add the autostart from `dotfiles/.bash_profile` to your own `~/.bash_profile`, s
 
 ```shell
 sed -n '/^# Start dwm/,$p' dotfiles/.bash_profile >> ~/.bash_profile
+```
+
+To skip the login prompt too, have tty1 log you in automatically. Anyone at the machine then gets your session, and apps that use the keyring ask for your password the first time instead of it unlocking at login.
+
+```shell
+sudo mkdir -p /etc/systemd/system/getty@tty1.service.d
+printf '[Service]\nExecStart=\nExecStart=-/sbin/agetty -o %s --noreset --noclear --autologin %s - ${TERM}\n' "'-p -f -- \\\\u'" "$USER" | sudo tee /etc/systemd/system/getty@tty1.service.d/autologin.conf
+sudo systemctl daemon-reload
 ```
 
 `dotfiles/.bashrc` sets the prompt (git branch and directory), history, aliases and git shortcuts.
