@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Installs FDWM on Fedora: packages, the Nerd Font, dwm/st/dmenu, dotfiles and the GRUB theme.
-# Safe to run again. Existing dotfiles that differ are backed up first, never silently replaced.
+# Installs FDWM on Fedora: packages, the Nerd Font, dwm/st/dmenu, dotfiles, autologin and
+# the GRUB theme. update.sh runs it after recloning, so it must stay safe to run again:
+# existing dotfiles that differ are backed up first, never silently replaced.
 set -euo pipefail
 trap 'echo "install.sh: failed on line $LINENO: $BASH_COMMAND" >&2' ERR
 
@@ -13,8 +14,18 @@ cd "$(dirname "$(readlink -f "$0")")"
 
 mapfile -t packages < <(sed 's/#.*//' packages.txt | xargs -n1)
 
-echo "==> Installing packages"
-sudo dnf install -y "${packages[@]}"
+# rpm is quick; dnf only runs (and refreshes its metadata) when something is missing.
+echo "==> Checking packages"
+missing=()
+for p in "${packages[@]}"; do
+    rpm -q --whatprovides "$p" >/dev/null 2>&1 || missing+=("$p")
+done
+if (( ${#missing[@]} )); then
+    echo "Installing: ${missing[*]}"
+    sudo dnf install -y "${missing[@]}"
+else
+    echo "All installed"
+fi
 
 # JetBrainsMono Nerd Font isn't packaged by Fedora; fetch the pinned upstream release.
 font_url=https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/JetBrainsMono.tar.xz
@@ -126,4 +137,8 @@ else
     echo "GRUB 2 not found, skipped"
 fi
 
-echo "==> Done. Log out and back in on tty1 to start dwm, or run: startx"
+if [[ -n ${DISPLAY:-} ]]; then
+    echo "==> Done. Press Alt+Shift+W to restart dwm on the new build."
+else
+    echo "==> Done. Reboot, or log in on tty1, to start dwm."
+fi

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Updates FDWM: installs any missing packages, reclones the repo and rebuilds
-# dwm, st and dmenu. It stops before touching the repo if you have
+# Updates FDWM: reclones the repo, then runs the new install.sh, which installs
+# any missing packages, rebuilds dwm, st and dmenu, and reapplies the dotfiles,
+# autologin and GRUB theme. It stops before touching the repo if you have
 # uncommitted changes or unpushed commits, so nothing of yours is lost.
 set -euo pipefail
 trap 'echo "update.sh: failed on line $LINENO: $BASH_COMMAND" >&2' ERR
@@ -16,19 +17,6 @@ main() {
     local repo
     repo=$(dirname "$(readlink -f "$0")")
     cd "$repo"
-
-    echo "==> Checking packages"
-    local packages missing=() p
-    mapfile -t packages < <(sed 's/#.*//' packages.txt | xargs -n1)
-    for p in "${packages[@]}"; do
-        rpm -q --whatprovides "$p" >/dev/null 2>&1 || missing+=("$p")
-    done
-    if (( ${#missing[@]} )); then
-        echo "Installing missing packages: ${missing[*]}"
-        sudo dnf install -y "${missing[@]}"
-    else
-        echo "All installed"
-    fi
 
     echo "==> Recloning $repo"
     if [[ -n $(git status --porcelain) ]]; then
@@ -52,14 +40,7 @@ main() {
     mv "$new" "$repo"
     cd "$repo"
 
-    local tool
-    for tool in dwm st dmenu; do
-        echo "==> Building and installing $tool"
-        sudo make -C "suckless/$tool" clean install
-    done
-
-    echo "==> Done. Press Alt+Shift+W to restart dwm on the new build."
-    echo "    Dotfiles and the GRUB theme aren't touched; run ./install.sh to reapply them."
+    exec ./install.sh
 }
 
 main "$@"
