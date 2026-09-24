@@ -1,0 +1,7 @@
+# build output from make
+*.o
+suckless/dwm/dwm
+suckless/st/st
+suckless/dmenu/dmenu
+suckless/dmenu/stest
+suckless/slock/slock

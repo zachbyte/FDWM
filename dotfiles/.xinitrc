@@ -12,8 +12,17 @@ export GNOME_KEYRING_CONTROL
 
 /usr/libexec/polkit-mate-authentication-agent-1 &
 
+# lock with slock after 15 minutes idle, and before the machine suspends
+xset s 900 0
+xss-lock -- slock &
+
 while true; do
-    xsetroot -name "$(date '+󰃭  %Y-%m-%d    %I:%M %p')"
+    # battery charge, e.g. "85%"; stays empty on machines without a battery
+    bat=""
+    for f in /sys/class/power_supply/BAT*/capacity; do
+        [ -r "$f" ] && read -r bat < "$f" && bat="$bat%  " && break
+    done
+    xsetroot -name "$bat$(date '+󰃭  %Y-%m-%d    %I:%M %p')"
     sleep $((60 - $(date +%-S)))
 done &
 

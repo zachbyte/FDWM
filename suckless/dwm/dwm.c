@@ -1874,7 +1874,7 @@ tagmon(const Arg *arg)
 void
 tile(Monitor *m)
 {
-	unsigned int i, n, h, mw, my, ty;
+	unsigned int i, n, h, r, mw, my, ty;
 	Client *c;
 
 	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
@@ -1885,14 +1885,20 @@ tile(Monitor *m)
 		mw = m->nmaster ? m->ww * m->mfact : 0;
 	else
 		mw = m->ww;
+	/* resizeclient() insets every tiled window by gappx on each side, so share
+	 * out the height left after the gaps and add them back to each request;
+	 * HEIGHT() already includes one gappx, so windows get equal heights with
+	 * one gappx between them */
 	for (i = my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
 		if (i < m->nmaster) {
-			h = (m->wh - my) / (MIN(n, m->nmaster) - i);
+			r = MIN(n, m->nmaster) - i;
+			h = MAX(((int)m->wh - (int)my - (int)((r + 1) * gappx)) / (int)r, 1) + 2 * gappx;
 			resize(c, m->wx, m->wy + my, mw - (2*c->bw) + (n > 1 ? gappx : 0), h - (2*c->bw), 0);
 			if (my + HEIGHT(c) < m->wh)
 				my += HEIGHT(c);
 		} else {
-			h = (m->wh - ty) / (n - i);
+			r = n - i;
+			h = MAX(((int)m->wh - (int)ty - (int)((r + 1) * gappx)) / (int)r, 1) + 2 * gappx;
 			resize(c, m->wx + mw, m->wy + ty, m->ww - mw - (2*c->bw), h - (2*c->bw), 0);
 			if (ty + HEIGHT(c) < m->wh)
 				ty += HEIGHT(c);

@@ -11,20 +11,7 @@ fi
 
 cd "$(dirname "$(readlink -f "$0")")"
 
-packages=(
-    # building dwm, st, dmenu and slock
-    git gcc make pkgconf-pkg-config diffutils tar xz
-    libX11-devel libXft-devel libXinerama-devel libXrender-devel
-    fontconfig-devel freetype-devel libXext-devel libXrandr-devel libxcrypt-devel
-    # X and the session started by .xinitrc
-    xorg-x11-server-Xorg xorg-x11-xinit xorg-x11-drv-libinput
-    xsetroot gnome-keyring mate-polkit dejavu-sans-mono-fonts
-    # sound, and the volume, brightness and media keys
-    pipewire wireplumber pipewire-pulseaudio brightnessctl playerctl
-    # neovim, plus what its plugins and language servers need
-    # (/usr/bin/npm is named by path because its package name differs between releases)
-    neovim ripgrep unzip tree-sitter-cli /usr/bin/npm java-latest-openjdk-headless
-)
+mapfile -t packages < <(sed 's/#.*//' packages.txt | xargs -n1)
 
 echo "==> Installing packages"
 sudo dnf install -y "${packages[@]}"
@@ -74,6 +61,9 @@ install_dotfile() {
 
 echo "==> Setting up ~/.xinitrc"
 install_dotfile .xinitrc
+
+echo "==> Setting up ~/.bashrc"
+install_dotfile .bashrc
 
 echo "==> Setting up neovim"
 if nvim --clean --headless +'if !has("nvim-0.12") | cquit | endif' +quit; then

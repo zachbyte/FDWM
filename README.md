@@ -4,7 +4,7 @@ A minimal dwm, st, dmenu and slock setup for Fedora.
 
 ## Quick install
 
-`install.sh` runs steps 1 to 6 for you; run it as your normal user. Any existing `~/.xinitrc` or `~/.config/nvim` that differs is moved to a `.bak.<time>` copy first.
+`install.sh` runs steps 1 to 6 for you; run it as your normal user. Any existing `~/.xinitrc`, `~/.bashrc` or `~/.config/nvim` that differs is moved to a `.bak.<time>` copy first.
 
 ```shell
 sudo dnf install -y git
@@ -15,9 +15,19 @@ cd FDWM
 
 Then log out and back in on tty1, and dwm starts.
 
+## Updating
+
+`update.sh` installs any packages that are missing, reclones the repo, and rebuilds dwm, st, dmenu and slock; press `Alt + Shift + W` afterwards to restart dwm on the new build. It stops without changing anything if you have uncommitted changes or unpushed commits, and it doesn't touch your dotfiles or the GRUB theme (run `./install.sh` for those).
+
+```shell
+./update.sh
+```
+
+## Manual install
+
 To do it by hand instead, follow the steps below.
 
-## 1. Install dependencies
+### 1. Install dependencies
 
 Installs git, the compiler, the X server, xinit, a fallback font, and the libraries dwm, st, dmenu and slock link against.
 
@@ -29,7 +39,7 @@ sudo dnf install git gcc make pkgconf-pkg-config tar xz \
     dejavu-sans-mono-fonts
 ```
 
-## 2. Install the font
+### 2. Install the font
 
 The configs use JetBrainsMono Nerd Font, which Fedora doesn't package, so this fetches and checks the upstream release.
 
@@ -42,14 +52,14 @@ sudo fc-cache -f
 rm JetBrainsMono.tar.xz
 ```
 
-## 3. Clone the repo
+### 3. Clone the repo
 
 ```shell
 git clone https://github.com/zachbyte/FDWM
 cd FDWM
 ```
 
-## 4. Build and install
+### 4. Build and install
 
 ```shell
 cd suckless/dwm && sudo make clean install && cd ../..
@@ -58,12 +68,12 @@ cd suckless/dmenu && sudo make clean install && cd ../..
 cd suckless/slock && sudo make clean install && cd ../..
 ```
 
-## 5. Set up the session
+### 5. Set up the session
 
-`dotfiles/.xinitrc` starts the keyring, the polkit agent and a clock in the bar before dwm; PipeWire gives you sound and the media keys.
+`dotfiles/.xinitrc` starts the keyring, the polkit agent, the battery charge and clock in the bar, and a screen lock after 15 minutes idle or on suspend before dwm; PipeWire gives you sound and the media keys.
 
 ```shell
-sudo dnf install xsetroot gnome-keyring mate-polkit \
+sudo dnf install xsetroot xset xss-lock gnome-keyring mate-polkit \
     pipewire wireplumber pipewire-pulseaudio brightnessctl playerctl
 cp dotfiles/.xinitrc ~/.xinitrc
 ```
@@ -74,16 +84,22 @@ Add the autostart from `dotfiles/.bash_profile` to your own `~/.bash_profile`, s
 sed -n '/^# Start dwm/,$p' dotfiles/.bash_profile >> ~/.bash_profile
 ```
 
+`dotfiles/.bashrc` sets the prompt (git branch and directory), history, aliases and git shortcuts.
+
+```shell
+cp dotfiles/.bashrc ~/.bashrc
+```
+
 | Keys | Action |
 | --- | --- |
 | `Alt + X` / `Alt + R` | Open st / dmenu |
-| `Alt + Shift + L` | Lock the screen (slock) |
+| `Alt + Shift + L` | Lock the screen (also locks itself after 15 minutes idle) |
 | `Alt + T` / `F` / `M` | Tiled / floating / monocle layout |
 | `Alt + Space` | Switch to the previous layout |
 | `Alt + Return` | Move the focused window into the master area |
 | `Alt + Q` / `Alt + Shift + Q` | Close the window / quit dwm |
 
-## 6. Neovim and GRUB theme
+### 6. Neovim and GRUB theme
 
 The config needs Neovim 0.12 or newer (Fedora 44 or newer) and installs its plugins, parsers and language servers the first time it starts.
 
