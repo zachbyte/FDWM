@@ -101,12 +101,13 @@ if [[ -f /etc/default/grub ]] && command -v grub2-mkconfig >/dev/null; then
     if rpm -q dracut-config-rescue >/dev/null; then
         sudo dnf remove -y dracut-config-rescue
     fi
-    sudo rm -f /boot/loader/entries/*-0-rescue.conf /boot/vmlinuz-0-rescue-* /boot/initramfs-0-rescue-*.img
+    # (inside sudo sh -c: only root can list /boot/loader/entries, so only root can expand the *)
+    sudo sh -c 'rm -f /boot/loader/entries/*-0-rescue.conf /boot/vmlinuz-0-rescue-* /boot/initramfs-0-rescue-*.img'
 
     # Short "Fedora <kernel version>" titles, now and for every kernel update.
     sudo install -m 755 grub/60-fdwm-title.install /etc/kernel/install.d/60-fdwm-title.install
     sudo sh -c 'for entry in /boot/loader/entries/*.conf; do
-        /etc/kernel/install.d/60-fdwm-title.install add "$(sed -n "s/^version //p" "$entry")"
+        /etc/kernel/install.d/60-fdwm-title.install add "$(sed -n "s/^version[[:space:]]*//p" "$entry")"
     done'
     sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 else
