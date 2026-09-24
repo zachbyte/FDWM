@@ -727,7 +727,7 @@ drawbar(Monitor *m)
     int tlpad;
     int boxs = drw->fonts->h / 9;
     int boxw = drw->fonts->h / 6 + 2;
-    unsigned int i, occ = 0, urg = 0;
+    unsigned int i, urg = 0;
     Client *c;
 
     if (!m->showbar)
@@ -740,11 +740,9 @@ drawbar(Monitor *m)
         drw_text(drw, m->ww - tw, 0, tw, bh, 0, stext, 0);
     }
 
-    for (c = m->clients; c; c = c->next) {
-        occ |= c->tags;
+    for (c = m->clients; c; c = c->next)
         if (c->isurgent)
             urg |= c->tags;
-    }
 
     x = 0;
     for (i = 0; i < LENGTH(tags); i++) {
@@ -1408,15 +1406,10 @@ void
 resizeclient(Client *c, int x, int y, int w, int h)
 {
 	XWindowChanges wc;
-	unsigned int n;
 	unsigned int gapoffset;
 	unsigned int gapincr;
-	Client *nbc;
 
 	wc.border_width = c->bw;
-
-	/* Get number of clients for the client's monitor */
-	for (n = 0, nbc = nexttiled(c->mon->clients); nbc; nbc = nexttiled(nbc->next), n++);
 
 	/* Do nothing if layout is floating */
 	if (c->isfloating || c->mon->lt[c->mon->sellt]->arrange == NULL) {
