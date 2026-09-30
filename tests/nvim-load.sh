@@ -26,7 +26,8 @@ echo "== second start: load everything"
 nvim --headless --cmd "luafile $ROOT/tests/nvim-check.lua"
 
 # the flavors in the palette's header line
-for flavor in $(awk '$1 == "name" { $1 = ""; print; exit }' "$ROOT/palette"); do
+mapfile -t flavors < <(awk '$1 == "name" { for (i = 2; i <= NF; i++) print $i; exit }' "$ROOT/palette")
+for flavor in "${flavors[@]}"; do
     echo "== with $flavor saved by fdwm-theme"
     mkdir -p "$XDG_CONFIG_HOME/fdwm"
     echo "$flavor" >"$XDG_CONFIG_HOME/fdwm/flavor"
