@@ -11,9 +11,6 @@ all: dmenu stest
 .c.o:
 	$(CC) -c $(CFLAGS) $<
 
-config.h:
-	cp config.def.h $@
-
 $(OBJ): arg.h config.h config.mk drw.h
 
 dmenu: dmenu.o drw.o util.o
@@ -23,16 +20,7 @@ stest: stest.o
 	$(CC) -o $@ stest.o $(LDFLAGS)
 
 clean:
-	rm -f dmenu stest $(OBJ) dmenu-$(VERSION).tar.gz *.rej *.orig config.def.h README
-
-dist: clean
-	mkdir -p dmenu-$(VERSION)
-	cp LICENSE Makefile arg.h config.h config.mk dmenu.1\
-		drw.h util.h dmenu_path dmenu_run stest.1 $(SRC)\
-		dmenu-$(VERSION)
-	tar -cf dmenu-$(VERSION).tar dmenu-$(VERSION)
-	gzip dmenu-$(VERSION).tar
-	rm -rf dmenu-$(VERSION)
+	rm -f dmenu stest $(OBJ) *.rej *.orig
 
 install: all
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
@@ -55,4 +43,4 @@ uninstall:
 		$(DESTDIR)$(MANPREFIX)/man1/dmenu.1\
 		$(DESTDIR)$(MANPREFIX)/man1/stest.1
 
-.PHONY: all clean dist install uninstall
+.PHONY: all clean install uninstall

@@ -1,5 +1,6 @@
-# dmenu version
-VERSION = 5.0
+# dmenu version: the 5.3 release plus upstream fixes from mid-2024
+# (utf8decode overhaul, invalid UTF-8 drawn as U+FFFD)
+VERSION = 5.3
 
 # paths
 PREFIX = /usr/local
@@ -21,7 +22,7 @@ FREETYPEINC = /usr/include/freetype2
 
 # includes and libs
 INCS = -I$(X11INC) -I$(FREETYPEINC)
-LIBS = -L$(X11LIB) -lX11 $(XINERAMALIBS) $(FREETYPELIBS) -lXrender
+LIBS = -L$(X11LIB) -lX11 $(XINERAMALIBS) $(FREETYPELIBS)
 
 # flags
 CPPFLAGS = -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L -DVERSION=\"$(VERSION)\" $(XINERAMAFLAGS)

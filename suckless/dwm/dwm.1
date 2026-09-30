@@ -15,19 +15,20 @@ right contains all other windows. The number of master area windows can be
 adjusted from zero to an arbitrary number. In monocle layout all windows are
 maximised to the screen size. In floating layout windows can be resized and
 moved freely. Dialog windows are always managed floating, regardless of the
-layout applied.
+layout applied. A new floating window keeps the size it asks for and opens
+centered on the screen.
 .P
 Windows are grouped by tags. Each window can be tagged with one or multiple
-tags. Selecting certain tags displays all windows with these tags.
+tags. Selecting certain tags displays all windows with these tags. A new window
+gets the tags named by its rule in config.h, or else the tags currently viewed;
+windows that are open when dwm restarts keep their tags.
 .P
 Each screen contains a small status bar which displays all available tags, the
-layout, the title of the focused window, and the text read from the root window
-name property, if the screen is focused. A floating window is indicated with an
-empty square and a maximised floating window is indicated with a filled square
-before the windows title.  The selected tags are indicated with a different
-color. The tags of the focused window are indicated with a filled square in the
-top left corner.  The tags which are applied to one or more windows are
-indicated with an empty square in the top left corner.
+layout, the title of the focused window (centered), and the text read from the
+root window name property, if the screen is focused. A floating window is
+indicated with an empty square and a fixed-size floating window is indicated
+with a filled square before the windows title. The selected tags are
+underlined, and a tag holding an urgent window is drawn in inverted colors.
 .P
 dwm draws a small border around windows to indicate the focus state.
 .SH OPTIONS
@@ -43,8 +44,12 @@ is read and displayed in the status text area. It can be set with the
 command.
 .TP
 .B Button1
-click on a tag label to display all windows with that tag, click on the layout
-label toggles between tiled and floating layout.
+click on a tag label to display all windows with that tag.
+.TP
+.B Button2
+click on the window title zooms the focused window to/from the master area;
+click on the status text starts
+.BR st(1).
 .TP
 .B Button3
 click on a tag label adds/removes all windows with that tag to/from the view.
@@ -56,26 +61,14 @@ click on a tag label applies that tag to the focused window.
 click on a tag label adds/removes that tag to/from the focused window.
 .SS Keyboard commands
 .TP
-.B Mod1\-Shift\-Return
+.B Mod1\-x
 Start
 .BR st(1).
 .TP
-.B Mod1\-p
+.B Mod1\-r
 Spawn
 .BR dmenu(1)
 for launching other programs.
-.TP
-.B Mod1\-,
-Focus previous screen, if any.
-.TP
-.B Mod1\-.
-Focus next screen, if any.
-.TP
-.B Mod1\-Shift\-,
-Send focused window to previous screen, if any.
-.TP
-.B Mod1\-Shift\-.
-Send focused window to next screen, if any.
 .TP
 .B Mod1\-b
 Toggles bar on and off.
@@ -110,17 +103,21 @@ Increase master area size.
 .B Mod1\-h
 Decrease master area size.
 .TP
+.B Mod1\-Shift\-r
+Reset master area size to its default.
+.TP
 .B Mod1\-Return
 Zooms/cycles focused window to/from master area (tiled layouts only).
 .TP
-.B Mod1\-Shift\-c
+.B Mod1\-q
 Close focused window.
 .TP
 .B Mod1\-Shift\-f
 Toggle fullscreen for focused window.
 .TP
 .B Mod1\-Shift\-space
-Toggle focused window between tiled and floating state.
+Toggle focused window between tiled and floating state. A window made floating
+is resized to 800\(mu500 and centered.
 .TP
 .B Mod1\-Tab
 Toggles to the previously selected tags.
@@ -146,18 +143,33 @@ Add/remove all windows with nth tag to/from the view.
 .B Mod1\-Shift\-q
 Quit dwm.
 .TP
-.B Mod1\-Control\-Shift\-q
-Restart dwm.
+.B Mod1\-Shift\-w
+Restart dwm, for example to run a newly installed build.
+.TP
+.B XF86MonBrightnessUp, XF86MonBrightnessDown
+Raise or lower the screen brightness by 10% with
+.BR brightnessctl (1).
+.TP
+.B XF86AudioRaiseVolume, XF86AudioLowerVolume, XF86AudioMute
+Raise or lower the volume by 5% (up to 100%), or toggle mute, with
+.BR wpctl (1).
+.TP
+.B XF86AudioPlay, XF86AudioNext, XF86AudioPrev
+Play/pause, or skip to the next or previous track, with
+.BR playerctl (1).
 .SS Mouse commands
 .TP
 .B Mod1\-Button1
-Move focused window while dragging. Tiled windows will be toggled to the floating state.
+Move focused window while dragging. In a tiled layout, dragging a tiled window
+over another swaps their places.
 .TP
 .B Mod1\-Button2
-Toggles focused window between floating and tiled state.
+Toggles focused window between floating and tiled state, like
+.BR Mod1\-Shift\-space .
 .TP
 .B Mod1\-Button3
-Resize focused window while dragging. Tiled windows will be toggled to the floating state.
+Resize focused window while dragging. A floating window stays within its size
+hints; for a tiled window, dragging sets the master area width instead.
 .SH CUSTOMIZATION
 dwm is customized by creating a custom config.h and (re)compiling the source
 code. This keeps it fast, secure and simple.

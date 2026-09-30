@@ -7,13 +7,17 @@ fi
 
 [[ $- != *i* ]] && return
 
-# parse the branch and transfer it to the prompt
+# the current branch and a space, or nothing outside a git repo: one git call
+# per prompt (a second only on a detached HEAD, to name the commit)
 parse_git_branch() {
-    git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'
+    local b
+    b=$(git branch --show-current 2>/dev/null) || return 0
+    [ -n "$b" ] || b="(HEAD detached at $(git rev-parse --short HEAD 2>/dev/null))"
+    printf '%s ' "$b"
 }
 
 # prompt: pink git branch, blue directory
-PS1='\[\e[38;5;204m\]$(if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then echo "$(parse_git_branch) "; fi)\[\e[38;2;137;180;250m\]\w $ \[\e[0m\]'
+PS1='\[\e[38;5;204m\]$(parse_git_branch)\[\e[38;2;137;180;250m\]\w $ \[\e[0m\]'
 
 # essential stuff
 stty -ixon # disable ctrl+s and ctrl+q
@@ -26,7 +30,6 @@ shopt -s histappend
 PROMPT_COMMAND="history -a; history -n${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
 
 # essentials
-alias cc='claude --dangerously-skip-permissions'
 alias grep='grep --color=auto'
 alias c='clear'
 alias vim='nvim'
@@ -40,7 +43,7 @@ alias push='git push'
 alias fetch='git fetch'
 alias merge='git merge'
 alias add='git add .'
-alias stash='git stash && git stash drop'
+alias discard='git reset --hard' # throw away uncommitted changes to tracked files
 alias status='git status'
 alias log='git log'
 
@@ -50,11 +53,10 @@ export VISUAL='nvim'
 export NNN_OPTS='e' # nnn opens text files in $EDITOR
 export TERMINAL='st'
 
-# stashes changes before pulling and then releases the changes
+# pull, setting uncommitted changes aside first and reapplying them after
+# (--autostash leaves your own stashes alone, unlike stash + pop)
 pull() {
-    git stash
-    git pull
-    git stash pop
+    git pull --autostash "$@"
 }
 
 # commit with a message dynamically
@@ -66,7 +68,7 @@ commit() {
 
 # cloning and cding into that cloned repo
 clone() {
-    git clone "$1" 2>/dev/null && cd "$(basename "$1" .git)"
+    git clone "$1" && cd "$(basename "$1" .git)"
 }
 
 # dynamically delete branches while on the branch you want to delete
@@ -90,12 +92,17 @@ rebase() {
     fi
 }
 
-export PATH="$HOME/.local/bin:$PATH"
+# ~/.local/bin, added once even when shells are nested (login -> startx -> st)
+case ":$PATH:" in
+    *":$HOME/.local/bin:"*) ;;
+    *) export PATH="$HOME/.local/bin:$PATH" ;;
+esac
 
-# extra snippets in ~/.bashrc.d, as Fedora's default .bashrc loads them
+# extra snippets in ~/.bashrc.d, as Fedora's default .bashrc loads them,
+# skipping the .bak.<time> copies install.sh leaves next to files it replaces
 if [ -d ~/.bashrc.d ]; then
     for rc in ~/.bashrc.d/*; do
-        if [ -f "$rc" ]; then
+        if [ -f "$rc" ] && [[ $rc != *.bak.* ]]; then
             . "$rc"
         fi
     done

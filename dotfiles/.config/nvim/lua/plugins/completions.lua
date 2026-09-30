@@ -2,8 +2,12 @@ return {
 	{
 		"hrsh7th/cmp-nvim-lsp",
 	},
+	-- LuaSnip and nvim-cmp load on the first switch to insert mode. Both need
+	-- the trigger: cmp_luasnip requires cmp as soon as it loads, so an eager
+	-- LuaSnip would pull cmp in at startup.
 	{
 		"L3MON4D3/LuaSnip",
+		event = "InsertEnter",
 		dependencies = {
 			"saadparwaiz1/cmp_luasnip",
 			"rafamadriz/friendly-snippets",
@@ -11,6 +15,7 @@ return {
 	},
 	{
 		"hrsh7th/nvim-cmp",
+		event = "InsertEnter",
 		config = function()
 			local cmp = require("cmp")
 			require("luasnip.loaders.from_vscode").lazy_load()
@@ -35,8 +40,6 @@ return {
 				sources = cmp.config.sources({
 					{ name = "nvim_lsp" },
 					{ name = "luasnip" },
-				}, {
-					{ name = "buffer" },
 				}),
 			})
 		end,

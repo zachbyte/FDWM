@@ -21,15 +21,7 @@ st: $(OBJ)
 	$(CC) -o $@ $(OBJ) $(STLDFLAGS)
 
 clean:
-	rm -f st $(OBJ) st-$(VERSION).tar.gz *.rej *.orig *.o config.def.h README TODO FAQ LEGACY 
-
-dist: clean
-	mkdir -p st-$(VERSION)
-	cp -R LICENSE Makefile config.mk\
-		config.h st.info st.1 arg.h st.h win.h $(SRC)\
-		st-$(VERSION)
-	tar -cf - st-$(VERSION) | gzip > st-$(VERSION).tar.gz
-	rm -rf st-$(VERSION)
+	rm -f st $(OBJ) *.rej *.orig *.o
 
 install: st
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
@@ -44,4 +36,4 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/st
 	rm -f $(DESTDIR)$(MANPREFIX)/man1/st.1
 
-.PHONY: all clean dist install uninstall
+.PHONY: all clean install uninstall
