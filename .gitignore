@@ -9,3 +9,4 @@ suckless/slock/slock
 # generated from the palette file by fdwm-theme
 suckless/colors.h
 grub/theme/theme.txt
+grub/theme/select_c.png
