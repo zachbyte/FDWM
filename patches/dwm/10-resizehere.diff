@@ -1,0 +1,59 @@
+Upstream patch dwm-resizehere-20230824-e81f17d.diff (https://dwm.suckless.org/patches/resizehere/),
+applied in this order to dwm 6.5.
+Merged by hand with dragmfact's resizemouse(): a floating window resizes from
+where the pointer is, a tiled one still sets the master area.
+
+diff --git a/dwm.c b/dwm.c
+index 6ead528..a8a3ca1 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -1343,7 +1343,7 @@ resizeclient(Client *c, int x, int y, int w, int h)
+ void
+ resizemouse(const Arg *arg)
+ {
+-	int ocx, ocy, nw, nh;
++	int x, y, ocw, och, nw, nh;
+ 	Client *c;
+ 	Monitor *m;
+ 	XEvent ev;
+@@ -1354,14 +1354,15 @@ resizemouse(const Arg *arg)
+ 	if (c->isfullscreen) /* no support resizing fullscreen windows by mouse */
+ 		return;
+ 	restack(selmon);
+-	ocx = c->x;
+-	ocy = c->y;
++	ocw = c->w;
++	och = c->h;
+ 	if (XGrabPointer(dpy, root, False, MOUSEMASK, GrabModeAsync, GrabModeAsync,
+ 		None, cursor[CurResize]->cursor, CurrentTime) != GrabSuccess)
+ 		return;
+ 
+ 	if (c->isfloating || NULL == c->mon->lt[c->mon->sellt]->arrange) {
+-		XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w + c->bw - 1, c->h + c->bw - 1);
++		if(!getrootptr(&x, &y))
++			return;
+ 	} else {
+ 		XWarpPointer(dpy, None, root, 0, 0, 0, 0,
+ 			selmon->mx + (selmon->ww * selmon->mfact),
+@@ -1382,8 +1383,8 @@ resizemouse(const Arg *arg)
+ 				continue;
+ 			lasttime = ev.xmotion.time;
+ 
+-			nw = MAX(ev.xmotion.x - ocx - 2 * c->bw + 1, 1);
+-			nh = MAX(ev.xmotion.y - ocy - 2 * c->bw + 1, 1);
++			nw = MAX(ocw + (ev.xmotion.x - x), 1);
++			nh = MAX(och + (ev.xmotion.y - y), 1);
+ 
+ 			if (!selmon->lt[selmon->sellt]->arrange || c->isfloating)
+ 				resize(c, c->x, c->y, nw, nh, 1);
+@@ -1391,9 +1392,7 @@ resizemouse(const Arg *arg)
+ 		}
+ 	} while (ev.type != ButtonRelease);
+ 
+-	if (c->isfloating || NULL == c->mon->lt[c->mon->sellt]->arrange) {
+-		XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w + c->bw - 1, c->h + c->bw - 1);
+-	} else {
++	if (!c->isfloating && c->mon->lt[c->mon->sellt]->arrange) {
+ 		selmon->mfact = (double) (ev.xmotion.x_root - selmon->mx) / (double) selmon->ww;
+ 		arrange(selmon);
+ 		XWarpPointer(dpy, None, root, 0, 0, 0, 0,

@@ -1,0 +1,45 @@
+From FDWM commit c93d659 feat(dwm): Print and Shift+Print take screenshots
+
+diff --git a/config.h b/config.h
+index 2292afa..65f9d7a 100644
+--- a/config.h
++++ b/config.h
+@@ -58,6 +58,9 @@ static const Layout layouts[] = {
+ /* after a volume, mute or brightness key, redraw the bar at once (fdwm-bar) */
+ #define BARREFRESH "; \"$HOME/.local/bin/fdwm-bar\" refresh"
+ 
++/* screenshots (fdwm-shot): a region, or the whole screen */
++#define SHOT(what) SHCMD ("\"$HOME/.local/bin/fdwm-shot\" " what)
++
+ /* commands */
+ static char dmenumon[2] = "0";
+ static const char *dmenucmd[] = { "dmenu_run", NULL };
+@@ -107,6 +110,8 @@ static const Key keys[] = {
+ 	{ 0,                            XF86XK_AudioPlay,          spawn,          SHCMD ("playerctl play-pause")},
+ 	{ 0,                            XF86XK_AudioNext,          spawn,          SHCMD ("playerctl next")},
+ 	{ 0,                            XF86XK_AudioPrev,          spawn,          SHCMD ("playerctl previous")},
++	{ 0,                            XK_Print,                  spawn,          SHOT ("region")},
++	{ ShiftMask,                    XK_Print,                  spawn,          SHOT ("screen")},
+ };
+ 
+ /* button definitions */
+diff --git a/dwm.1 b/dwm.1
+index 6e5f0e7..77dc6ee 100644
+--- a/dwm.1
++++ b/dwm.1
+@@ -162,6 +162,15 @@ Raise or lower the volume by 5% (up to 100%), or toggle mute, with
+ .B XF86AudioPlay, XF86AudioNext, XF86AudioPrev
+ Play/pause, or skip to the next or previous track, with
+ .BR playerctl (1).
++.TP
++.B Print
++Take a screenshot of a region you drag out with the mouse, with
++.BR maim (1):
++it is saved in ~/Pictures/Screenshots and copied to the clipboard.
++Escape or a right click cancels.
++.TP
++.B Shift\-Print
++The same for the whole screen.
+ .SS Mouse commands
+ .TP
+ .B Mod1\-Button1

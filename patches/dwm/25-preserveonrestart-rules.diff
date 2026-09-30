@@ -1,0 +1,67 @@
+From FDWM commit 285778e fix(dwm): let rules set the tags of new windows (#6)
+
+diff --git a/dwm.1 b/dwm.1
+index dd9ad4a..b30f266 100644
+--- a/dwm.1
++++ b/dwm.1
+@@ -19,7 +19,9 @@ layout applied. A new floating window keeps the size it asks for and opens
+ centered on the screen.
+ .P
+ Windows are grouped by tags. Each window can be tagged with one or multiple
+-tags. Selecting certain tags displays all windows with these tags.
++tags. Selecting certain tags displays all windows with these tags. A new window
++gets the tags named by its rule in config.h, or else the tags currently viewed;
++windows that are open when dwm restarts keep their tags.
+ .P
+ Each screen contains a small status bar which displays all available tags, the
+ layout, the title of the focused window, and the text read from the root window
+diff --git a/dwm.c b/dwm.c
+index d2b02c0..77b66ea 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -1056,24 +1056,27 @@ manage(Window w, XWindowAttributes *wa)
+         applyrules(c);
+     }
+ 
+-    unsigned long *data = NULL;
+-    Atom actual_type;
+-    int actual_format;
+-    unsigned long nitems, bytes_after;
+-
+-    if (XGetWindowProperty(dpy, c->win, netatom[NetClientInfo], 0L, 2L, False, XA_CARDINAL,
+-            &actual_type, &actual_format, &nitems, &bytes_after, (unsigned char **)&data) == Success && nitems == 2) {
+-        c->tags = data[0];
+-        for (Monitor *m = mons; m; m = m->next) {
+-            if (m->num == data[1]) {
+-                c->mon = m;
+-                break;
+-            }
+-        }
+-        XFree(data);
+-    } else {
+-        c->tags = c->mon->tagset[c->mon->seltags];
+-    }
++	/* preserveonrestart: a window left open across a restart keeps its tags;
++	 * any other window keeps what applyrules() or its parent gave it */
++	{
++		unsigned long *data = NULL, nitems, bytes_after;
++		Atom actual_type;
++		int actual_format;
++		Monitor *m;
++
++		if (XGetWindowProperty(dpy, c->win, netatom[NetClientInfo], 0L, 2L, False, XA_CARDINAL,
++				&actual_type, &actual_format, &nitems, &bytes_after, (unsigned char **)&data) == Success
++		&& nitems == 2) {
++			c->tags = data[0];
++			for (m = mons; m; m = m->next)
++				if (m->num == data[1]) {
++					c->mon = m;
++					break;
++				}
++		}
++		if (data)
++			XFree(data);
++	}
+ 
+     if (c->x + WIDTH(c) > c->mon->wx + c->mon->ww)
+         c->x = c->mon->wx + c->mon->ww - WIDTH(c);

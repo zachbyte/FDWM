@@ -3,9 +3,11 @@
 # may spell one out. Caught: any #rgb or #rrggbb; any palette color (every
 # flavor) as bare hex, or in decimal as red;green;blue or red,green,blue;
 # console palette escapes (\e]P<n><rrggbb>); vt.default_* lists; and
-# 256-color escapes. The generated files are ignored by git, so not checked.
-# The samples it checks itself with are built from the palette as it runs,
-# so this file spells out no color either.
+# 256-color escapes. The generated files are ignored by git, so not checked,
+# and neither is patches/: it quotes upstream's code and FDWM's history as
+# they were, colors and all, and tests/patches.sh makes it rebuild
+# suckless/ exactly, which is checked. The samples it checks itself with are
+# built from the palette as it runs, so this file spells out no color either.
 # shellcheck source=tests/lib.sh
 source "$(dirname "$0")/lib.sh"
 sandbox
@@ -60,7 +62,7 @@ done
 expect "leaves alone what isn't a color" "" "${flagged[*]}"
 
 # then the repo: every file git tracks, and new ones it doesn't ignore
-mapfile -t files < <(repo ls-files -co --exclude-standard | grep -vx palette)
+mapfile -t files < <(repo ls-files -co --exclude-standard | grep -vxE 'palette|patches/.*')
 existing=()
 for f in "${files[@]}"; do [[ -f $ROOT/$f ]] && existing+=("$f"); done
 expect "found the repo's files (so this checks something)" yes "$( ((${#existing[@]} > 50)) && echo yes)"

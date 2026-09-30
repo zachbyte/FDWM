@@ -1,0 +1,80 @@
+From FDWM commit 805dbac fix(st): send the mouse wheel to pagers on the alternate screen (#7)
+
+diff --git a/config.h b/config.h
+index be1277b..c0878f6 100644
+--- a/config.h
++++ b/config.h
+@@ -169,16 +169,17 @@ static uint forcemousemod = ShiftMask;
+ /*
+  * Internal mouse shortcuts.
+  * Beware that overloading Button1 will disable the selection.
++ * altscrn: -1 only on the normal screen, 1 only on the alternate screen
++ * (less, man), 0 on either. The wheel scrolls st's history at the prompt
++ * and sends ^Y/^E to pagers, which scroll themselves.
+  */
+ static MouseShortcut mshortcuts[] = {
+-	/* mask                 button   function        argument       release */
+-	{ XK_NO_MOD,            Button4, kscrollup,      {.i = 1} },
+-	{ XK_NO_MOD,            Button5, kscrolldown,    {.i = 1} },
++	/* mask                 button   function        argument       release  altscrn */
++	{ XK_ANY_MOD,           Button4, kscrollup,      {.i = 1},      0,       -1 },
++	{ XK_ANY_MOD,           Button5, kscrolldown,    {.i = 1},      0,       -1 },
+ 	{ XK_ANY_MOD,           Button2, selpaste,       {.i = 0},      1 },
+-	{ ShiftMask,            Button4, ttysend,        {.s = "\033[5;2~"} },
+-	{ XK_ANY_MOD,           Button4, ttysend,        {.s = "\031"} },
+-	{ ShiftMask,            Button5, ttysend,        {.s = "\033[6;2~"} },
+-	{ XK_ANY_MOD,           Button5, ttysend,        {.s = "\005"} },
++	{ XK_ANY_MOD,           Button4, ttysend,        {.s = "\031"}, 0,        1 },
++	{ XK_ANY_MOD,           Button5, ttysend,        {.s = "\005"}, 0,        1 },
+ };
+ 
+ /* Internal keyboard shortcuts. */
+diff --git a/st.c b/st.c
+index 1558f54..9d3e602 100644
+--- a/st.c
++++ b/st.c
+@@ -1064,6 +1064,12 @@ tswapscreen(void)
+ 	tfulldirt();
+ }
+ 
++int
++tisaltscr(void)
++{
++	return IS_SET(MODE_ALTSCREEN);
++}
++
+ void
+ kscrolldown(const Arg* a)
+ {
+diff --git a/st.h b/st.h
+index 818a6f8..aef72ef 100644
+--- a/st.h
++++ b/st.h
+@@ -89,6 +89,7 @@ void sendbreak(const Arg *);
+ void toggleprinter(const Arg *);
+ 
+ int tattrset(int);
++int tisaltscr(void);
+ void tnew(int, int);
+ void tresize(int, int);
+ void tsetdirtattr(int);
+diff --git a/x.c b/x.c
+index 9a49c0a..e3d9799 100644
+--- a/x.c
++++ b/x.c
+@@ -34,6 +34,7 @@ typedef struct {
+ 	void (*func)(const Arg *);
+ 	const Arg arg;
+ 	uint  release;
++	int  altscrn;  /* 0: don't care, -1: not alt screen, 1: alt screen */
+ } MouseShortcut;
+ 
+ typedef struct {
+@@ -456,6 +457,7 @@ mouseaction(XEvent *e, uint release)
+ 	for (ms = mshortcuts; ms < mshortcuts + LEN(mshortcuts); ms++) {
+ 		if (ms->release == release &&
+ 		    ms->button == e->xbutton.button &&
++		    (!ms->altscrn || (ms->altscrn == (tisaltscr() ? 1 : -1))) &&
+ 		    (match(ms->mod, state) ||  /* exact or forced */
+ 		     match(ms->mod, state & ~forcemousemod))) {
+ 			ms->func(&(ms->arg));

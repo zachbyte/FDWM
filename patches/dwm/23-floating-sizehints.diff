@@ -1,0 +1,47 @@
+From FDWM commit ba2857e fix(dwm): apply size hints to floating windows again (#3)
+
+diff --git a/dwm.1 b/dwm.1
+index 36d2883..d063ce5 100644
+--- a/dwm.1
++++ b/dwm.1
+@@ -160,7 +160,8 @@ Toggles focused window between floating and tiled state, like
+ .BR Mod1\-Shift\-space .
+ .TP
+ .B Mod1\-Button3
+-Resize focused window while dragging. Tiled windows will be toggled to the floating state.
++Resize focused window while dragging. A floating window stays within its size
++hints; for a tiled window, dragging sets the master area width instead.
+ .SH CUSTOMIZATION
+ dwm is customized by creating a custom config.h and (re)compiling the source
+ code. This keeps it fast, secure and simple.
+diff --git a/dwm.c b/dwm.c
+index fda0dea..53d7a89 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -386,10 +386,6 @@ applysizehints(Client *c, int *x, int *y, int *w, int *h, int interact)
+ 		if (c->maxh)
+ 			*h = MIN(*h, c->maxh);
+ 	}
+-	if (c->isfloating || !c->mon->lt[c->mon->sellt]->arrange) {
+-		*w = MAX(*w, FLOAT_WIDTH);
+-		*h = MAX(*h, FLOAT_HEIGHT);
+-	}
+ 	return *x != c->x || *y != c->y || *w != c->w || *h != c->h;
+ }
+ 
+@@ -1354,13 +1350,8 @@ recttomon(int x, int y, int w, int h)
+ void
+ resize(Client *c, int x, int y, int w, int h, int interact)
+ {
+-    if (!c) return;
+-    if (c->isfloating || !selmon->lt[selmon->sellt]->arrange) {
+-        resizeclient(c, x, y, w, h);
+-    } else {
+-        if (applysizehints(c, &x, &y, &w, &h, interact))
+-            resizeclient(c, x, y, w, h);
+-    }
++	if (applysizehints(c, &x, &y, &w, &h, interact))
++		resizeclient(c, x, y, w, h);
+ }
+ 
+ void

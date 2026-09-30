@@ -1,0 +1,25 @@
+From FDWM commit 6f112ee chore(suckless): drop Makefile cleanup of files the repo doesn't have (#D6)
+
+diff --git a/Makefile b/Makefile
+index 6fdea38..39ed692 100644
+--- a/Makefile
++++ b/Makefile
+@@ -11,9 +11,6 @@ all: dmenu stest
+ .c.o:
+ 	$(CC) -c $(CFLAGS) $<
+ 
+-config.h:
+-	cp config.def.h $@
+-
+ $(OBJ): arg.h config.h config.mk drw.h
+ 
+ dmenu: dmenu.o drw.o util.o
+@@ -23,7 +20,7 @@ stest: stest.o
+ 	$(CC) -o $@ stest.o $(LDFLAGS)
+ 
+ clean:
+-	rm -f dmenu stest $(OBJ) *.rej *.orig config.def.h README
++	rm -f dmenu stest $(OBJ) *.rej *.orig
+ 
+ install: all
+ 	mkdir -p $(DESTDIR)$(PREFIX)/bin

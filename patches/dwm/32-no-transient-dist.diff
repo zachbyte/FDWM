@@ -1,0 +1,79 @@
+From FDWM commit c65c01c chore(suckless): remove transient.c and the unused dist targets (#D5)
+
+diff --git a/Makefile b/Makefile
+index b0dc3ba..4210ca4 100644
+--- a/Makefile
++++ b/Makefile
+@@ -17,15 +17,7 @@ dwm: ${OBJ}
+ 	${CC} -o $@ ${OBJ} ${LDFLAGS}
+ 
+ clean:
+-	rm -f dwm ${OBJ} dwm-${VERSION}.tar.gz *.orig *.rej config.def.h dwm.png README
+-
+-dist: clean
+-	mkdir -p dwm-${VERSION}
+-	cp -R LICENSE Makefile config.mk\
+-		dwm.1 drw.h util.h ${SRC} transient.c dwm-${VERSION}
+-	tar -cf dwm-${VERSION}.tar dwm-${VERSION}
+-	gzip dwm-${VERSION}.tar
+-	rm -rf dwm-${VERSION}
++	rm -f dwm ${OBJ} *.orig *.rej config.def.h dwm.png README
+ 
+ install: all
+ 	mkdir -p ${DESTDIR}${PREFIX}/bin
+@@ -38,4 +30,4 @@ uninstall:
+ 	rm -f ${DESTDIR}${PREFIX}/bin/dwm\
+ 		${DESTDIR}${MANPREFIX}/man1/dwm.1
+ 
+-.PHONY: all clean dist install uninstall
+\ No newline at end of file
++.PHONY: all clean install uninstall
+\ No newline at end of file
+diff --git a/transient.c b/transient.c
+deleted file mode 100644
+index 040adb5..0000000
+--- a/transient.c
++++ /dev/null
+@@ -1,42 +0,0 @@
+-/* cc transient.c -o transient -lX11 */
+-
+-#include <stdlib.h>
+-#include <unistd.h>
+-#include <X11/Xlib.h>
+-#include <X11/Xutil.h>
+-
+-int main(void) {
+-	Display *d;
+-	Window r, f, t = None;
+-	XSizeHints h;
+-	XEvent e;
+-
+-	d = XOpenDisplay(NULL);
+-	if (!d)
+-		exit(1);
+-	r = DefaultRootWindow(d);
+-
+-	f = XCreateSimpleWindow(d, r, 100, 100, 400, 400, 0, 0, 0);
+-	h.min_width = h.max_width = h.min_height = h.max_height = 400;
+-	h.flags = PMinSize | PMaxSize;
+-	XSetWMNormalHints(d, f, &h);
+-	XStoreName(d, f, "floating");
+-	XMapWindow(d, f);
+-
+-	XSelectInput(d, f, ExposureMask);
+-	while (1) {
+-		XNextEvent(d, &e);
+-
+-		if (t == None) {
+-			sleep(5);
+-			t = XCreateSimpleWindow(d, r, 50, 50, 100, 100, 0, 0, 0);
+-			XSetTransientForHint(d, t, f);
+-			XStoreName(d, t, "transient");
+-			XMapWindow(d, t);
+-			XSelectInput(d, t, ExposureMask);
+-		}
+-	}
+-
+-	XCloseDisplay(d);
+-	exit(0);
+-}

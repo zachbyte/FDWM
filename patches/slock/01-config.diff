@@ -1,0 +1,40 @@
+From FDWM commit ffd51d6 (build slock from source): upstream's config.def.h as
+config.h, dropping privileges to Fedora's nobody group, in Catppuccin colors.
+
+diff --git a/config.def.h b/config.def.h
+deleted file mode 100644
+index 9855e21..0000000
+--- a/config.def.h
++++ /dev/null
+@@ -1,12 +0,0 @@
+-/* user and group to drop privileges to */
+-static const char *user  = "nobody";
+-static const char *group = "nogroup";
+-
+-static const char *colorname[NUMCOLS] = {
+-	[INIT] =   "black",     /* after initialization */
+-	[INPUT] =  "#005577",   /* during input */
+-	[FAILED] = "#CC3333",   /* wrong password */
+-};
+-
+-/* treat a cleared input like a wrong password (color) */
+-static const int failonclear = 1;
+diff --git a/config.h b/config.h
+new file mode 100644
+index 0000000..776fcfa
+--- /dev/null
++++ b/config.h
+@@ -0,0 +1,13 @@
++/* user and group to drop privileges to (Fedora has no "nogroup") */
++static const char *user  = "nobody";
++static const char *group = "nobody";
++
++/* Catppuccin Mocha, matching dwm and st */
++static const char *colorname[NUMCOLS] = {
++	[INIT] =   "#1e1e2e",   /* after initialization: dwm's background */
++	[INPUT] =  "#b4befe",   /* during input: dwm's bar lavender */
++	[FAILED] = "#f38ba8",   /* wrong password: red */
++};
++
++/* treat a cleared input like a wrong password (color) */
++static const int failonclear = 1;

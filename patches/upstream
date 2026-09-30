@@ -1,0 +1,8 @@
+# The upstream releases patches/ applies to: tool, version, release tarball,
+# its sha256. tests/patches.sh downloads each, applies patches/<tool>/*.diff
+# in order and checks the result is suckless/<tool> exactly. To move to a new
+# release, see "Patches" in the README.
+dwm    6.5    https://dl.suckless.org/dwm/dwm-6.5.tar.gz       21d79ebfa9f2fb93141836c2666cb81f4784c69d64e7f1b2352f9b970ba09729
+st     0.9.2  https://dl.suckless.org/st/st-0.9.2.tar.gz       6b215d4f472b21d6232f30f221117a777e24bcfee68955ddefb7426467f9494b
+dmenu  5.3    https://dl.suckless.org/tools/dmenu-5.3.tar.gz   1a8f53e6fd2d749839ec870c5e27b3e14da5c3eeacbfcb945d159e1d5433795f
+slock  1.5    https://dl.suckless.org/tools/slock-1.5.tar.gz   aee1e3fbf6a277fb625a3838073b979b6483e7baca4ce82f56de1ff192db0e4d

@@ -1,0 +1,15 @@
+From FDWM commit 6f112ee chore(suckless): drop Makefile cleanup of files the repo doesn't have (#D6)
+
+diff --git a/Makefile b/Makefile
+index 4210ca4..616a62a 100644
+--- a/Makefile
++++ b/Makefile
+@@ -17,7 +17,7 @@ dwm: ${OBJ}
+ 	${CC} -o $@ ${OBJ} ${LDFLAGS}
+ 
+ clean:
+-	rm -f dwm ${OBJ} *.orig *.rej config.def.h dwm.png README
++	rm -f dwm ${OBJ} *.orig *.rej
+ 
+ install: all
+ 	mkdir -p ${DESTDIR}${PREFIX}/bin

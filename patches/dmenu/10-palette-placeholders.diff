@@ -1,0 +1,15 @@
+From FDWM commit 72eb1dd fix(dwm, dmenu): take the last black placeholders from the palette
+
+diff --git a/config.h b/config.h
+index 503f188..c478bea 100644
+--- a/config.h
++++ b/config.h
+@@ -12,7 +12,7 @@ static const char *colors[SchemeLast][2] = {
+ 	/*     fg         bg       */
+ 	[SchemeNorm] = { COL_LAVENDER, COL_BASE },
+ 	[SchemeSel] = { COL_BASE, COL_LAVENDER },
+-	[SchemeOut] = { "#000000", COL_LAVENDER },
++	[SchemeOut] = { COL_CRUST, COL_LAVENDER },
+ };
+ /* -l option; if nonzero, dmenu uses vertical list with given number of lines */
+ static unsigned int lines      = 0;

@@ -1,0 +1,16 @@
+Upstream patch dwm-alwayscenter-20200625-f04cac6.diff (https://dwm.suckless.org/patches/alwayscenter/),
+applied in this order to dwm 6.5.
+
+diff --git a/dwm.c b/dwm.c
+index 545383f..f213135 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -1070,6 +1070,8 @@ manage(Window w, XWindowAttributes *wa)
+ 	updatewindowtype(c);
+ 	updatesizehints(c);
+ 	updatewmhints(c);
++	c->x = c->mon->mx + (c->mon->mw - WIDTH(c)) / 2;
++	c->y = c->mon->my + (c->mon->mh - HEIGHT(c)) / 2;
+ 	XSelectInput(dpy, w, EnterWindowMask|FocusChangeMask|PropertyChangeMask|StructureNotifyMask);
+ 	grabbuttons(c, 0);
+ 	if (!c->isfloating)
