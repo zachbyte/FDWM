@@ -90,12 +90,12 @@ expect "Alt+\`: it has the focus" "$(win spterm)" "$(xdotool getactivewindow 2>/
 key alt+grave
 expect "Alt+\` again: hidden" yes "$(until_ 5 hidden spterm && echo yes)"
 key alt+grave
-expect "and again: shown, centered" yes "$(until_ 5 shown spterm && centered spterm && echo yes)"
+expect "and again: shown, centered" yes "$(until_ 5 shown spterm; centered spterm && echo yes || echo "no, at ${X},${Y} ${WIDTH}x${HEIGHT}")"
 expect "the same window, not a second terminal" 1 "$(xdotool search --classname '^spterm$' | wc -l)"
 
 key alt+n
 if until_ 15 exists spnotes; then pass "Alt+N: starts the notes scratchpad"; else fail "Alt+N: no notes scratchpad"; finish; fi
-expect "Alt+N: centered too" yes "$(until_ 5 shown spnotes && centered spnotes && echo yes)"
+expect "Alt+N: centered too" yes "$(until_ 5 shown spnotes; centered spnotes && echo yes || echo "no, at ${X},${Y} ${WIDTH}x${HEIGHT}")"
 key alt+n
 expect "Alt+N again: the notes hidden" yes "$(until_ 5 hidden spnotes && echo yes)"
 expect "the terminal still shown" yes "$(shown spterm && echo yes)"
