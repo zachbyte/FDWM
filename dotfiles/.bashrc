@@ -7,6 +7,15 @@ fi
 
 [[ $- != *i* ]] && return
 
+# on a Linux console (the ttys), use the same Catppuccin colors as st and
+# dwm: \e]P<n><rrggbb> sets palette entry n; 0 is the background and 7 the
+# default text, so they get dwm's #1e1e2e and st's #cdd6f4
+if [ "$TERM" = linux ]; then
+    printf '\e]P01e1e2e\e]P1cba6f7\e]P2a6e3a1\e]P3f9e2af\e]P489b4fa\e]P5f38ba8\e]P694e2d5\e]P7cdd6f4'
+    printf '\e]P8585b70\e]P9cba6f7\e]PAa6e3a1\e]PBf9e2af\e]PC89b4fa\e]PDf38ba8\e]PE94e2d5\e]PFa6adc8'
+    clear  # repaint the whole screen in the new background
+fi
+
 # the current branch and a space, or nothing outside a git repo: one git call
 # per prompt (a second only on a detached HEAD, to name the commit)
 parse_git_branch() {
