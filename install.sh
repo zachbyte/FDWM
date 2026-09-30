@@ -82,6 +82,8 @@ install_dotfile() {
 
 echo "==> Setting up ~/.xinitrc"
 install_dotfile .xinitrc
+# the bar script .xinitrc starts (and dwm's volume and brightness keys poke)
+install_dotfile .local/bin/fdwm-bar
 
 echo "==> Setting up ~/.bashrc"
 install_dotfile .bashrc
