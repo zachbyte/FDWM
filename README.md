@@ -81,7 +81,7 @@ The tests run `install.sh`, `update.sh`, the GRUB step and the dotfiles against 
 tests/run.sh
 ```
 
-`tests/build.sh`, `tests/shellcheck.sh` and `tests/nvim-load.sh` are the other CI steps, if you want to run those too.
+`tests/build.sh`, `tests/shellcheck.sh`, `tests/nvim-load.sh` and `tests/patches.sh` (see "Patches" below) are the other CI steps, if you want to run those too.
 
 ## Manual install
 
@@ -204,13 +204,38 @@ The `grubby` line gives the ttys the Catppuccin palette from boot, login prompt 
 
 `nnn`, installed in step 2, is a terminal file manager: run `nnn`, press `?` for its keys, and text files open in Neovim.
 
-## Applied patches
+## Patches
 
-The source already includes these, so there is nothing to apply.
+The source in `suckless/` already includes every patch, so there is nothing to apply. It is also kept as a record: the upstream releases pinned in `patches/upstream` (dwm 6.5, st 0.9.2, dmenu 5.3, slock 1.5), and every change made to them since as a `.diff` in `patches/<tool>/`, applied in file-name order. Each diff starts with a few lines on what it is and where it came from. `tests/patches.sh`, which CI runs, downloads the releases, applies the diffs with `git apply` and fails unless the result is `suckless/` file for file. So a change to `suckless/` needs its diff in `patches/` too, as the last one for that tool.
 
-- dwm: activetagindicatorbar, actualfullscreen, alwayscenter, attachbottom, centretitle, colorbar, dragmfact, noborderflicker, preserveonrestart, resizehere, restartsig, tiledmove, togglefloatingcenter, uselessgap
-- st: anysize, scrollback, scrollback-mouse, scrollback-mouse-altscreen
-- slock: no patches; `config.h` sets Catppuccin colors (base while locked, surface1 while you type, red only after a wrong password) and drops privileges to Fedora's `nobody` group
+The order:
+
+- dwm (39)
+  - 01–14: the upstream patches activetagindicatorbar, actualfullscreen, alwayscenter, attachbottom, centretitle, colorbar, dragmfact, noborderflicker, preserveonrestart, resizehere, restartsig, tiledmove, togglefloatingcenter and uselessgap, as they apply to 6.5. The three that needed fixing by hand (attachbottom, colorbar, resizehere) say how.
+  - 15: FDWM's `config.h`.
+  - 16: `import-edits`, the hand edits made when the patched dwm was first imported, before the repo had history.
+  - 17–39: FDWM's changes since, one per commit: the floating window sizes (#2, #3), swapclients in tiledmove (#4), the preserveonrestart fix for `rules` (#6), the drw.c sync (#15), the Makefile and cleanup changes, the slock, bar-refresh, screenshot and power-menu keys, and the palette.
+- st (10): the upstream patches anysize, scrollback and scrollback-mouse; `config.h`; `upstream-csi-colon`, a fix from st's development version after 0.9.2; `import-edits`; then FDWM's changes: scrollback-mouse-altscreen (the wheel scrolls pagers on the alternate screen, #7), the Makefile changes and the palette.
+- dmenu (10): `config.h`; `upstream-drw-utf8`, drw.c from dmenu's development version after 5.3; `import-edits`; then FDWM's changes: one monitor, the version fixed to 5.3, the Makefile changes, and the palette.
+- slock (4): `config.h` (Catppuccin colors, dropping privileges to Fedora's `nobody` group) and the Makefile, as slock was built from source; the softer colors (base while locked, surface1 while you type, red only after a wrong password); and the palette.
+
+### Moving to a new upstream release
+
+1. Download the new release and put its version, URL and `sha256sum` in `patches/upstream`, and its version in `suckless/<tool>/config.mk`.
+2. Rebuild it from the diffs, keeping the result:
+
+   ```shell
+   tests/patches.sh --keep ~/fdwm-upgrade
+   ```
+
+   For each tool it stops at the first diff that no longer applies, and leaves `~/fdwm-upgrade/<tool>` as a git repository with the new release and one commit per diff that did apply.
+3. In that folder, apply the failing diff by hand with `patch -p1 --merge < ~/FDWM/patches/<tool>/NN-name.diff`, and fix the conflicts it marks. Then `git diff` is the diff's new version: write it over the old one, keeping the lines at its top, and run step 2 again. A diff that the new release already contains, such as an `upstream-*` one, can simply be deleted.
+4. Once every tool rebuilds, copy the rebuilt trees into `suckless/`, then check that the record and the sources agree:
+
+   ```shell
+   for t in dwm st dmenu slock; do rm -rf suckless/$t && cp -r ~/fdwm-upgrade/$t suckless/$t && rm -rf suckless/$t/.git; done
+   tests/patches.sh
+   ```
 
 How dwm behaves with these:
 
