@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Installs FDWM on Fedora: packages, the Nerd Font, dwm/st/dmenu, dotfiles, autologin and
-# the GRUB theme. update.sh runs it after recloning, so it must stay safe to run again:
+# the GRUB theme. update.sh runs it after pulling, so it must stay safe to run again:
 # existing dotfiles that differ are backed up first, never silently replaced.
 set -euo pipefail
 trap 'echo "install.sh: failed on line $LINENO: $BASH_COMMAND" >&2' ERR

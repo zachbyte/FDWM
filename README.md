@@ -17,7 +17,7 @@ Then reboot: tty1 logs you in automatically and dwm starts.
 
 ## Updating
 
-`update.sh` reclones the repo and then runs `install.sh`, so one command installs any missing packages, rebuilds dwm, st and dmenu, and reapplies the dotfiles, autologin and GRUB theme; press `Alt + Shift + W` afterwards to restart dwm on the new build. It stops without changing anything if you have uncommitted changes or unpushed commits. A dotfile you edited in your home folder is moved to a `.bak.<time>` copy before the repo's version replaces it, so make lasting changes in `dotfiles/`.
+`update.sh` pulls the latest commits into your checkout and then runs `install.sh`, so one command installs any missing packages, rebuilds dwm, st and dmenu, and reapplies the dotfiles, autologin and GRUB theme; press `Alt + Shift + W` afterwards to restart dwm on the new build. It stops without changing anything if you have uncommitted changes or unpushed commits, or if your branch has no upstream; your stashes and other branches are never touched. A dotfile you edited in your home folder is moved to a `.bak.<time>` copy before the repo's version replaces it, so make lasting changes in `dotfiles/`.
 
 ```shell
 ./update.sh
