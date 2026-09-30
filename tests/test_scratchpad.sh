@@ -73,11 +73,12 @@ shown() { geometry "$1" && ((X >= 0)); }
 hidden() { geometry "$1" && ((X < 0)); }
 # centered NAME: in the middle of the 1280x800 screen, across and (the bar
 # above shifting it a little) down, at spfact (0.6) of it: 768 across, and
-# about 470 of the height under the bar
+# about 470 of the height under the bar. xdotool gives the corner outside
+# dwm's 2 px border.
 centered() {
     geometry "$1"
-    local cx=$((X + WIDTH / 2)) cy=$((Y + HEIGHT / 2))
-    ((cx >= 638 && cx <= 642 && cy >= 395 && cy <= 430 &&
+    local cx=$((X + 2 + WIDTH / 2)) cy=$((Y + 2 + HEIGHT / 2))
+    ((cx >= 639 && cx <= 641 && cy >= 400 && cy <= 425 &&
         WIDTH >= 760 && WIDTH <= 776 && HEIGHT >= 440 && HEIGHT <= 490))
 }
 key() { xdotool key "$1"; }
