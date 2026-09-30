@@ -4,7 +4,7 @@ A minimal dwm, st and dmenu setup for Fedora.
 
 ## Quick install
 
-`install.sh` runs steps 1 to 7 for you (only installing packages that are missing); run it as your normal user. Any existing `~/.xinitrc`, `~/.bashrc`, `~/.bashrc.d/claude.sh` or `~/.config/nvim` that differs is moved to a `.bak.<time>` copy first.
+The commands below clone the repo (step 1), then `install.sh` runs steps 2 to 7 for you (only installing packages that are missing); run it as your normal user. Any existing `~/.xinitrc`, `~/.bashrc`, `~/.bashrc.d/claude.sh` or `~/.config/nvim` that differs is moved to a `.bak.<time>` copy first.
 
 ```shell
 sudo dnf install -y git
@@ -27,19 +27,23 @@ Then reboot: tty1 logs you in automatically and dwm starts.
 
 To do it by hand instead, follow the steps below.
 
-### 1. Install dependencies
-
-Installs git, the compiler, the X server, xinit, a fallback font, and the libraries dwm, st and dmenu link against.
+### 1. Clone the repo
 
 ```shell
-sudo dnf install git gcc make pkgconf-pkg-config tar xz \
-    xorg-x11-server-Xorg xorg-x11-xinit xorg-x11-drv-libinput \
-    libX11-devel libXft-devel libXrender-devel \
-    fontconfig-devel freetype-devel \
-    dejavu-sans-mono-fonts
+sudo dnf install -y git
+git clone https://github.com/zachbyte/FDWM
+cd FDWM
 ```
 
-### 2. Install the font
+### 2. Install dependencies
+
+`packages.txt` lists every package FDWM uses, grouped by what needs it: building dwm, st and dmenu; X and the session `.xinitrc` starts; sound and the media keys; nnn; and Neovim with what its plugins need.
+
+```shell
+sudo dnf install $(sed 's/#.*//' packages.txt)
+```
+
+### 3. Install the font
 
 The configs use JetBrainsMono Nerd Font, which Fedora doesn't package, so this fetches and checks the upstream release.
 
@@ -50,13 +54,6 @@ sudo mkdir -p /usr/local/share/fonts/JetBrainsMonoNerdFont
 sudo tar -xJf JetBrainsMono.tar.xz -C /usr/local/share/fonts/JetBrainsMonoNerdFont JetBrainsMonoNerdFont-{Regular,Bold,Italic,BoldItalic}.ttf
 sudo fc-cache -f
 rm JetBrainsMono.tar.xz
-```
-
-### 3. Clone the repo
-
-```shell
-git clone https://github.com/zachbyte/FDWM
-cd FDWM
 ```
 
 ### 4. Build and install
@@ -75,8 +72,6 @@ done
 `dotfiles/.xinitrc` starts the keyring, the polkit agent, and the battery charge and clock in the bar before dwm; PipeWire gives you sound and the media keys.
 
 ```shell
-sudo dnf install xsetroot gnome-keyring mate-polkit \
-    pipewire wireplumber pipewire-pulseaudio brightnessctl playerctl
 cp dotfiles/.xinitrc ~/.xinitrc
 ```
 
@@ -115,7 +110,6 @@ cp dotfiles/.bashrc.d/claude.sh ~/.bashrc.d/
 The config needs Neovim 0.12 or newer (Fedora 44 or newer) and installs its plugins, parsers and language servers the first time it starts.
 
 ```shell
-sudo dnf install neovim ripgrep unzip tree-sitter-cli /usr/bin/npm java-latest-openjdk-headless
 mkdir -p ~/.config
 cp -r dotfiles/.config/nvim ~/.config/
 ```
@@ -136,11 +130,7 @@ sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 
 ### 7. File manager
 
-`nnn` is a terminal file manager: run `nnn`, press `?` for its keys, and text files open in Neovim.
-
-```shell
-sudo dnf install nnn
-```
+`nnn`, installed in step 2, is a terminal file manager: run `nnn`, press `?` for its keys, and text files open in Neovim.
 
 ## Applied patches
 
