@@ -134,7 +134,7 @@ The source already includes these, so there is nothing to apply.
 
 - dwm: activetagindicatorbar, actualfullscreen, alwayscenter, attachbottom, centretitle, colorbar, dragmfact, noborderflicker, preserveonrestart, resizehere, restartsig, tiledmove, togglefloatingcenter, uselessgap
 - st: anysize, scrollback, scrollback-mouse, scrollback-mouse-altscreen
-- slock: no patches; `config.h` sets Catppuccin colors (dark while locked, lavender while you type, red after a wrong password) and drops privileges to Fedora's `nobody` group
+- slock: no patches; `config.h` sets Catppuccin colors (base #1e1e2e while locked, surface1 #45475a while you type, red #f38ba8 only after a wrong password) and drops privileges to Fedora's `nobody` group
 
 How dwm behaves with these:
 
