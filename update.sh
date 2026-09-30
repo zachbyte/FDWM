@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Updates FDWM: pulls the latest commits into this checkout, then runs the new
-# install.sh, which installs any missing packages, rebuilds dwm, st and dmenu,
+# install.sh, which installs any missing packages, rebuilds dwm, st, dmenu and slock,
 # and reapplies the dotfiles and GRUB theme. It stops before touching
 # the repo if you have uncommitted changes or unpushed commits, and it never
 # touches your stashes or other branches.

@@ -1,6 +1,6 @@
 # FDWM
 
-A minimal dwm, st and dmenu setup for Fedora.
+A minimal dwm, st, dmenu and slock setup for Fedora.
 
 ## Quick install
 
@@ -17,7 +17,7 @@ Then reboot and log in on tty1: dwm starts. (Earlier versions logged tty1 in aut
 
 ## Updating
 
-`update.sh` pulls the latest commits into your checkout and then runs `install.sh`, so one command installs any missing packages, rebuilds dwm, st and dmenu, and reapplies the dotfiles and GRUB theme; press `Alt + Shift + W` afterwards to restart dwm on the new build. It stops without changing anything if you have uncommitted changes or unpushed commits, or if your branch has no upstream; your stashes and other branches are never touched. A dotfile you edited in your home folder is moved to a `.bak.<time>` copy before the repo's version replaces it, so make lasting changes in `dotfiles/`.
+`update.sh` pulls the latest commits into your checkout and then runs `install.sh`, so one command installs any missing packages, rebuilds dwm, st, dmenu and slock, and reapplies the dotfiles and GRUB theme; press `Alt + Shift + W` afterwards to restart dwm on the new build. It stops without changing anything if you have uncommitted changes or unpushed commits, or if your branch has no upstream; your stashes and other branches are never touched. A dotfile you edited in your home folder is moved to a `.bak.<time>` copy before the repo's version replaces it, so make lasting changes in `dotfiles/`.
 
 ```shell
 ./update.sh
@@ -37,7 +37,7 @@ cd FDWM
 
 ### 2. Install dependencies
 
-`packages.txt` lists every package FDWM uses, grouped by what needs it: building dwm, st and dmenu; X and the session `.xinitrc` starts; sound and the media keys; nnn; and Neovim with what its plugins need.
+`packages.txt` lists every package FDWM uses, grouped by what needs it: building dwm, st, dmenu and slock; X and the session `.xinitrc` starts; sound and the media keys; nnn; and Neovim with what its plugins need.
 
 ```shell
 sudo dnf install $(sed 's/#.*//' packages.txt)
@@ -58,10 +58,10 @@ rm JetBrainsMono.tar.xz
 
 ### 4. Build and install
 
-Each tool is built as you and only installed as root.
+Each tool is built as you and only installed as root (slock's install makes it setuid root, which it needs to check your password).
 
 ```shell
-for tool in dwm st dmenu; do
+for tool in dwm st dmenu slock; do
     make -C suckless/$tool clean all
     sudo make -C suckless/$tool install
 done
@@ -131,6 +131,7 @@ The source already includes these, so there is nothing to apply.
 
 - dwm: activetagindicatorbar, actualfullscreen, alwayscenter, attachbottom, centretitle, colorbar, dragmfact, noborderflicker, preserveonrestart, resizehere, restartsig, tiledmove, togglefloatingcenter, uselessgap
 - st: anysize, scrollback, scrollback-mouse, scrollback-mouse-altscreen
+- slock: no patches; `config.h` sets Catppuccin colors (dark while locked, lavender while you type, red after a wrong password) and drops privileges to Fedora's `nobody` group
 
 How dwm behaves with these:
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installs FDWM on Fedora: packages, the Nerd Font, dwm/st/dmenu, dotfiles and
+# Installs FDWM on Fedora: packages, the Nerd Font, dwm/st/dmenu/slock, dotfiles and
 # the GRUB theme. update.sh runs it after pulling, so it must stay safe to run again:
 # existing dotfiles that differ are backed up first, never silently replaced.
 set -Eeuo pipefail  # -E: the ERR trap below also fires inside functions
@@ -54,7 +54,7 @@ fi
 
 # Build as you and only install as root, so the compiler never runs as root
 # and no root-owned build files are left in the checkout.
-for tool in dwm st dmenu; do
+for tool in dwm st dmenu slock; do
     echo "==> Building and installing $tool"
     make -C "suckless/$tool" clean all
     sudo make -C "suckless/$tool" install
