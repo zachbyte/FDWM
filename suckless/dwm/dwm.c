@@ -210,6 +210,7 @@ static void spawn(const Arg *arg);
 static void seturgent(Client *c, int urg);
 static void sighup(int unused);
 static void sigterm(int unused);
+static void swapclients(Client *a, Client *b);
 static void tag(const Arg *arg);
 static void tile(Monitor *m);
 static void togglebar(const Arg *arg);
@@ -1210,7 +1211,7 @@ movemouse(const Arg *arg)
             ny = ocy + (ev.xmotion.y - y);
             if (!selmon->lt[selmon->sellt]->arrange || c->isfloating)
                 resize(c, nx, ny, c->w, c->h, 1);
-            else if (selmon->lt[selmon->sellt]->arrange || !c->isfloating) {
+			else {
                 if ((m = recttomon(ev.xmotion.x_root, ev.xmotion.y_root, 1, 1)) != selmon) {
                     sendmon(c, m);
                     selmon = m;
@@ -1232,35 +1233,10 @@ movemouse(const Arg *arg)
                     cc = cc->next;
                 }
 
-                if (cc) {
-                    Client *cl1, *cl2, ocl1;
-                    
-                    if (!selmon->lt[selmon->sellt]->arrange) return;
-
-                    cl1 = c;
-                    cl2 = cc;
-                    ocl1 = *cl1;
-                    strcpy(cl1->name, cl2->name);
-                    cl1->win = cl2->win;
-                    cl1->x = cl2->x;
-                    cl1->y = cl2->y;
-                    cl1->w = cl2->w;
-                    cl1->h = cl2->h;
-                    
-                    cl2->win = ocl1.win;
-                    strcpy(cl2->name, ocl1.name);
-                    cl2->x = ocl1.x;
-                    cl2->y = ocl1.y;
-                    cl2->w = ocl1.w;
-                    cl2->h = ocl1.h;
-                    
-                    selmon->sel = cl2;
-
-                    c = cc;
-                    focus(c);
-                    
-                    arrange(cl1->mon);
-                }
+				if (cc) {
+					swapclients(c, cc);
+					arrange(c->mon);
+				}
             }
             break;
         }
@@ -1793,6 +1769,24 @@ setclienttagprop(Client *c)
 	long data[] = { (long) c->tags, (long) c->mon->num };
 	XChangeProperty(dpy, c->win, netatom[NetClientInfo], XA_CARDINAL, 32,
 			PropModeReplace, (unsigned char *) data, 2);
+}
+
+/* tiledmove: swap two clients' places in the client list, so each window
+ * keeps its own Client with its hints, tags and flags */
+void
+swapclients(Client *a, Client *b)
+{
+	Client **pa, **pb, *t;
+
+	for (pa = &a->mon->clients; *pa != a; pa = &(*pa)->next);
+	for (pb = &b->mon->clients; *pb != b; pb = &(*pb)->next);
+	/* swap the slots pointing at a and b, then their successors; this also
+	 * holds when a and b are neighbours */
+	*pa = b;
+	*pb = a;
+	t = a->next;
+	a->next = b->next;
+	b->next = t;
 }
 
 void
