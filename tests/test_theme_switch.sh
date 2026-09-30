@@ -2,9 +2,10 @@
 # shellcheck disable=SC2016  # stub bodies expand later, not here
 # shellcheck disable=SC2154  # fdwm_* come from the generated colors.sh
 # fdwm-theme FLAVOR: saves the flavor, runs install.sh, then recolors the
-# desktop and the open st windows and restarts dwm. install.sh is a
-# stand-in that generates the colors as the real one does first; the st
-# windows' terminals are files, and xsetroot, pkill, pgrep and ps stubs.
+# desktop and the open st windows, reloads dunst and restarts dwm.
+# install.sh is a stand-in that generates the colors as the real one does
+# first; the st windows' terminals are files, and xsetroot, pkill, pgrep,
+# ps and dunstctl stubs.
 # shellcheck source=tests/lib.sh
 source "$(dirname "$0")/lib.sh"
 sandbox
@@ -30,11 +31,17 @@ if [[ ! -L $cmd ]]; then
 fi
 
 # two st windows (pids 100 and 200, on pts/3 and pts/4) and another
-# terminal, pts/9, that isn't st's
-stub pgrep '[ "$*" = "-u $(id -u) -x st" ] && echo 100 && echo 200'
+# terminal, pts/9, that isn't st's; dunst runs when $DUNST is set
+stub pgrep '
+case "$*" in
+"-u $(id -u) -x st") echo 100; echo 200 ;;
+"-u $(id -u) -x dunst") [ -n "${DUNST:-}" ] && echo 300 ;;
+*) exit 1 ;;
+esac'
 stub ps 'case "$4" in 100) echo "pts/3" ;; 200) echo "pts/4" ;; esac'
 stub xsetroot 'echo "xsetroot $*" >>"$LOG"'
 stub pkill 'echo "pkill $*" >>"$LOG"'
+stub dunstctl 'echo "dunstctl $*" >>"$LOG"'
 PATH="$T/bin:$PATH"
 # theme ARGS...: fdwm-theme ARGS; sets $out and $rc, with a fresh log and
 # empty terminals
@@ -55,14 +62,14 @@ expect "an unknown flavor: fails" 1 "$rc"
 expect_match "an unknown flavor: names the ones there are" "no flavor called nosuch \(the palette has: mocha latte\)" "$out"
 expect "an unknown flavor: nothing saved or run" "no:" "$([[ -e $flavor_file ]] && echo yes || echo no):$(cat "$LOG")"
 
-theme latte
+DUNST=1 theme latte
 expect "latte: exits 0" 0 "$rc"
 expect "latte: saved" latte "$(cat "$flavor_file")"
 # shellcheck source=/dev/null
 . "$HOME/.config/fdwm/colors.sh"
 expect "latte: install.sh ran and generated latte" "latte" "$fdwm_flavor"
-expect "latte: install.sh, the desktop, then dwm" \
-    "$(printf 'INSTALL\nxsetroot -solid %s\npkill -HUP -u %s -x dwm' "$fdwm_base" "$(id -u)")" "$(cat "$LOG")"
+expect "latte: install.sh, the desktop, dunst, then dwm" \
+    "$(printf 'INSTALL\nxsetroot -solid %s\ndunstctl reload\npkill -HUP -u %s -x dwm' "$fdwm_base" "$(id -u)")" "$(cat "$LOG")"
 want=$(for i in {0..15}; do v=fdwm_term$i; printf '\e]4;%d;%s\a' "$i" "${!v}"; done
     printf '\e]10;%s\a\e]11;%s\a\e]12;%s\a' "$fdwm_term_fg" "$fdwm_term_bg" "$fdwm_term_cursor")
 expect "latte: each st window gets the 16 colors, text, background and cursor" \
@@ -79,6 +86,7 @@ expect "back to mocha: saved" mocha "$(cat "$flavor_file")"
 expect "back to mocha: generated" mocha "$fdwm_flavor"
 expect_match "back to mocha: the st windows get mocha's background" "]11;$fdwm_term_bg" "$(cat "$FDWM_DEV/pts/4")"
 expect "back to mocha: not what latte sent" yes "$([[ $(cat "$FDWM_DEV/pts/4") != "$latte_seq" ]] && echo yes)"
+expect "dunst not running: not reloaded" "" "$(grep dunstctl "$LOG")"
 
 DISPLAY='' theme latte
 expect "outside X: exits 0" 0 "$rc"

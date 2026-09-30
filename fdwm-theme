@@ -7,7 +7,8 @@
 #                            install.sh (which generates the colors and
 #                            rebuilds dwm, st, dmenu and slock, the GRUB
 #                            theme and the ttys' colors), then recolor the
-#                            desktop and the open st windows and restart dwm
+#                            desktop and the open st windows, reload dunst
+#                            and restart dwm
 #   fdwm-theme generate      write the files below from the palette
 #   fdwm-theme kernel-args   print the vt.default_* boot options that give
 #                            the ttys the palette from boot (install.sh
@@ -225,6 +226,10 @@ switch() {
     echo "==> Recoloring what's open"
     xsetroot -solid "#${color[base]}"
     recolor_st
+    # dunst rereads its config, colors drop-in and all
+    if pgrep -u "$(id -u)" -x dunst >/dev/null; then
+        dunstctl reload || echo "fdwm-theme: dunstctl reload failed; dunst keeps its old colors" >&2
+    fi
     # dwm restarts on its new build (restartsig), windows and tags kept
     pkill -HUP -u "$(id -u)" -x dwm || true
     echo "==> Switched to $flavor. Neovim takes it from its next start, the ttys and GRUB from the next boot."
