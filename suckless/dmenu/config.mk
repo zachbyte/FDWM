@@ -1,5 +1,6 @@
-# dmenu version
-VERSION = 5.0
+# dmenu version: the 5.3 release plus upstream fixes from mid-2024
+# (utf8decode overhaul, invalid UTF-8 drawn as U+FFFD)
+VERSION = 5.3
 
 # paths
 PREFIX = /usr/local
