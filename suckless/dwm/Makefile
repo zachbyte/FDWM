@@ -17,15 +17,7 @@ dwm: ${OBJ}
 	${CC} -o $@ ${OBJ} ${LDFLAGS}
 
 clean:
-	rm -f dwm ${OBJ} dwm-${VERSION}.tar.gz *.orig *.rej config.def.h dwm.png README
-
-dist: clean
-	mkdir -p dwm-${VERSION}
-	cp -R LICENSE Makefile config.mk\
-		dwm.1 drw.h util.h ${SRC} transient.c dwm-${VERSION}
-	tar -cf dwm-${VERSION}.tar dwm-${VERSION}
-	gzip dwm-${VERSION}.tar
-	rm -rf dwm-${VERSION}
+	rm -f dwm ${OBJ} *.orig *.rej config.def.h dwm.png README
 
 install: all
 	mkdir -p ${DESTDIR}${PREFIX}/bin
@@ -38,4 +30,4 @@ uninstall:
 	rm -f ${DESTDIR}${PREFIX}/bin/dwm\
 		${DESTDIR}${MANPREFIX}/man1/dwm.1
 
-.PHONY: all clean dist install uninstall
+.PHONY: all clean install uninstall
