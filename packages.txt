@@ -19,6 +19,9 @@ dunst libnotify
 # sound, and the volume, brightness and media keys
 pipewire wireplumber pipewire-pulseaudio brightnessctl playerctl
 
+# screenshots (fdwm-shot): maim takes them, xclip copies them
+maim xclip
+
 # nnn, the terminal file manager
 nnn
 

@@ -88,6 +88,8 @@ install_dotfile() {
 
 echo "==> Setting up ~/.xinitrc"
 install_dotfile .xinitrc
+# screenshots, which dwm's Print and Shift+Print run
+install_dotfile .local/bin/fdwm-shot
 # the bar script .xinitrc starts (and dwm's volume and brightness keys poke)
 install_dotfile .local/bin/fdwm-bar
 # notifications: dunst's layout (fdwm-theme writes its colors)
