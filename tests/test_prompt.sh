@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2016  # stub bodies and sed scripts expand later, not here
+# shellcheck disable=SC2154  # fdwm_* come from the generated colors.sh
 # The .bashrc prompt: what it shows, its colors, how many git calls it
 # makes, and that ~/.local/bin lands on PATH only once however deep shells
 # are nested.

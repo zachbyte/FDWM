@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2016  # stub bodies and sed scripts expand later, not here
+# shellcheck disable=SC2154  # fdwm_* come from the generated colors.sh
 # The tty palette: .bashrc loads the palette's 16 console colors (from
 # fdwm-theme's colors.sh) on a Linux console only, the kernel gets the same
 # 16 from fdwm-theme kernel-args, and install.sh adds them to each kernel
