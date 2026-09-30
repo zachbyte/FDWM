@@ -1379,10 +1379,8 @@ resizemouse(const Arg *arg)
 		None, cursor[CurResize]->cursor, CurrentTime) != GrabSuccess)
 		return;
 
-	if (c->isfloating) {
-		if(!getrootptr(&x, &y))
-			return;
-	}
+	if (!getrootptr(&x, &y))
+		return;
 
 	do {
 		XMaskEvent(dpy, MOUSEMASK|ExposureMask|SubstructureRedirectMask, &ev);
