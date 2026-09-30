@@ -1,0 +1,25 @@
+#!/bin/sh
+# fdwm-menu: lock, suspend, restart dwm, log out, reboot or power off,
+# picked in dmenu (Alt+Shift+E). Log out, reboot and power off ask again
+# first; Escape leaves either menu without doing anything.
+
+# confirm WHAT: true only if you pick "yes" when asked "WHAT?"
+confirm() {
+    [ "$(printf 'no\nyes\n' | dmenu -p "$1?")" = yes ]
+}
+
+choice=$(printf '%s\n' lock suspend "restart dwm" "log out" reboot "power off" | dmenu -i -p power)
+case $choice in
+lock) exec slock ;;
+suspend) exec systemctl suspend ;;  # xss-lock locks the screen first
+"restart dwm") exec pkill -HUP -u "$(id -u)" -x dwm ;;  # as Alt+Shift+W does
+"log out") confirm "log out" && exec pkill -TERM -u "$(id -u)" -x dwm ;;  # as Alt+Shift+Q does
+reboot) confirm reboot && exec systemctl reboot ;;
+"power off") confirm "power off" && exec systemctl poweroff ;;
+"") ;;
+*)
+    echo "fdwm-menu: not in the menu: $choice" >&2
+    exit 1
+    ;;
+esac
+exit 0
