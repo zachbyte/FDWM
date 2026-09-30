@@ -55,6 +55,7 @@ for f in .xinitrc .bashrc .bashrc.d/claude.sh .config/nvim/init.lua .config/duns
     expect "installs ~/$f" yes "$([[ -f $T/home/$f ]] && echo yes)"
 done
 expect "installs ~/.local/bin/fdwm-bar, executable" yes "$([[ -x $T/home/.local/bin/fdwm-bar ]] && echo yes)"
+expect "installs ~/.local/bin/fdwm-shot, executable" yes "$([[ -x $T/home/.local/bin/fdwm-shot ]] && echo yes)"
 if ln -s probe "$T/probe" 2>/dev/null && [[ -L $T/probe ]]; then
     expect "links ~/.local/bin/fdwm-theme to the checkout's" "$T/repo/fdwm-theme" "$(readlink "$T/home/.local/bin/fdwm-theme")"
 else

@@ -58,6 +58,9 @@ static const Layout layouts[] = {
 /* after a volume, mute or brightness key, redraw the bar at once (fdwm-bar) */
 #define BARREFRESH "; \"$HOME/.local/bin/fdwm-bar\" refresh"
 
+/* screenshots (fdwm-shot): a region, or the whole screen */
+#define SHOT(what) SHCMD ("\"$HOME/.local/bin/fdwm-shot\" " what)
+
 /* commands */
 static char dmenumon[2] = "0";
 static const char *dmenucmd[] = { "dmenu_run", NULL };
@@ -107,6 +110,8 @@ static const Key keys[] = {
 	{ 0,                            XF86XK_AudioPlay,          spawn,          SHCMD ("playerctl play-pause")},
 	{ 0,                            XF86XK_AudioNext,          spawn,          SHCMD ("playerctl next")},
 	{ 0,                            XF86XK_AudioPrev,          spawn,          SHCMD ("playerctl previous")},
+	{ 0,                            XK_Print,                  spawn,          SHOT ("region")},
+	{ ShiftMask,                    XK_Print,                  spawn,          SHOT ("screen")},
 };
 
 /* button definitions */

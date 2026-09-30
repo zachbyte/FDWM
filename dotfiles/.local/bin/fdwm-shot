@@ -1,0 +1,59 @@
+#!/bin/sh
+# fdwm-shot: screenshots with maim, saved to ~/Pictures/Screenshots and put
+# on the clipboard with xclip, ready to paste.
+#
+#   fdwm-shot region  drag out a region (Print); Escape or a right click
+#                     cancels
+#   fdwm-shot screen  the whole screen (Shift+Print)
+#
+# The region's outline is the palette's lavender, like dwm's borders, from
+# the colors.sh fdwm-theme writes.
+
+colors=${XDG_CONFIG_HOME:-$HOME/.config}/fdwm/colors.sh
+# shellcheck source=/dev/null
+[ -r "$colors" ] && . "$colors"
+
+# outline RRGGBB: the color as maim's -c wants it: red,green,blue,alpha,
+# each from 0 to 1
+outline() {
+    awk -v r="$(printf '%d' "0x$(echo "$1" | cut -c1-2)")" \
+        -v g="$(printf '%d' "0x$(echo "$1" | cut -c3-4)")" \
+        -v b="$(printf '%d' "0x$(echo "$1" | cut -c5-6)")" \
+        'BEGIN { printf "%.3f,%.3f,%.3f,1", r / 255, g / 255, b / 255 }'
+}
+
+case ${1:-} in
+region)
+    set -- -s -b 2
+    [ -n "${fdwm_lavender:-}" ] && set -- "$@" -c "$(outline "${fdwm_lavender#\#}")"
+    ;;
+screen)
+    set --
+    ;;
+*)
+    echo "usage: fdwm-shot region | screen" >&2
+    exit 2
+    ;;
+esac
+
+dir=$(xdg-user-dir PICTURES 2>/dev/null) || dir=
+dir=${dir:-$HOME/Pictures}/Screenshots
+mkdir -p "$dir"
+# named for the time, and -2, -3... for more in the same second
+base=$dir/$(date +%Y-%m-%d_%H-%M-%S)
+file=$base.png n=1
+while [ -e "$file" ]; do
+    n=$((n + 1))
+    file=$base-$n.png
+done
+
+# -u: without the mouse pointer. A cancelled region takes nothing.
+if ! maim -u "$@" "$file"; then
+    rm -f "$file"
+    exit 0
+fi
+xclip -selection clipboard -t image/png -i "$file"
+echo "$file"
+command -v notify-send >/dev/null 2>&1 &&
+    notify-send -a fdwm-shot -t 3000 "Screenshot" "Copied, and saved to $file" 2>/dev/null
+exit 0
