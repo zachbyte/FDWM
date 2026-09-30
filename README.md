@@ -4,7 +4,7 @@ A minimal dwm, st and dmenu setup for Fedora.
 
 ## Quick install
 
-`install.sh` runs steps 1 to 7 for you (only installing packages that are missing); run it as your normal user. Any existing `~/.xinitrc`, `~/.bashrc` or `~/.config/nvim` that differs is moved to a `.bak.<time>` copy first.
+`install.sh` runs steps 1 to 7 for you (only installing packages that are missing); run it as your normal user. Any existing `~/.xinitrc`, `~/.bashrc`, `~/.bashrc.d/claude.sh` or `~/.config/nvim` that differs is moved to a `.bak.<time>` copy first.
 
 ```shell
 sudo dnf install -y git
@@ -91,10 +91,12 @@ printf '[Service]\nExecStart=\nExecStart=-/sbin/agetty -o %s --noreset --noclear
 sudo systemctl daemon-reload
 ```
 
-`dotfiles/.bashrc` sets the prompt (git branch and directory), history, aliases and git shortcuts.
+`dotfiles/.bashrc` sets the prompt (git branch and directory), history, aliases and git shortcuts, and loads every file in `~/.bashrc.d`. `dotfiles/.bashrc.d/claude.sh` adds `cl` for Claude Code.
 
 ```shell
 cp dotfiles/.bashrc ~/.bashrc
+mkdir -p ~/.bashrc.d
+cp dotfiles/.bashrc.d/claude.sh ~/.bashrc.d/
 ```
 
 | Keys | Action |

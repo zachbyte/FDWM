@@ -75,6 +75,7 @@ install_dotfile .xinitrc
 
 echo "==> Setting up ~/.bashrc"
 install_dotfile .bashrc
+install_dotfile .bashrc.d/claude.sh
 
 echo "==> Setting up neovim"
 if nvim --clean --headless +'if !has("nvim-0.12") | cquit | endif' +quit; then

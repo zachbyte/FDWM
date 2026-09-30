@@ -26,7 +26,6 @@ shopt -s histappend
 PROMPT_COMMAND="history -a; history -n${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
 
 # essentials
-alias cc='claude --dangerously-skip-permissions'
 alias grep='grep --color=auto'
 alias c='clear'
 alias vim='nvim'
@@ -91,10 +90,11 @@ rebase() {
 
 export PATH="$HOME/.local/bin:$PATH"
 
-# extra snippets in ~/.bashrc.d, as Fedora's default .bashrc loads them
+# extra snippets in ~/.bashrc.d, as Fedora's default .bashrc loads them,
+# skipping the .bak.<time> copies install.sh leaves next to files it replaces
 if [ -d ~/.bashrc.d ]; then
     for rc in ~/.bashrc.d/*; do
-        if [ -f "$rc" ]; then
+        if [ -f "$rc" ] && [[ $rc != *.bak.* ]]; then
             . "$rc"
         fi
     done
