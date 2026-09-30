@@ -17,7 +17,7 @@ dwm: ${OBJ}
 	${CC} -o $@ ${OBJ} ${LDFLAGS}
 
 clean:
-	rm -f dwm ${OBJ} *.orig *.rej config.def.h dwm.png README
+	rm -f dwm ${OBJ} *.orig *.rej
 
 install: all
 	mkdir -p ${DESTDIR}${PREFIX}/bin

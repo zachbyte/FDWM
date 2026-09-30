@@ -21,7 +21,7 @@ st: $(OBJ)
 	$(CC) -o $@ $(OBJ) $(STLDFLAGS)
 
 clean:
-	rm -f st $(OBJ) *.rej *.orig *.o config.def.h README TODO FAQ LEGACY
+	rm -f st $(OBJ) *.rej *.orig *.o
 
 install: st
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
