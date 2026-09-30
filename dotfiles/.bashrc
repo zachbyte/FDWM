@@ -7,13 +7,17 @@ fi
 
 [[ $- != *i* ]] && return
 
-# parse the branch and transfer it to the prompt
+# the current branch and a space, or nothing outside a git repo: one git call
+# per prompt (a second only on a detached HEAD, to name the commit)
 parse_git_branch() {
-    git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'
+    local b
+    b=$(git branch --show-current 2>/dev/null) || return 0
+    [ -n "$b" ] || b="(HEAD detached at $(git rev-parse --short HEAD 2>/dev/null))"
+    printf '%s ' "$b"
 }
 
 # prompt: pink git branch, blue directory
-PS1='\[\e[38;5;204m\]$(if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then echo "$(parse_git_branch) "; fi)\[\e[38;2;137;180;250m\]\w $ \[\e[0m\]'
+PS1='\[\e[38;5;204m\]$(parse_git_branch)\[\e[38;2;137;180;250m\]\w $ \[\e[0m\]'
 
 # essential stuff
 stty -ixon # disable ctrl+s and ctrl+q
@@ -88,7 +92,11 @@ rebase() {
     fi
 }
 
-export PATH="$HOME/.local/bin:$PATH"
+# ~/.local/bin, added once even when shells are nested (login -> startx -> st)
+case ":$PATH:" in
+    *":$HOME/.local/bin:"*) ;;
+    *) export PATH="$HOME/.local/bin:$PATH" ;;
+esac
 
 # extra snippets in ~/.bashrc.d, as Fedora's default .bashrc loads them,
 # skipping the .bak.<time> copies install.sh leaves next to files it replaces
