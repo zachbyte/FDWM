@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016  # regexes and stubs with a literal $
+# shellcheck disable=SC2329  # wm_running, exists, shown and hidden run through until_
 # dwm's scratchpads. First config.h: each scratchpad's command starts st with
 # the instance name its rule matches, the rule floats it on its own tag, and
 # the keys toggle the right one. Then, where Xvfb and xdotool are (CI
@@ -15,8 +17,8 @@ mapfile -t pads < <(sed -n '/^static Sp scratchpads\[\] = {/,/^};/s/^\t{ "\([a-z
 expect "two scratchpads" 2 "${#pads[@]}"
 for i in "${!pads[@]}"; do
     read -r name cmd <<<"${pads[i]}"
-    cmdline=$(sed -n "/^static const char \*$cmd\[\] = /,/NULL };/p" "$config" | tr -d '\n\t')
-    expect_match "$name: its command starts st as instance $name" "st(\", \"| )-n(\", \"| )$name[\" ]" "$cmdline"
+    cmdline=$(sed -n "/^static const char \*${cmd}\[\] = /,/NULL };/p" "$config" | tr -d '\n\t')
+    expect_match "$name: its command starts st as instance $name" "st(\", \"| )-n(\", \"| )${name}[\" ]" "$cmdline"
     expect_match "$name: a rule floats instance $name on its own tag" \
         "^[[:space:]]*\{ NULL, +\"$name\", *NULL, +SPTAG\($i\), +1, " "$(grep -F "\"$name\"," "$config" | grep SPTAG)"
 done
