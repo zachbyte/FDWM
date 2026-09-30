@@ -1,0 +1,199 @@
+Upstream patch dwm-scratchpads-20200414-728d397b.diff
+(https://dwm.suckless.org/patches/scratchpads/), merged by hand into this dwm,
+with FDWM's two scratchpads: Alt+` a terminal (st -n spterm) and Alt+N Neovim
+on ~/notes.md (st -n spnotes), both floating at 120x34 and centered. Unlike
+the patch, the tag-count check counts the scratchpads' tags, and Alt+0 and
+Alt+Shift+0 leave them out.
+
+diff --git a/config.h b/config.h
+index b498fa2..4ad13c8 100644
+--- a/config.h
++++ b/config.h
+@@ -19,6 +19,22 @@ static const char *colors[][4] = {
+ 	[SchemeInfoNorm]  = { col_fg, col_bg,  col_bg  }, // infobar middle  unselected {text,background,not used but cannot be empty}
+ };
+ 
++/* scratchpads: a floating window a key shows and hides again, started the
++ * first time it's wanted. Each has its own tag, SPTAG(n), which a rule
++ * below gives the window by the instance name st -n sets. */
++typedef struct {
++	const char *name;
++	const void *cmd;
++} Sp;
++static const char *sptermcmd[] = { "st", "-n", "spterm", "-g", "120x34", NULL };
++static const char *spnotescmd[] = { "/bin/sh", "-c",
++	"exec st -n spnotes -g 120x34 -e nvim \"$HOME/notes.md\"", NULL };
++static Sp scratchpads[] = {
++	/* name          cmd  */
++	{ "spterm",      sptermcmd },   /* Alt+`: a terminal */
++	{ "spnotes",     spnotescmd },  /* Alt+N: Neovim on ~/notes.md */
++};
++
+ /* tagging */
+ static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9"};
+ 
+@@ -29,6 +45,8 @@ static const Rule rules[] = {
+ 	 */
+ 	/* class     instance  title           tags mask  isfloating  monitor */
+ 	{ "feh",     NULL,     NULL,           0,         1,          -1 },
++	{ NULL,      "spterm", NULL,           SPTAG(0),  1,          -1 },
++	{ NULL,      "spnotes", NULL,          SPTAG(1),  1,          -1 },
+  };
+ 
+ /* layout(s) */
+@@ -89,8 +107,8 @@ static const Key keys[] = {
+ 	{ MODKEY,                       XK_space,  setlayout,      {0} },
+ 	{ MODKEY|ShiftMask,             XK_space,  togglefloating, {0} },
+ 	{ MODKEY|ShiftMask,             XK_f,      togglefullscr,  {0} },
+-	{ MODKEY,                       XK_0,      view,           {.ui = ~0 } },
+-	{ MODKEY|ShiftMask,             XK_0,      tag,            {.ui = ~0 } },
++	{ MODKEY,                       XK_0,      view,           {.ui = ~SPTAGMASK } },
++	{ MODKEY|ShiftMask,             XK_0,      tag,            {.ui = ~SPTAGMASK } },
+ 	TAGKEYS(                        XK_1,                      0)
+ 	TAGKEYS(                        XK_2,                      1)
+ 	TAGKEYS(                        XK_3,                      2)
+@@ -105,6 +123,8 @@ static const Key keys[] = {
+ 	{ MODKEY|ShiftMask,             XK_r,      resetmfact,     {0} },
+ 	{ MODKEY|ShiftMask,             XK_l,      spawn,          {.v = lockcmd } },
+ 	{ MODKEY|ShiftMask,             XK_e,      spawn,          {.v = menucmd } },
++	{ MODKEY,                       XK_grave,  togglescratch,  {.ui = 0 } },
++	{ MODKEY,                       XK_n,      togglescratch,  {.ui = 1 } },
+ 	{ 0,                            XF86XK_MonBrightnessUp,    spawn,          SHCMD ("brightnessctl set +10%" BARREFRESH)},
+ 	{ 0,                            XF86XK_MonBrightnessDown,  spawn,          SHCMD ("brightnessctl set 10%-" BARREFRESH)},
+ 	{ 0,                            XF86XK_AudioLowerVolume,   spawn,          SHCMD ("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-" BARREFRESH)},
+diff --git a/dwm.1 b/dwm.1
+index 5e6f911..42f8d9a 100644
+--- a/dwm.1
++++ b/dwm.1
+@@ -126,7 +126,7 @@ Toggles to the previously selected tags.
+ Apply nth tag to focused window.
+ .TP
+ .B Mod1\-Shift\-0
+-Apply all tags to focused window.
++Apply all tags to focused window (not the scratchpads' tags).
+ .TP
+ .B Mod1\-Control\-Shift\-[1..n]
+ Add/remove nth tag to/from focused window.
+@@ -135,7 +135,7 @@ Add/remove nth tag to/from focused window.
+ View all windows with nth tag.
+ .TP
+ .B Mod1\-0
+-View all windows with any tag.
++View all windows with any tag, except the scratchpads.
+ .TP
+ .B Mod1\-Control\-[1..n]
+ Add/remove all windows with nth tag to/from the view.
+@@ -157,6 +157,16 @@ Open the power menu,
+ in dmenu: lock, suspend, restart dwm, log out, reboot or power off. Log out,
+ reboot and power off ask again first.
+ .TP
++.B Mod1\-grave
++Show or hide the terminal scratchpad: a floating
++.BR st (1)
++in the middle of the screen, over whatever tag you view. The first press
++starts it; closing it and pressing again starts a new one.
++.TP
++.B Mod1\-n
++Show or hide the notes scratchpad: Neovim on ~/notes.md, in a floating st
++like the terminal scratchpad.
++.TP
+ .B XF86MonBrightnessUp, XF86MonBrightnessDown
+ Raise or lower the screen brightness by 10% with
+ .BR brightnessctl (1).
+diff --git a/dwm.c b/dwm.c
+index 23cf3c8..acc6ffd 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -54,7 +54,10 @@
+ #define MOUSEMASK               (BUTTONMASK|PointerMotionMask)
+ #define WIDTH(X)                ((X)->w + 2 * (X)->bw + gappx)
+ #define HEIGHT(X)               ((X)->h + 2 * (X)->bw + gappx)
+-#define TAGMASK                 ((1 << LENGTH(tags)) - 1)
++#define NUMTAGS                 (LENGTH(tags) + LENGTH(scratchpads))
++#define TAGMASK                 ((1 << NUMTAGS) - 1)
++#define SPTAG(i)                ((1 << LENGTH(tags)) << (i))
++#define SPTAGMASK               (((1 << LENGTH(scratchpads)) - 1) << LENGTH(tags))
+ #define TEXTW(X)                (drw_fontset_getwidth(drw, (X)) + lrpad)
+ 
+ /* enums */
+@@ -215,6 +218,7 @@ static void tile(Monitor *m);
+ static void togglebar(const Arg *arg);
+ static void togglefloating(const Arg *arg);
+ static void togglefullscr(const Arg *arg);
++static void togglescratch(const Arg *arg);
+ static void toggletag(const Arg *arg);
+ static void toggleview(const Arg *arg);
+ static void unfocus(Client *c, int setfocus);
+@@ -278,7 +282,7 @@ static Window root, wmcheckwin;
+ #include "config.h"
+ 
+ /* compile-time check if all tags fit into an unsigned int bit array. */
+-struct NumTags { char limitexceeded[LENGTH(tags) > 31 ? -1 : 1]; };
++struct NumTags { char limitexceeded[NUMTAGS > 31 ? -1 : 1]; };
+ 
+ /* size of a window floated by togglefloating() */
+ #define FLOAT_WIDTH  800
+@@ -309,6 +313,10 @@ applyrules(Client *c)
+ 		{
+ 			c->isfloating = r->isfloating;
+ 			c->tags |= r->tags;
++			if ((r->tags & SPTAGMASK) && r->isfloating) {
++				c->x = c->mon->wx + (c->mon->ww / 2 - WIDTH(c) / 2);
++				c->y = c->mon->wy + (c->mon->wh / 2 - HEIGHT(c) / 2);
++			}
+ 			for (m = mons; m && m->num != r->monitor; m = m->next);
+ 			if (m)
+ 				c->mon = m;
+@@ -318,7 +326,7 @@ applyrules(Client *c)
+ 		XFree(ch.res_class);
+ 	if (ch.res_name)
+ 		XFree(ch.res_name);
+-	c->tags = c->tags & TAGMASK ? c->tags & TAGMASK : c->mon->tagset[c->mon->seltags];
++	c->tags = c->tags & TAGMASK ? c->tags & TAGMASK : (c->mon->tagset[c->mon->seltags] & ~SPTAGMASK);
+ }
+ 
+ int
+@@ -1714,6 +1722,10 @@ showhide(Client *c)
+ 	if (!c)
+ 		return;
+ 	if (ISVISIBLE(c)) {
++		if ((c->tags & SPTAGMASK) && c->isfloating) {
++			c->x = c->mon->wx + (c->mon->ww / 2 - WIDTH(c) / 2);
++			c->y = c->mon->wy + (c->mon->wh / 2 - HEIGHT(c) / 2);
++		}
+ 		/* show clients top down */
+ 		XMoveWindow(dpy, c->win, c->x, c->y);
+ 		if ((!c->mon->lt[c->mon->sellt]->arrange || c->isfloating) && !c->isfullscreen)
+@@ -1866,6 +1878,32 @@ togglefullscr(const Arg *arg)
+ 		setfullscreen(selmon->sel, !selmon->sel->isfullscreen);
+ }
+ 
++void
++togglescratch(const Arg *arg)
++{
++	Client *c;
++	unsigned int found = 0;
++	unsigned int scratchtag = SPTAG(arg->ui);
++	Arg sparg = {.v = scratchpads[arg->ui].cmd};
++
++	for (c = selmon->clients; c && !(found = c->tags & scratchtag); c = c->next);
++	if (found) {
++		unsigned int newtagset = selmon->tagset[selmon->seltags] ^ scratchtag;
++		if (newtagset) {
++			selmon->tagset[selmon->seltags] = newtagset;
++			focus(NULL);
++			arrange(selmon);
++		}
++		if (ISVISIBLE(c)) {
++			focus(c);
++			restack(selmon);
++		}
++	} else {
++		selmon->tagset[selmon->seltags] |= scratchtag;
++		spawn(&sparg);
++	}
++}
++
+ void
+ toggletag(const Arg *arg)
+ {
