@@ -147,21 +147,25 @@ fi
 
 echo "==> Installing the GRUB theme"
 if [[ -f /etc/default/grub ]] && command -v grub2-mkconfig >/dev/null; then
-    theme=/boot/grub2/themes/catppuccin-mocha-grub
+    theme=/boot/grub2/themes/fdwm
     # grub2-mkconfig is slow, so it only runs at the end if this changes the
     # GRUB settings or theme, or grub.cfg is missing the theme or is older than
     # /etc/default/grub (an edit of yours it hasn't picked up yet).
     # (sudo sh -c: /boot/grub2 and grub.cfg are readable only by root)
     grub_state() {
         sudo sh -c 'cat /etc/default/grub; cd /boot/grub2/themes 2>/dev/null &&
-            find catppuccin-mocha-grub -type f -exec cksum {} + | sort; true'
+            find fdwm -type f -exec cksum {} + | sort; true'
     }
     grub_before=$(grub_state)
-    grub_stale=$(sudo sh -c 'grep -q catppuccin-mocha-grub/theme.txt /boot/grub2/grub.cfg 2>/dev/null &&
+    grub_stale=$(sudo sh -c 'grep -q themes/fdwm/theme.txt /boot/grub2/grub.cfg 2>/dev/null &&
         [ ! /etc/default/grub -nt /boot/grub2/grub.cfg ] || echo yes')
 
-    sudo mkdir -p "$theme"
-    sudo cp -r grub/catppuccin-mocha-grub/. "$theme"
+    # An exact copy of grub/theme, so a file the repo drops goes from /boot
+    # too. It is made beside the old one first, so a failed copy leaves that.
+    sudo rm -rf "$theme.new"
+    sudo cp -r grub/theme "$theme.new"
+    sudo rm -rf "$theme"
+    sudo mv "$theme.new" "$theme"
     [[ -e /etc/default/grub.fdwm.bak ]] || sudo cp /etc/default/grub /etc/default/grub.fdwm.bak
     # Rewrite the two settings only when they differ, so the file's timestamp
     # (checked above) only moves when something really changed.
@@ -204,6 +208,14 @@ if [[ -f /etc/default/grub ]] && command -v grub2-mkconfig >/dev/null; then
         sudo grub2-mkconfig -o /boot/grub2/grub.cfg
     else
         echo "GRUB settings and theme unchanged; grub.cfg left as it is"
+    fi
+
+    # The theme's folder before it followed the palette, which grub.cfg no
+    # longer points to (it names $theme, or was just regenerated above).
+    old_theme=/boot/grub2/themes/catppuccin-mocha-grub
+    if sudo test -d "$old_theme"; then
+        sudo rm -rf "$old_theme"
+        echo "Removed the old theme folder $old_theme"
     fi
 else
     echo "GRUB 2 not found, skipped"

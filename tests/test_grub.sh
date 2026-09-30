@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2016  # stub bodies and sed scripts expand later, not here
 # install.sh's GRUB step with /etc and /boot moved into a sandbox: when it
-# regenerates grub.cfg, and that it leaves /etc/default/grub tidy.
+# regenerates grub.cfg, that it leaves /etc/default/grub tidy, and that it
+# moves an earlier install from the theme's old folder to themes/fdwm.
 # shellcheck source=tests/lib.sh
 source "$(dirname "$0")/lib.sh"
 sandbox
@@ -13,14 +14,20 @@ mkdir -p "$SB/etc/default" "$SB/etc/kernel/install.d" \
 # install.sh does before this step
 theme_repo "$T/repo"
 HOME=$T/home bash "$T/repo/fdwm-theme" generate >/dev/null
-printf 'GRUB_TIMEOUT=5\nGRUB_ENABLE_BLSCFG=true\n' >"$SB/etc/default/grub"
+# installed by an earlier version, in the theme's old folder
+old_theme=$SB/boot/grub2/themes/catppuccin-mocha-grub
+mkdir -p "$old_theme"
+echo 'desktop-color: "black"' >"$old_theme/theme.txt"
+printf 'GRUB_TIMEOUT=5\nGRUB_ENABLE_BLSCFG=true\nGRUB_TERMINAL_OUTPUT="gfxterm"\nGRUB_THEME="%s"\n' \
+    "$old_theme/theme.txt" >"$SB/etc/default/grub"
+echo "set theme=$old_theme/theme.txt" >"$SB/boot/grub2/grub.cfg"
 printf 'title Fedora Linux (6.16.7-200.fc44.x86_64)\nversion 6.16.7-200.fc44.x86_64\n' \
     >"$SB/boot/loader/entries/abc-6.16.7-200.fc44.x86_64.conf"
 echo 'args="ro rhgb quiet"' >"$ARGS"
 
 # sudo runs the command: every path it can reach is inside the sandbox
 stub sudo 'exec "$@"'
-stub grub2-mkconfig 'echo MKCONFIG >>"$LOG"; echo "set theme=(\$root)/grub2/themes/catppuccin-mocha-grub/theme.txt" >"$2"'
+stub grub2-mkconfig 'echo MKCONFIG >>"$LOG"; echo "set theme=(\$root)/grub2/themes/fdwm/theme.txt" >"$2"'
 stub grub2-editenv 'exit 0'
 stub rpm 'exit 1'
 stub dnf 'exit 0'
@@ -59,16 +66,25 @@ step() {
 # make grub.cfg look older than anything written after this
 age_cfg() { touch -d "@$(($(date +%s) - 120))" "$cfg"; }
 
+theme=$SB/boot/grub2/themes/fdwm
 step "first install" 1
 expect "first install: kernel colors added" 1 "$(grep -c GRUBBY "$LOG")"
+expect "first install: the theme is an exact copy of grub/theme" "" "$(diff -r "$T/repo/grub/theme" "$theme")"
+expect_match "first install: GRUB_THEME names the new folder" "^GRUB_THEME=\"$theme/theme.txt\"$" "$(cat "$SB/etc/default/grub")"
+expect "first install: the old theme folder is gone" no "$([[ -e $old_theme ]] && echo yes || echo no)"
+expect_match "first install: says so" "Removed the old theme folder" "$out"
 step "again, nothing changed" 0
+touch "$theme/stale.png"
+step "a file the repo no longer has" 1
+expect "it is removed from /boot" no "$([[ -e $theme/stale.png ]] && echo yes || echo no)"
+expect "and no copy is left beside the theme" no "$([[ -e $theme.new ]] && echo yes || echo no)"
 step "and again" 0
 expect "kernel colors not added twice" 0 "$(grep -c GRUBBY "$LOG")"
 age_cfg
 echo 'GRUB_TIMEOUT=3' >>"$SB/etc/default/grub"
 step "after you edit /etc/default/grub" 1
 step "again, nothing changed" 0
-echo '# tweak' >>"$T/repo/grub/catppuccin-mocha-grub/theme.txt"
+echo '# tweak' >>"$T/repo/grub/theme/theme.txt"
 step "after the repo's theme changes" 1
 rm "$cfg"
 step "grub.cfg missing" 1

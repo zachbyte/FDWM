@@ -40,7 +40,7 @@ fdwm-bar print
 Every color is written down once, in `palette`: the Catppuccin Mocha colors as `rrggbb`, and which of them the terminal uses for its 16 colors, text, background and cursor. `fdwm-theme generate`, which `install.sh` runs before building, writes the rest from it:
 
 - `suckless/colors.h`, which the `config.h` of dwm, st, dmenu and slock include (`COL_BASE`, `COL_LAVENDER` and so on)
-- the GRUB theme's `theme.txt`, from `grub/theme.txt.in`
+- `grub/theme/theme.txt`, the GRUB theme's colors, from `grub/theme.txt.in`
 - `~/.config/fdwm/colors.sh`, which `.bashrc` (the prompt and the ttys) and `.xinitrc` (the desktop behind the windows) read
 
 `fdwm-theme kernel-args` prints the kernel options that color the ttys from boot. The generated files say so at the top, and git ignores the two in the repo. To change a color, edit `palette` and run `./install.sh`.
@@ -154,9 +154,10 @@ cp -r dotfiles/.config/nvim ~/.config/
 The GRUB theme needs graphical output, and Fedora hides the menu when only one OS is installed. The rest removes the rescue entry and gives each kernel a short title such as `Fedora 6.16.7`, including future kernel updates.
 
 ```shell
-sudo cp -r grub/catppuccin-mocha-grub /boot/grub2/themes/
+sudo rm -rf /boot/grub2/themes/fdwm
+sudo cp -r grub/theme /boot/grub2/themes/fdwm
 sudo sed -i '/^GRUB_THEME=/d; /^GRUB_TERMINAL_OUTPUT=/d' /etc/default/grub
-printf 'GRUB_TERMINAL_OUTPUT="gfxterm"\nGRUB_THEME="/boot/grub2/themes/catppuccin-mocha-grub/theme.txt"\n' | sudo tee -a /etc/default/grub
+printf 'GRUB_TERMINAL_OUTPUT="gfxterm"\nGRUB_THEME="/boot/grub2/themes/fdwm/theme.txt"\n' | sudo tee -a /etc/default/grub
 sudo grub2-editenv - unset menu_auto_hide
 sudo dnf remove dracut-config-rescue
 sudo sh -c 'rm -f /boot/loader/entries/*-0-rescue.conf /boot/vmlinuz-0-rescue-* /boot/initramfs-0-rescue-*.img'
