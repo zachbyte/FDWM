@@ -3,6 +3,7 @@ return {
 	name = "catppuccin",
 	priority = 1000,
 	config = function()
-		vim.cmd.colorscheme("catppuccin-mocha")
+		-- the desktop's flavor (fdwm-theme)
+		vim.cmd.colorscheme("catppuccin-" .. require("config.flavor"))
 	end,
 }

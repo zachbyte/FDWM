@@ -7,12 +7,23 @@ fi
 
 [[ $- != *i* ]] && return
 
+# FDWM's colors (fdwm_<name> for each color in the palette), which
+# fdwm-theme writes from the palette file in the repo
+fdwm_colors=${XDG_CONFIG_HOME:-$HOME/.config}/fdwm/colors.sh
+# shellcheck source=/dev/null
+[ -r "$fdwm_colors" ] && . "$fdwm_colors"
+unset fdwm_colors
+
 # on a Linux console (the ttys), use the same Catppuccin colors as st and
 # dwm: \e]P<n><rrggbb> sets palette entry n; 0 is the background and 7 the
-# default text, so they get dwm's #1e1e2e and st's #cdd6f4
-if [ "$TERM" = linux ]; then
-    printf '\e]P01e1e2e\e]P1cba6f7\e]P2a6e3a1\e]P3f9e2af\e]P489b4fa\e]P5f38ba8\e]P694e2d5\e]P7cdd6f4'
-    printf '\e]P8585b70\e]P9cba6f7\e]PAa6e3a1\e]PBf9e2af\e]PC89b4fa\e]PDf38ba8\e]PE94e2d5\e]PFa6adc8'
+# default text, so they get dwm's background and st's text
+if [ "$TERM" = linux ] && [ -n "${fdwm_console:-}" ]; then
+    n=0
+    for c in $fdwm_console; do
+        printf '\e]P%X%s' "$n" "$c"
+        n=$((n + 1))
+    done
+    unset n c
     clear  # repaint the whole screen in the new background
 fi
 
@@ -25,8 +36,14 @@ parse_git_branch() {
     printf '%s ' "$b"
 }
 
-# prompt: pink git branch, blue directory
-PS1='\[\e[38;5;204m\]$(parse_git_branch)\[\e[38;2;137;180;250m\]\w $ \[\e[0m\]'
+# prompt: the git branch in the palette's red (a pink in Mocha), the
+# directory in its blue; fdwm_fg COLOR is the escape for text in #rrggbb,
+# as a 24-bit color: \e[38;2;<red>;<green>;<blue>m
+fdwm_fg() {
+    [ -n "$1" ] && printf '\\[\\e[38;2;%d;%d;%dm\\]' "0x${1:1:2}" "0x${1:3:2}" "0x${1:5:2}"
+}
+PS1="$(fdwm_fg "${fdwm_red:-}")"'$(parse_git_branch)'"$(fdwm_fg "${fdwm_blue:-}")"'\w $ \[\e[0m\]'
+unset -f fdwm_fg
 
 # essential stuff
 stty -ixon # disable ctrl+s and ctrl+q

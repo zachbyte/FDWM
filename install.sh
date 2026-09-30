@@ -52,6 +52,12 @@ else
     trap - EXIT
 fi
 
+# The colors of everything below, from the palette file: dwm, st, dmenu and
+# slock's colors.h, the GRUB theme and ~/.config/fdwm/colors.sh (for .bashrc
+# and .xinitrc).
+echo "==> Generating the colors"
+./fdwm-theme generate
+
 # Build as you and only install as root, so the compiler never runs as root
 # and no root-owned build files are left in the checkout.
 for tool in dwm st dmenu slock; do
@@ -84,6 +90,14 @@ echo "==> Setting up ~/.xinitrc"
 install_dotfile .xinitrc
 # the bar script .xinitrc starts (and dwm's volume and brightness keys poke)
 install_dotfile .local/bin/fdwm-bar
+# fdwm-theme on your PATH, as a link to this checkout's: it switches flavors
+# by regenerating and rebuilding from here
+theme_link=$HOME/.local/bin/fdwm-theme
+if [[ $(readlink "$theme_link" || true) != "$PWD/fdwm-theme" ]]; then
+    mkdir -p "${theme_link%/*}"
+    ln -sfn "$PWD/fdwm-theme" "$theme_link"
+    echo "Linked $theme_link to $PWD/fdwm-theme"
+fi
 
 echo "==> Setting up ~/.bashrc"
 install_dotfile .bashrc
@@ -141,21 +155,25 @@ fi
 
 echo "==> Installing the GRUB theme"
 if [[ -f /etc/default/grub ]] && command -v grub2-mkconfig >/dev/null; then
-    theme=/boot/grub2/themes/catppuccin-mocha-grub
+    theme=/boot/grub2/themes/fdwm
     # grub2-mkconfig is slow, so it only runs at the end if this changes the
     # GRUB settings or theme, or grub.cfg is missing the theme or is older than
     # /etc/default/grub (an edit of yours it hasn't picked up yet).
     # (sudo sh -c: /boot/grub2 and grub.cfg are readable only by root)
     grub_state() {
         sudo sh -c 'cat /etc/default/grub; cd /boot/grub2/themes 2>/dev/null &&
-            find catppuccin-mocha-grub -type f -exec cksum {} + | sort; true'
+            find fdwm -type f -exec cksum {} + | sort; true'
     }
     grub_before=$(grub_state)
-    grub_stale=$(sudo sh -c 'grep -q catppuccin-mocha-grub/theme.txt /boot/grub2/grub.cfg 2>/dev/null &&
+    grub_stale=$(sudo sh -c 'grep -q themes/fdwm/theme.txt /boot/grub2/grub.cfg 2>/dev/null &&
         [ ! /etc/default/grub -nt /boot/grub2/grub.cfg ] || echo yes')
 
-    sudo mkdir -p "$theme"
-    sudo cp -r grub/catppuccin-mocha-grub/. "$theme"
+    # An exact copy of grub/theme, so a file the repo drops goes from /boot
+    # too. It is made beside the old one first, so a failed copy leaves that.
+    sudo rm -rf "$theme.new"
+    sudo cp -r grub/theme "$theme.new"
+    sudo rm -rf "$theme"
+    sudo mv "$theme.new" "$theme"
     [[ -e /etc/default/grub.fdwm.bak ]] || sudo cp /etc/default/grub /etc/default/grub.fdwm.bak
     # Rewrite the two settings only when they differ, so the file's timestamp
     # (checked above) only moves when something really changed.
@@ -182,11 +200,11 @@ if [[ -f /etc/default/grub ]] && command -v grub2-mkconfig >/dev/null; then
 
     # Catppuccin on the ttys from the moment the kernel starts, login prompt
     # included: the kernel's console palette, the same 16 colors .bashrc loads
-    # after login (0 = background #1e1e2e, 7 = text #cdd6f4). grubby adds them
-    # to every kernel entry and keeps them for future kernels.
-    vt_red='vt.default_red=30,203,166,249,137,243,148,205,88,203,166,249,137,243,148,166'
-    vt_grn='vt.default_grn=30,166,227,226,180,139,226,214,91,166,227,226,180,139,226,173'
-    vt_blu='vt.default_blu=46,247,161,175,250,168,213,244,112,247,161,175,250,168,213,200'
+    # after login (0 = the background, 7 = the text), from fdwm-theme as
+    # vt.default_red=..., _grn and _blu. grubby adds them to every kernel
+    # entry and keeps them for future kernels.
+    vt_args=$(./fdwm-theme kernel-args)
+    read -r vt_red vt_grn vt_blu <<<"$vt_args"
     # (grep reads everything rather than -q, which could SIGPIPE the pipeline
     # and make pipefail report a failure even when a kernel needs the colors)
     if sudo grubby --info=ALL | grep '^args=' | grep -vF "$vt_blu" >/dev/null; then
@@ -198,6 +216,14 @@ if [[ -f /etc/default/grub ]] && command -v grub2-mkconfig >/dev/null; then
         sudo grub2-mkconfig -o /boot/grub2/grub.cfg
     else
         echo "GRUB settings and theme unchanged; grub.cfg left as it is"
+    fi
+
+    # The theme's folder before it followed the palette, which grub.cfg no
+    # longer points to (it names $theme, or was just regenerated above).
+    old_theme=/boot/grub2/themes/catppuccin-mocha-grub
+    if sudo test -d "$old_theme"; then
+        sudo rm -rf "$old_theme"
+        echo "Removed the old theme folder $old_theme"
     fi
 else
     echo "GRUB 2 not found, skipped"

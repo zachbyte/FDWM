@@ -2,11 +2,12 @@
 static const char *user  = "nobody";
 static const char *group = "nobody";
 
-/* Catppuccin Mocha, matching dwm and st */
+/* Catppuccin, matching dwm and st */
+#include "../colors.h" /* COL_*: the palette's colors, written by fdwm-theme */
 static const char *colorname[NUMCOLS] = {
-	[INIT] =   "#1e1e2e",   /* after initialization: base, dwm's background */
-	[INPUT] =  "#45475a",   /* during input: surface1, a step lighter */
-	[FAILED] = "#f38ba8",   /* wrong password: red */
+	[INIT] =   COL_BASE,     /* after initialization: dwm's background */
+	[INPUT] =  COL_SURFACE1, /* during input: a step lighter */
+	[FAILED] = COL_RED,      /* wrong password */
 };
 
 /* treat a cleared input like a wrong password (color); off, so pressing

@@ -16,7 +16,12 @@ export GNOME_KEYRING_CONTROL
 # the status text in dwm's bar: volume, brightness, battery and the clock
 "$HOME/.local/bin/fdwm-bar" &
 
-xsetroot -solid "#1E1E2E"
+# the desktop behind the windows (and between them) in the palette's base;
+# fdwm-theme writes colors.sh from the palette file in the repo
+colors=${XDG_CONFIG_HOME:-$HOME/.config}/fdwm/colors.sh
+# shellcheck source=/dev/null
+[ -r "$colors" ] && . "$colors"
+[ -n "${fdwm_base:-}" ] && xsetroot -solid "$fdwm_base"
 
 # After 5 minutes without input, lock with slock and turn the screen off.
 # xss-lock runs slock when X's screensaver timer fires, and also locks

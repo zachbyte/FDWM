@@ -35,11 +35,30 @@ To see the line it would draw, without warning or suspending:
 fdwm-bar print
 ```
 
+## Colors
+
+Every color is written down once, in `palette`: Catppuccin's dark Mocha and light Latte flavors as `rrggbb`, one column each, and which of their colors the terminal uses for its 16 colors, text, background and cursor. `fdwm-theme generate`, which `install.sh` runs before building, writes the rest from it, in the flavor saved in `~/.config/fdwm/flavor` (Mocha until there is one):
+
+- `suckless/colors.h`, which the `config.h` of dwm, st, dmenu and slock include (`COL_BASE`, `COL_LAVENDER` and so on)
+- `grub/theme/theme.txt`, the GRUB theme's colors, from `grub/theme.txt.in`, and `grub/theme/select_c.png`, the bar behind the selected boot entry (one pixel, which GRUB stretches)
+- `~/.config/fdwm/colors.sh`, which `.bashrc` (the prompt and the ttys) and `.xinitrc` (the desktop behind the windows) read
+
+`fdwm-theme kernel-args` prints the kernel options that color the ttys from boot. The generated files say so at the top, and git ignores the ones in the repo. To change a color, edit `palette` and run `./install.sh`.
+
+To switch between the dark and the light flavor:
+
+```shell
+fdwm-theme latte
+fdwm-theme mocha
+```
+
+`fdwm-theme` (which `install.sh` links into `~/.local/bin`) saves the flavor and runs `install.sh`, which regenerates the colors and rebuilds dwm, st, dmenu, slock, the GRUB theme and the ttys' boot colors, so it asks for your password. Then it repaints the desktop, recolors every open st window and restarts dwm, keeping your windows where they are. dmenu and slock show the new flavor the next time they open, Neovim when it next starts, and the ttys and GRUB from the next boot. `install.sh` and `update.sh` keep the saved flavor, and `fdwm-theme` alone says which one is in use.
+
 ## Tests
 
 Every push runs CI on a Fedora 44 container (`.github/workflows/ci.yml`), so a change is compiled and tested before it reaches your laptop. It installs `packages.txt`, builds dwm, st, dmenu and slock with every warning an error, runs ShellCheck on every script, runs the tests in `tests/`, and loads the Neovim config headless with every plugin.
 
-The tests run `install.sh`, `update.sh`, the GRUB step and the dotfiles against stubbed commands and throwaway directories, so they never touch your system. Run them yourself with:
+The tests run `install.sh`, `update.sh`, the GRUB step and the dotfiles against stubbed commands and throwaway directories, so they never touch your system. `tests/test_palette_refactor.sh` shows that moving the colors into `palette` changed none of them, and `tests/test_hardcoded_colors.sh` fails if any other file spells out a color (as hex, decimal or a terminal escape). Run them yourself with:
 
 ```shell
 tests/run.sh
@@ -82,9 +101,10 @@ rm JetBrainsMono.tar.xz
 
 ### 4. Build and install
 
-Each tool is built as you and only installed as root (slock's install makes it setuid root, which it needs to check your password).
+Each tool is built as you and only installed as root (slock's install makes it setuid root, which it needs to check your password). `fdwm-theme generate` first writes the colors from `palette` (see "Colors" above): the tools' `colors.h`, the GRUB theme and `~/.config/fdwm/colors.sh`.
 
 ```shell
+./fdwm-theme generate
 for tool in dwm st dmenu slock; do
     make -C suckless/$tool clean all
     sudo make -C suckless/$tool install
@@ -133,7 +153,7 @@ cp dotfiles/.bashrc.d/claude.sh ~/.bashrc.d/
 
 ### 6. Neovim and GRUB theme
 
-The config needs Neovim 0.12 or newer (Fedora 44 or newer) and installs its plugins, parsers and language servers the first time it starts.
+The config needs Neovim 0.12 or newer (Fedora 44 or newer) and installs its plugins, parsers and language servers the first time it starts. Its colors are Catppuccin in the flavor `fdwm-theme` last switched to.
 
 ```shell
 mkdir -p ~/.config
@@ -143,19 +163,20 @@ cp -r dotfiles/.config/nvim ~/.config/
 The GRUB theme needs graphical output, and Fedora hides the menu when only one OS is installed. The rest removes the rescue entry and gives each kernel a short title such as `Fedora 6.16.7`, including future kernel updates.
 
 ```shell
-sudo cp -r grub/catppuccin-mocha-grub /boot/grub2/themes/
+sudo rm -rf /boot/grub2/themes/fdwm
+sudo cp -r grub/theme /boot/grub2/themes/fdwm
 sudo sed -i '/^GRUB_THEME=/d; /^GRUB_TERMINAL_OUTPUT=/d' /etc/default/grub
-printf 'GRUB_TERMINAL_OUTPUT="gfxterm"\nGRUB_THEME="/boot/grub2/themes/catppuccin-mocha-grub/theme.txt"\n' | sudo tee -a /etc/default/grub
+printf 'GRUB_TERMINAL_OUTPUT="gfxterm"\nGRUB_THEME="/boot/grub2/themes/fdwm/theme.txt"\n' | sudo tee -a /etc/default/grub
 sudo grub2-editenv - unset menu_auto_hide
 sudo dnf remove dracut-config-rescue
 sudo sh -c 'rm -f /boot/loader/entries/*-0-rescue.conf /boot/vmlinuz-0-rescue-* /boot/initramfs-0-rescue-*.img'
 sudo install -m 755 grub/60-fdwm-title.install /etc/kernel/install.d/
 sudo sh -c 'for e in /boot/loader/entries/*.conf; do /etc/kernel/install.d/60-fdwm-title.install add "$(sed -n "s/^version[[:space:]]*//p" "$e")"; done'
-sudo grubby --update-kernel=ALL --args="vt.default_red=30,203,166,249,137,243,148,205,88,203,166,249,137,243,148,166 vt.default_grn=30,166,227,226,180,139,226,214,91,166,227,226,180,139,226,173 vt.default_blu=46,247,161,175,250,168,213,244,112,247,161,175,250,168,213,200"
+sudo grubby --update-kernel=ALL --args="$(./fdwm-theme kernel-args)"
 sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 ```
 
-The `grubby` line gives the ttys the Catppuccin palette from boot, login prompt included (the `vt.default_*` numbers are the red, green and blue of the same 16 colors `.bashrc` uses).
+The `grubby` line gives the ttys the Catppuccin palette from boot, login prompt included (`fdwm-theme kernel-args` prints the red, green and blue of the same 16 colors `.bashrc` uses, as `vt.default_*` options).
 
 ### 7. File manager
 
@@ -167,7 +188,7 @@ The source already includes these, so there is nothing to apply.
 
 - dwm: activetagindicatorbar, actualfullscreen, alwayscenter, attachbottom, centretitle, colorbar, dragmfact, noborderflicker, preserveonrestart, resizehere, restartsig, tiledmove, togglefloatingcenter, uselessgap
 - st: anysize, scrollback, scrollback-mouse, scrollback-mouse-altscreen
-- slock: no patches; `config.h` sets Catppuccin colors (base #1e1e2e while locked, surface1 #45475a while you type, red #f38ba8 only after a wrong password) and drops privileges to Fedora's `nobody` group
+- slock: no patches; `config.h` sets Catppuccin colors (base while locked, surface1 while you type, red only after a wrong password) and drops privileges to Fedora's `nobody` group
 
 How dwm behaves with these:
 

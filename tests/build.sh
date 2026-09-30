@@ -6,6 +6,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+./fdwm-theme generate  # colors.h, as install.sh does first
+
 export WERROR_CC=${CC:-cc}
 for tool in dwm st dmenu slock; do
     echo "== $tool"

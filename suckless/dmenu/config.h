@@ -7,11 +7,12 @@ static const char *fonts[] = {
 	"JetBrainsMono Nerd Font:size=10"
 };
 static const char *prompt      = NULL;      /* -p  option; prompt to the left of input field */
+#include "../colors.h" /* COL_*: the palette's colors, written by fdwm-theme */
 static const char *colors[SchemeLast][2] = {
 	/*     fg         bg       */
-	[SchemeNorm] = { "#b4befe", "#1e1e2e" },
-	[SchemeSel] = { "#1e1e2e", "#b4befe" },
-	[SchemeOut] = { "#000000", "#b4befe" },
+	[SchemeNorm] = { COL_LAVENDER, COL_BASE },
+	[SchemeSel] = { COL_BASE, COL_LAVENDER },
+	[SchemeOut] = { COL_CRUST, COL_LAVENDER },
 };
 /* -l option; if nonzero, dmenu uses vertical list with given number of lines */
 static unsigned int lines      = 0;
