@@ -117,6 +117,24 @@ if [[ -e $autologin ]]; then
     echo "tty1 asks for your password again from the next boot"
 fi
 
+# Suspend after 10 minutes without use, and when the lid closes. .xinitrc
+# locks the screen after 5 idle minutes, and xss-lock then marks the session
+# idle in logind; logind suspends once everything has been idle for
+# IdleActionSec more. Lid-close suspend is logind's default already; it is
+# spelled out so an edit elsewhere in logind's config can't turn it off.
+echo "==> Setting up suspend (10 minutes idle, lid closed)"
+idle_conf=/etc/systemd/logind.conf.d/fdwm-idle.conf
+idle_want=$'[Login]\nIdleAction=suspend\nIdleActionSec=5min\nHandleLidSwitch=suspend\nHandleLidSwitchExternalPower=suspend'
+if [[ $(cat "$idle_conf" 2>/dev/null || true) != "$idle_want" ]]; then
+    sudo mkdir -p "${idle_conf%/*}"
+    printf '%s\n' "$idle_want" | sudo tee "$idle_conf" >/dev/null
+    # SIGHUP makes logind reload its settings; a restart would end your session
+    sudo systemctl kill -s HUP systemd-logind
+    echo "Installed $idle_conf"
+else
+    echo "Already set up"
+fi
+
 echo "==> Installing the GRUB theme"
 if [[ -f /etc/default/grub ]] && command -v grub2-mkconfig >/dev/null; then
     theme=/boot/grub2/themes/catppuccin-mocha-grub

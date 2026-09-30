@@ -69,7 +69,7 @@ done
 
 ### 5. Set up the session
 
-`dotfiles/.xinitrc` starts the keyring, the polkit agent, and the battery charge and clock in the bar before dwm, and locks the screen with slock and turns it off after 5 minutes idle (or before the laptop suspends); PipeWire gives you sound and the media keys.
+`dotfiles/.xinitrc` starts the keyring, the polkit agent, and the battery charge and clock in the bar before dwm, and locks the screen with slock and turns it off after 5 minutes idle (or before the laptop suspends); after 10 minutes idle the laptop suspends (see the logind step below); PipeWire gives you sound and the media keys.
 
 ```shell
 cp dotfiles/.xinitrc ~/.xinitrc
@@ -79,6 +79,14 @@ Add the autostart from `dotfiles/.bash_profile` to your own `~/.bash_profile`, s
 
 ```shell
 sed -n '/^# Start dwm/,$p' dotfiles/.bash_profile >> ~/.bash_profile
+```
+
+To suspend after 10 minutes without use, have logind act once the session has been idle (xss-lock marks it idle when the screen locks at 5 minutes) for 5 more minutes, and to suspend when the lid closes (logind's default, spelled out here):
+
+```shell
+sudo mkdir -p /etc/systemd/logind.conf.d
+printf '[Login]\nIdleAction=suspend\nIdleActionSec=5min\nHandleLidSwitch=suspend\nHandleLidSwitchExternalPower=suspend\n' | sudo tee /etc/systemd/logind.conf.d/fdwm-idle.conf
+sudo systemctl kill -s HUP systemd-logind
 ```
 
 `dotfiles/.bashrc` sets the prompt (git branch and directory), history, aliases and git shortcuts, gives the ttys the same Catppuccin colors as st and dwm once you log in, and loads every file in `~/.bashrc.d`. `dotfiles/.bashrc.d/claude.sh` adds `cl` for Claude Code.
