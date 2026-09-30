@@ -13,10 +13,10 @@ static const char *colors[][4] = {
     /*               fg         bg         border   */
     [SchemeNorm] = { col_fg, col_bg, col_fg },
     [SchemeSel]  = { col_fg, col_fg, col_fg },
-	[SchemeStatus]  = { col_fg, col_bg,  "#000000"  }, // Statusbar right {text,background,not used but cannot be empty}
-	[SchemeTagsNorm]  = { col_fg, col_bg,  "#000000"  }, // Tagbar left unselected {text,background,not used but cannot be empty}
-	[SchemeInfoSel]  = { col_fg, col_bg,  "#000000"  }, // infobar middle  selected {text,background,not used but cannot be empty}
-	[SchemeInfoNorm]  = { col_fg, col_bg,  "#000000"  }, // infobar middle  unselected {text,background,not used but cannot be empty}
+	[SchemeStatus]  = { col_fg, col_bg,  col_bg  }, // Statusbar right {text,background,not used but cannot be empty}
+	[SchemeTagsNorm]  = { col_fg, col_bg,  col_bg  }, // Tagbar left unselected {text,background,not used but cannot be empty}
+	[SchemeInfoSel]  = { col_fg, col_bg,  col_bg  }, // infobar middle  selected {text,background,not used but cannot be empty}
+	[SchemeInfoNorm]  = { col_fg, col_bg,  col_bg  }, // infobar middle  unselected {text,background,not used but cannot be empty}
 };
 
 /* tagging */
