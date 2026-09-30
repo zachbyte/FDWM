@@ -1479,8 +1479,9 @@ scratchgeom(Client *c)
 {
 	c->w = c->mon->ww * spfact;
 	c->h = c->mon->wh * spfact;
-	c->x = c->mon->wx + (c->mon->ww - WIDTH(c)) / 2;
-	c->y = c->mon->wy + (c->mon->wh - HEIGHT(c)) / 2;
+	/* (not WIDTH() and HEIGHT(), which uselessgap widens by gappx) */
+	c->x = c->mon->wx + (c->mon->ww - c->w - 2 * c->bw) / 2;
+	c->y = c->mon->wy + (c->mon->wh - c->h - 2 * c->bw) / 2;
 }
 
 void
@@ -1731,8 +1732,9 @@ showhide(Client *c)
 	if (!c)
 		return;
 	if (ISVISIBLE(c)) {
-		/* a floating scratchpad at its size, centered, whatever size it was
-		 * left at or asked for while hidden */
+		/* a floating scratchpad back at its size, centered, even if it was
+		 * resized; resizeclient() because scratchgeom() has already set
+		 * the size resize() would compare with */
 		if ((c->tags & SPTAGMASK) && c->isfloating) {
 			scratchgeom(c);
 			resizeclient(c, c->x, c->y, c->w, c->h);

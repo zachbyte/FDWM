@@ -1,9 +1,9 @@
 FDWM's own, after the scratchpads patch: scratchgeom() gives a floating
 scratchpad spfact (0.6) of its monitor, across and down, centered under the
-bar, when it is first managed and every time it shows, resizing it even if
-dwm thinks it already has that size (a hidden window's size requests are
-recorded but not applied). It replaces st -g in characters, which depends on
-the font and could come out bigger than the screen.
+bar on its real size (the patch centered with WIDTH() and HEIGHT(), which
+uselessgap widens by gappx, so 5 px up and left), when it is first managed
+and every time it shows, even after being resized. It replaces st -g in
+characters, which depends on the font and could be bigger than the screen.
 
 diff --git a/config.h b/config.h
 index 4ad13c8..dce6473 100644
@@ -23,7 +23,7 @@ index 4ad13c8..dce6473 100644
  	/* name          cmd  */
  	{ "spterm",      sptermcmd },   /* Alt+`: a terminal */
 diff --git a/dwm.c b/dwm.c
-index acc6ffd..c55edf9 100644
+index acc6ffd..9984468 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -197,6 +197,7 @@ static void resizeclient(Client *c, int x, int y, int w, int h);
@@ -56,7 +56,7 @@ index acc6ffd..c55edf9 100644
  		c->x = MAX(c->mon->wx, c->mon->mx + (c->mon->mw - c->w - 2 * c->bw) / 2);
  		c->y = MAX(c->mon->wy, c->mon->my + (c->mon->mh - c->h - 2 * c->bw) / 2);
  	}
-@@ -1474,6 +1473,16 @@ run(void)
+@@ -1474,6 +1473,17 @@ run(void)
  			handler[ev.type](&ev); /* call handler */
  }
  
@@ -66,19 +66,21 @@ index acc6ffd..c55edf9 100644
 +{
 +	c->w = c->mon->ww * spfact;
 +	c->h = c->mon->wh * spfact;
-+	c->x = c->mon->wx + (c->mon->ww - WIDTH(c)) / 2;
-+	c->y = c->mon->wy + (c->mon->wh - HEIGHT(c)) / 2;
++	/* (not WIDTH() and HEIGHT(), which uselessgap widens by gappx) */
++	c->x = c->mon->wx + (c->mon->ww - c->w - 2 * c->bw) / 2;
++	c->y = c->mon->wy + (c->mon->wh - c->h - 2 * c->bw) / 2;
 +}
 +
  void
  scan(void)
  {
-@@ -1722,9 +1731,11 @@ showhide(Client *c)
+@@ -1722,9 +1732,12 @@ showhide(Client *c)
  	if (!c)
  		return;
  	if (ISVISIBLE(c)) {
-+		/* a floating scratchpad at its size, centered, whatever size it was
-+		 * left at or asked for while hidden */
++		/* a floating scratchpad back at its size, centered, even if it was
++		 * resized; resizeclient() because scratchgeom() has already set
++		 * the size resize() would compare with */
  		if ((c->tags & SPTAGMASK) && c->isfloating) {
 -			c->x = c->mon->wx + (c->mon->ww / 2 - WIDTH(c) / 2);
 -			c->y = c->mon->wy + (c->mon->wh / 2 - HEIGHT(c) / 2);
