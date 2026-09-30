@@ -142,7 +142,7 @@ sudo dnf install nnn
 The source already includes these, so there is nothing to apply.
 
 - dwm: activetagindicatorbar, actualfullscreen, alwayscenter, attachbottom, centretitle, colorbar, dragmfact, noborderflicker, preserveonrestart, resizehere, restartsig, tiledmove, togglefloatingcenter, uselessgap
-- st: anysize, scrollback, scrollback-mouse
+- st: anysize, scrollback, scrollback-mouse, scrollback-mouse-altscreen
 
 How dwm behaves with these:
 
