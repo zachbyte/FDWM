@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016  # stub bodies and sed scripts expand later, not here
 # The tty palette: .bashrc loads it on a Linux console only, install.sh and
 # the README give the kernel the same 16 colors, and install.sh adds them to
 # each kernel entry once.

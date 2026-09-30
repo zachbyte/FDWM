@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016  # stub bodies and sed scripts expand later, not here
 # install.sh in a sandbox: sudo, rpm, make, fc-list and nvim are stubs that
 # only log their arguments, so nothing here can touch the real system.
 # shellcheck source=tests/lib.sh
@@ -33,7 +34,7 @@ npackages=$(sed 's/#.*//' "$ROOT/packages.txt" | wc -w | tr -d ' ')
 
 # run: a fresh home and log, then install.sh; sets $out and $rc
 run() {
-    rm -rf "$T/home" && mkdir -p "$T/home" && : >"$LOG"
+    rm -rf "${T:?}/home" && mkdir -p "$T/home" && : >"$LOG"
     out=$(cd "$T/repo" && HOME="$T/home" MISSING=${MISSING:-} bash ./install.sh 2>&1)
     rc=$?
 }

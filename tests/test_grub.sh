@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016  # stub bodies and sed scripts expand later, not here
 # install.sh's GRUB step with /etc and /boot moved into a sandbox: when it
 # regenerates grub.cfg, and that it leaves /etc/default/grub tidy.
 # shellcheck source=tests/lib.sh

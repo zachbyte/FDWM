@@ -2,6 +2,7 @@
 # Helpers shared by the tests in this directory; every test sources this.
 # A test prints one line per check and exits non-zero if any check failed.
 
+# shellcheck disable=SC2034  # ROOT is for the tests that source this file
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 fails=0
 

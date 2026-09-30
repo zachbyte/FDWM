@@ -14,6 +14,8 @@ check dotfiles/.xinitrc grub/60-fdwm-title.install
 # sourced by bash, no shebang
 check -s bash dotfiles/.bashrc dotfiles/.bash_profile dotfiles/.bashrc.d/claude.sh
 check tests/*.sh tests/werror-cc
-check suckless/dmenu/dmenu_run suckless/dmenu/dmenu_path
+# upstream dmenu, unchanged: dmenu_path splits $PATH on purpose (IFS=:)
+check suckless/dmenu/dmenu_run
+check -e SC2086 suckless/dmenu/dmenu_path
 
 exit $status

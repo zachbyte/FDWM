@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016  # stub bodies and sed scripts expand later, not here
 # The .bashrc prompt: what it shows, how many git calls it makes, and that
 # ~/.local/bin lands on PATH only once however deep shells are nested.
 # shellcheck source=tests/lib.sh
@@ -38,6 +39,6 @@ expect "outside a repo: just the directory" "$T/plain \$ " "$(prompt "$T/plain")
 
 block=$(sed -n '/^case ":\$PATH:" in/,/^esac/p' "$ROOT/dotfiles/.bashrc")
 path=$(PATH=/usr/bin HOME=$T; for _ in 1 2 3; do eval "$block"; done; echo "$PATH")
-expect "~/.local/bin on PATH once after three nested shells" 1 "$(tr ':' '\n' <<<"$path" | grep -c '/\.local/bin$')"
+expect ".local/bin on PATH once after three nested shells" 1 "$(tr ':' '\n' <<<"$path" | grep -c '/\.local/bin$')"
 
 finish
