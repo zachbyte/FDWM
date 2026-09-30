@@ -5,3 +5,7 @@ suckless/st/st
 suckless/dmenu/dmenu
 suckless/dmenu/stest
 suckless/slock/slock
+
+# generated from the palette file by fdwm-theme
+suckless/colors.h
+grub/catppuccin-mocha-grub/theme.txt

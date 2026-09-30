@@ -1,15 +1,27 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2016  # stub bodies and sed scripts expand later, not here
-# The .bashrc prompt: what it shows, how many git calls it makes, and that
-# ~/.local/bin lands on PATH only once however deep shells are nested.
+# The .bashrc prompt: what it shows, its colors, how many git calls it
+# makes, and that ~/.local/bin lands on PATH only once however deep shells
+# are nested.
 # shellcheck source=tests/lib.sh
 source "$(dirname "$0")/lib.sh"
 sandbox
 git_sandboxed
+theme_repo "$T/theme"
+HOME=$T/home bash "$T/theme/fdwm-theme" generate >/dev/null
 export HOME=/nonexistent  # so \w shows full paths, never ~
 
+prompt_block=$(sed -n '/^# prompt:/,/^unset -f fdwm_fg$/p' "$ROOT/dotfiles/.bashrc")
 eval "$(sed -n '/^parse_git_branch() {/,/^}/p' "$ROOT/dotfiles/.bashrc")"
-eval "$(grep '^PS1=' "$ROOT/dotfiles/.bashrc")"
+# without FDWM's colors: no color for the directory, and no error
+expect "no colors.sh: no 24-bit color, nothing on stderr" "" \
+    "$(unset fdwm_blue; eval "$prompt_block" 2>&1; grep -o '38;2;' <<<"$PS1")"
+# with them: the directory in the palette's blue
+# shellcheck source=/dev/null
+. "$T/home/.config/fdwm/colors.sh"
+eval "$prompt_block"
+expect_match "the directory is in the palette's blue" \
+    "$(printf '38;2;%d;%d;%dm' "0x${fdwm_blue:1:2}" "0x${fdwm_blue:3:2}" "0x${fdwm_blue:5:2}")"'\\\]\\w' "$PS1"
 
 git init -q -b main "$T/repo"
 (cd "$T/repo" && echo a >a && git add a && git commit -qm c1 && echo b >a && git commit -qam c2)

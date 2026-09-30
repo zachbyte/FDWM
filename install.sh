@@ -52,6 +52,12 @@ else
     trap - EXIT
 fi
 
+# The colors of everything below, from the palette file: dwm, st, dmenu and
+# slock's colors.h, the GRUB theme and ~/.config/fdwm/colors.sh (for .bashrc
+# and .xinitrc).
+echo "==> Generating the colors"
+./fdwm-theme generate
+
 # Build as you and only install as root, so the compiler never runs as root
 # and no root-owned build files are left in the checkout.
 for tool in dwm st dmenu slock; do
@@ -182,11 +188,11 @@ if [[ -f /etc/default/grub ]] && command -v grub2-mkconfig >/dev/null; then
 
     # Catppuccin on the ttys from the moment the kernel starts, login prompt
     # included: the kernel's console palette, the same 16 colors .bashrc loads
-    # after login (0 = background #1e1e2e, 7 = text #cdd6f4). grubby adds them
-    # to every kernel entry and keeps them for future kernels.
-    vt_red='vt.default_red=30,203,166,249,137,243,148,205,88,203,166,249,137,243,148,166'
-    vt_grn='vt.default_grn=30,166,227,226,180,139,226,214,91,166,227,226,180,139,226,173'
-    vt_blu='vt.default_blu=46,247,161,175,250,168,213,244,112,247,161,175,250,168,213,200'
+    # after login (0 = the background, 7 = the text), from fdwm-theme as
+    # vt.default_red=..., _grn and _blu. grubby adds them to every kernel
+    # entry and keeps them for future kernels.
+    vt_args=$(./fdwm-theme kernel-args)
+    read -r vt_red vt_grn vt_blu <<<"$vt_args"
     # (grep reads everything rather than -q, which could SIGPIPE the pipeline
     # and make pipefail report a failure even when a kernel needs the colors)
     if sudo grubby --info=ALL | grep '^args=' | grep -vF "$vt_blu" >/dev/null; then

@@ -15,7 +15,11 @@ jobs:
       - name: Install git
         run: dnf -y install git-core
 
+      # all of the history: tests/test_palette_refactor.sh compares the
+      # commit that added the palette with its parent
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Install packages.txt, ShellCheck and runuser
         run: dnf -y install $(sed 's/#.*//' packages.txt) ShellCheck util-linux

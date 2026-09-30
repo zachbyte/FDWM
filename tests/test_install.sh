@@ -27,7 +27,7 @@ done
 exit $n'
 PATH="$T/bin:$PATH"
 
-mkdir -p "$T/repo"
+theme_repo "$T/repo"
 cp "$ROOT/install.sh" "$ROOT/packages.txt" "$T/repo/"
 cp -r "$ROOT/dotfiles" "$T/repo/"
 npackages=$(sed 's/#.*//' "$ROOT/packages.txt" | wc -w | tr -d ' ')
@@ -46,6 +46,8 @@ expect_match "normal run: finishes" "==> Done" "$out"
 expect "builds each tool as you, then installs it with sudo" \
     "$(for t in dwm st dmenu slock; do printf 'MAKE -C suckless/%s clean all\nSUDO make -C suckless/%s install\n' "$t" "$t"; done)" \
     "$(grep -E '^(MAKE|SUDO make)' "$LOG")"
+expect "generates colors.h before building" yes "$([[ -s $T/repo/suckless/colors.h ]] && echo yes)"
+expect "generates ~/.config/fdwm/colors.sh" yes "$([[ -s $T/home/.config/fdwm/colors.sh ]] && echo yes)"
 expect "every package installed: one rpm call" 1 "$(grep -c '^RPM' "$LOG")"
 expect_match "every package installed: says so" "All installed" "$out"
 for f in .xinitrc .bashrc .bashrc.d/claude.sh .config/nvim/init.lua; do

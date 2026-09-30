@@ -7,9 +7,12 @@ source "$(dirname "$0")/lib.sh"
 sandbox
 SB=$T/sb
 export LOG="$T/log" ARGS="$T/kernel-args"
-mkdir -p "$T/repo" "$SB/etc/default" "$SB/etc/kernel/install.d" \
+mkdir -p "$SB/etc/default" "$SB/etc/kernel/install.d" \
     "$SB/boot/grub2/themes" "$SB/boot/loader/entries"
-cp -r "$ROOT/grub" "$T/repo/"
+# the repo's grub/ and fdwm-theme, with the theme's colors generated as
+# install.sh does before this step
+theme_repo "$T/repo"
+HOME=$T/home bash "$T/repo/fdwm-theme" generate >/dev/null
 printf 'GRUB_TIMEOUT=5\nGRUB_ENABLE_BLSCFG=true\n' >"$SB/etc/default/grub"
 printf 'title Fedora Linux (6.16.7-200.fc44.x86_64)\nversion 6.16.7-200.fc44.x86_64\n' \
     >"$SB/boot/loader/entries/abc-6.16.7-200.fc44.x86_64.conf"
