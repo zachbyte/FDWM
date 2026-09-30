@@ -4,7 +4,7 @@
 # and reapplies the dotfiles, autologin and GRUB theme. It stops before touching
 # the repo if you have uncommitted changes or unpushed commits, and it never
 # touches your stashes or other branches.
-set -euo pipefail
+set -Eeuo pipefail  # -E: the ERR trap below also fires inside main()
 trap 'echo "update.sh: failed on line $LINENO: $BASH_COMMAND" >&2' ERR
 
 # Everything runs inside main() so bash has read the whole script before
