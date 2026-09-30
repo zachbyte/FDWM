@@ -69,7 +69,7 @@ done
 
 ### 5. Set up the session
 
-`dotfiles/.xinitrc` starts the keyring, the polkit agent, and the battery charge and clock in the bar before dwm; PipeWire gives you sound and the media keys.
+`dotfiles/.xinitrc` starts the keyring, the polkit agent, and the battery charge and clock in the bar before dwm, and locks the screen with slock and turns it off after 5 minutes idle (or before the laptop suspends); PipeWire gives you sound and the media keys.
 
 ```shell
 cp dotfiles/.xinitrc ~/.xinitrc

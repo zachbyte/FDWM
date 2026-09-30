@@ -36,5 +36,13 @@ while true; do
 done &
 
 xsetroot -solid "#1E1E2E"
+
+# After 5 minutes without input, lock with slock and turn the screen off.
+# xss-lock runs slock when X's screensaver timer fires, and also locks
+# before the laptop suspends (lid closed, suspend key).
+xset s 300 300
+xset dpms 300 300 300
+xss-lock -- slock &
+
 exec dwm
 
