@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installs FDWM on Fedora: packages, the Nerd Font, dwm/st/dmenu, dotfiles, autologin and
+# Installs FDWM on Fedora: packages, the Nerd Font, dwm/st/dmenu, dotfiles and
 # the GRUB theme. update.sh runs it after pulling, so it must stay safe to run again:
 # existing dotfiles that differ are backed up first, never silently replaced.
 set -Eeuo pipefail  # -E: the ERR trap below also fires inside functions
@@ -106,17 +106,16 @@ else
     echo "Added the tty1 autostart to ~/.bash_profile"
 fi
 
-# Log in on tty1 without a password prompt; .bash_profile then runs startx.
-echo "==> Setting up autologin on tty1"
+# Earlier versions logged tty1 in without a password; remove that so tty1
+# asks for your password again (.bash_profile still starts dwm after login).
 autologin=/etc/systemd/system/getty@tty1.service.d/autologin.conf
-sudo mkdir -p "${autologin%/*}"
-sudo tee "$autologin" >/dev/null <<EOF
-[Service]
-ExecStart=
-ExecStart=-/sbin/agetty -o '-p -f -- \\\\u' --noreset --noclear --autologin $USER - \${TERM}
-EOF
-sudo systemctl daemon-reload
-echo "tty1 now logs in $USER automatically"
+if [[ -e $autologin ]]; then
+    echo "==> Removing autologin on tty1"
+    sudo rm -f "$autologin"
+    sudo rmdir --ignore-fail-on-non-empty "${autologin%/*}"
+    sudo systemctl daemon-reload
+    echo "tty1 asks for your password again from the next boot"
+fi
 
 echo "==> Installing the GRUB theme"
 if [[ -f /etc/default/grub ]] && command -v grub2-mkconfig >/dev/null; then

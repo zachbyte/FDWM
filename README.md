@@ -13,11 +13,11 @@ cd FDWM
 ./install.sh
 ```
 
-Then reboot: tty1 logs you in automatically and dwm starts.
+Then reboot and log in on tty1: dwm starts. (Earlier versions logged tty1 in automatically; `install.sh` now removes that.)
 
 ## Updating
 
-`update.sh` pulls the latest commits into your checkout and then runs `install.sh`, so one command installs any missing packages, rebuilds dwm, st and dmenu, and reapplies the dotfiles, autologin and GRUB theme; press `Alt + Shift + W` afterwards to restart dwm on the new build. It stops without changing anything if you have uncommitted changes or unpushed commits, or if your branch has no upstream; your stashes and other branches are never touched. A dotfile you edited in your home folder is moved to a `.bak.<time>` copy before the repo's version replaces it, so make lasting changes in `dotfiles/`.
+`update.sh` pulls the latest commits into your checkout and then runs `install.sh`, so one command installs any missing packages, rebuilds dwm, st and dmenu, and reapplies the dotfiles and GRUB theme; press `Alt + Shift + W` afterwards to restart dwm on the new build. It stops without changing anything if you have uncommitted changes or unpushed commits, or if your branch has no upstream; your stashes and other branches are never touched. A dotfile you edited in your home folder is moved to a `.bak.<time>` copy before the repo's version replaces it, so make lasting changes in `dotfiles/`.
 
 ```shell
 ./update.sh
@@ -79,14 +79,6 @@ Add the autostart from `dotfiles/.bash_profile` to your own `~/.bash_profile`, s
 
 ```shell
 sed -n '/^# Start dwm/,$p' dotfiles/.bash_profile >> ~/.bash_profile
-```
-
-To skip the login prompt too, have tty1 log you in automatically. Anyone at the machine then gets your session, and apps that use the keyring ask for your password the first time instead of it unlocking at login.
-
-```shell
-sudo mkdir -p /etc/systemd/system/getty@tty1.service.d
-printf '[Service]\nExecStart=\nExecStart=-/sbin/agetty -o %s --noreset --noclear --autologin %s - ${TERM}\n' "'-p -f -- \\\\u'" "$USER" | sudo tee /etc/systemd/system/getty@tty1.service.d/autologin.conf
-sudo systemctl daemon-reload
 ```
 
 `dotfiles/.bashrc` sets the prompt (git branch and directory), history, aliases and git shortcuts, and loads every file in `~/.bashrc.d`. `dotfiles/.bashrc.d/claude.sh` adds `cl` for Claude Code.

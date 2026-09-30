@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Updates FDWM: pulls the latest commits into this checkout, then runs the new
 # install.sh, which installs any missing packages, rebuilds dwm, st and dmenu,
-# and reapplies the dotfiles, autologin and GRUB theme. It stops before touching
+# and reapplies the dotfiles and GRUB theme. It stops before touching
 # the repo if you have uncommitted changes or unpushed commits, and it never
 # touches your stashes or other branches.
 set -Eeuo pipefail  # -E: the ERR trap below also fires inside main()
