@@ -1,0 +1,17 @@
+#!/bin/sh
+# The compiler tests/build.sh builds with: -Wall -Werror, except for the
+# warnings listed here, which come from upstream suckless code we haven't
+# changed. They are still printed, just not fatal.
+#
+#   st/x.c  unused-function: upstream st ships "[SelectionClear] = selclear_"
+#           commented out in its event handler table (uncomment it to drop
+#           the selection when another window takes it), so selclear_() is
+#           never used. st's own config.mk has no -Wall, so upstream never
+#           sees this.
+tool=${PWD##*/}
+for arg; do
+	case $tool/$arg in
+	st/x.c) set -- "$@" -Wno-error=unused-function ;;
+	esac
+done
+exec "${WERROR_CC:-cc}" -Wall -Werror "$@"
