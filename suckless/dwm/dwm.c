@@ -386,10 +386,6 @@ applysizehints(Client *c, int *x, int *y, int *w, int *h, int interact)
 		if (c->maxh)
 			*h = MIN(*h, c->maxh);
 	}
-	if (c->isfloating || !c->mon->lt[c->mon->sellt]->arrange) {
-		*w = MAX(*w, FLOAT_WIDTH);
-		*h = MAX(*h, FLOAT_HEIGHT);
-	}
 	return *x != c->x || *y != c->y || *w != c->w || *h != c->h;
 }
 
@@ -1354,13 +1350,8 @@ recttomon(int x, int y, int w, int h)
 void
 resize(Client *c, int x, int y, int w, int h, int interact)
 {
-    if (!c) return;
-    if (c->isfloating || !selmon->lt[selmon->sellt]->arrange) {
-        resizeclient(c, x, y, w, h);
-    } else {
-        if (applysizehints(c, &x, &y, &w, &h, interact))
-            resizeclient(c, x, y, w, h);
-    }
+	if (applysizehints(c, &x, &y, &w, &h, interact))
+		resizeclient(c, x, y, w, h);
 }
 
 void
