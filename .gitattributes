@@ -1,2 +1,5 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Text files are stored with LF and checked out with LF on every OS, including
+# Windows, so a script copied from any checkout still runs on Linux.
+* text=auto eol=lf
+*.png binary
+*.pf2 binary
