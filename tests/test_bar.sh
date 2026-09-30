@@ -22,7 +22,14 @@ echo "Volume: 0.45" >"$VOL"
 stub wpctl 'cat "$VOL"'
 stub xsetroot '[ "$1" = -name ] && printf "%s\n" "$2" >>"$DRAWN"'
 stub systemctl 'echo "systemctl $*" >>"$ACTIONS"'
-stub notify-send 'echo "notify-send $*" >>"$ACTIONS"'
+# notify-send: prints id 42 when asked (-p), or fails when $NO_DUNST is set,
+# as it does with no notification daemon running
+stub notify-send '
+[ -f "$NO_DUNST" ] && exit 1
+echo "notify-send $*" >>"$ACTIONS"
+[ "$1" = -p ] && echo 42
+exit 0'
+export NO_DUNST=$T/no-dunst
 PATH="$T/bin:$PATH"
 
 # print: the line itself
@@ -64,10 +71,11 @@ expect_match "the redraw shows the new volume" "^󰕾  90%    " "$(last)"
 set_battery 9 Discharging
 refresh_and_wait
 expect_match "10% or less: warns in the bar" "󰂃  9%  LOW BATTERY, PLUG IN" "$(last)"
-expect "10% or less: notify-send hook called" 1 "$(grep -c '^notify-send -u critical Battery at 9%' "$ACTIONS")"
+expect "10% or less: a critical notification through dunst" 1 \
+    "$(grep -c '^notify-send -p -a fdwm-bar -u critical Battery at 9%' "$ACTIONS")"
 set_battery 8 Discharging
 refresh_and_wait
-expect "still low: hook not called again" 1 "$(grep -c '^notify-send' "$ACTIONS")"
+expect "still low: not notified again" 1 "$(grep -c '^notify-send' "$ACTIONS")"
 
 set_battery 3 Discharging
 refresh_and_wait
@@ -77,10 +85,28 @@ expect "still at 3%: doesn't suspend again" 1 "$(grep -c '^systemctl suspend' "$
 set_battery 3 Charging
 refresh_and_wait
 expect_no_match "charging: warning gone" "LOW BATTERY" "$(last)"
+expect "charging: the warning notification replaced, for 3 s" \
+    "notify-send -r 42 -a fdwm-bar -t 3000 Battery at 3% Charging" "$(tail -1 "$ACTIONS")"
+refresh_and_wait
+expect "still charging: not replaced again" 1 "$(grep -c '^notify-send -r' "$ACTIONS")"
 set_battery 3 Discharging
 refresh_and_wait
-expect "unplugged again at 3%: warns again" 2 "$(grep -c '^notify-send' "$ACTIONS")"
+expect "unplugged again at 3%: warns again" 2 "$(grep -c '^notify-send .*-u critical' "$ACTIONS")"
 expect "unplugged again at 3%: suspends again" 2 "$(grep -c '^systemctl suspend' "$ACTIONS")"
+
+# with no notification daemon notify-send fails: the bar still warns, and
+# neither retries every minute nor replaces anything on plugging in
+set_battery 50 Charging
+refresh_and_wait
+: >"$ACTIONS" && touch "$NO_DUNST"
+set_battery 9 Discharging
+refresh_and_wait
+expect_match "no dunst: warns in the bar" "󰂃  9%  LOW BATTERY, PLUG IN" "$(last)"
+rm "$NO_DUNST"
+refresh_and_wait
+set_battery 20 Charging
+refresh_and_wait
+expect "no dunst: nothing retried or replaced" "" "$(cat "$ACTIONS")"
 
 kill "$barpid"
 wait "$barpid" 2>/dev/null

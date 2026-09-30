@@ -27,7 +27,7 @@ Then reboot and log in on tty1: dwm starts. (Earlier versions logged tty1 in aut
 
 `fdwm-bar` (in `dotfiles/.local/bin`, installed to `~/.local/bin`) writes dwm's status text: volume (a muted icon when muted), screen brightness, battery and the clock. It redraws every minute, and at once when you press the volume, mute or brightness keys, which run `fdwm-bar refresh`. Anything the machine doesn't have, like a battery or a backlight on a desktop, is left out.
 
-When the battery is discharging and reaches 10%, the bar shows `LOW BATTERY, PLUG IN`; at 3% the laptop suspends. Each happens once per discharge and re-arms when you plug in. `on_low_battery` at the top of the script is where a notification daemon hooks in: once `notify-send` is installed, the 10% warning also pops up.
+When the battery is discharging and reaches 10%, the bar shows `LOW BATTERY, PLUG IN` and dunst pops up a critical notification that stays until you click it; at 3% the laptop suspends. Each happens once per discharge and re-arms when you plug in, which also replaces the notification with a short `Charging` one. Both are hooks at the top of the script (`on_low_battery` and `on_battery_back`); without a notification daemon the bar still warns.
 
 To see the line it would draw, without warning or suspending:
 

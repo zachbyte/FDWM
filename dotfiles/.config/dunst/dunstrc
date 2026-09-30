@@ -31,6 +31,7 @@
 [urgency_normal]
     timeout = 8
 
-# stays until clicked
+# stays until clicked (fdwm-bar replaces its low-battery warning once you
+# plug in)
 [urgency_critical]
     timeout = 0
