@@ -61,10 +61,13 @@ cd FDWM
 
 ### 4. Build and install
 
+Each tool is built as you and only installed as root.
+
 ```shell
-cd suckless/dwm && sudo make clean install && cd ../..
-cd suckless/st && sudo make clean install && cd ../..
-cd suckless/dmenu && sudo make clean install && cd ../..
+for tool in dwm st dmenu; do
+    make -C suckless/$tool clean all
+    sudo make -C suckless/$tool install
+done
 ```
 
 ### 5. Set up the session

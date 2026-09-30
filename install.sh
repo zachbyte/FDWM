@@ -46,9 +46,12 @@ else
     rm -rf "$tmp"
 fi
 
+# Build as you and only install as root, so the compiler never runs as root
+# and no root-owned build files are left in the checkout.
 for tool in dwm st dmenu; do
     echo "==> Building and installing $tool"
-    sudo make -C "suckless/$tool" clean install
+    make -C "suckless/$tool" clean all
+    sudo make -C "suckless/$tool" install
 done
 
 # Copy dotfiles/<path> to ~/<path>. Anything different already there is moved to
