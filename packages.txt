@@ -8,6 +8,7 @@ fontconfig-devel freetype-devel
 # X and the session started by .xinitrc
 xorg-x11-server-Xorg xorg-x11-xinit xorg-x11-drv-libinput
 xsetroot gnome-keyring mate-polkit dejavu-sans-mono-fonts
+slock
 
 # sound, and the volume, brightness and media keys
 pipewire wireplumber pipewire-pulseaudio brightnessctl playerctl
