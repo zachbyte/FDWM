@@ -1,0 +1,20 @@
+# The frame says how urgent a notification is: lavender like dwm's borders,
+# red when critical.
+[global]
+    separator_color = frame
+    highlight = "@lavender@"
+
+[urgency_low]
+    background = "@base@"
+    foreground = "@subtext0@"
+    frame_color = "@surface2@"
+
+[urgency_normal]
+    background = "@base@"
+    foreground = "@text@"
+    frame_color = "@lavender@"
+
+[urgency_critical]
+    background = "@base@"
+    foreground = "@text@"
+    frame_color = "@red@"

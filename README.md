@@ -4,7 +4,7 @@ A minimal dwm, st, dmenu and slock setup for Fedora.
 
 ## Quick install
 
-The commands below clone the repo (step 1), then `install.sh` runs steps 2 to 7 for you (only installing packages that are missing); run it as your normal user. Any existing `~/.xinitrc`, `~/.local/bin/fdwm-bar`, `~/.bashrc`, `~/.bashrc.d/claude.sh` or `~/.config/nvim` that differs is moved to a `.bak.<time>` copy first.
+The commands below clone the repo (step 1), then `install.sh` runs steps 2 to 7 for you (only installing packages that are missing); run it as your normal user. Any existing `~/.xinitrc`, `~/.local/bin/fdwm-bar`, `~/.bashrc`, `~/.bashrc.d/claude.sh`, `~/.config/nvim` or `~/.config/dunst/dunstrc` that differs is moved to a `.bak.<time>` copy first.
 
 ```shell
 sudo dnf install -y git
@@ -27,12 +27,20 @@ Then reboot and log in on tty1: dwm starts. (Earlier versions logged tty1 in aut
 
 `fdwm-bar` (in `dotfiles/.local/bin`, installed to `~/.local/bin`) writes dwm's status text: volume (a muted icon when muted), screen brightness, battery and the clock. It redraws every minute, and at once when you press the volume, mute or brightness keys, which run `fdwm-bar refresh`. Anything the machine doesn't have, like a battery or a backlight on a desktop, is left out.
 
-When the battery is discharging and reaches 10%, the bar shows `LOW BATTERY, PLUG IN`; at 3% the laptop suspends. Each happens once per discharge and re-arms when you plug in. `on_low_battery` at the top of the script is where a notification daemon hooks in: once `notify-send` is installed, the 10% warning also pops up.
+When the battery is discharging and reaches 10%, the bar shows `LOW BATTERY, PLUG IN` and dunst pops up a critical notification that stays until you click it; at 3% the laptop suspends. Each happens once per discharge and re-arms when you plug in, which also replaces the notification with a short `Charging` one. Both are hooks at the top of the script (`on_low_battery` and `on_battery_back`); without a notification daemon the bar still warns.
 
 To see the line it would draw, without warning or suspending:
 
 ```shell
 fdwm-bar print
+```
+
+## Notifications
+
+dunst shows notifications (anything that runs `notify-send`) in the top right corner under the bar, in dwm's font. `dotfiles/.config/dunst/dunstrc` sets the layout and how long each kind stays: 5 seconds for low urgency, 8 for normal, and critical ones until you click them. Left click closes one, right click closes them all, and middle click runs its action. The colors come from the palette (see "Colors" below): the frame is lavender, or red when critical. To try it:
+
+```shell
+notify-send "Hello" "from dunst"
 ```
 
 ## Colors
@@ -42,6 +50,7 @@ Every color is written down once, in `palette`: Catppuccin's dark Mocha and ligh
 - `suckless/colors.h`, which the `config.h` of dwm, st, dmenu and slock include (`COL_BASE`, `COL_LAVENDER` and so on)
 - `grub/theme/theme.txt`, the GRUB theme's colors, from `grub/theme.txt.in`, and `grub/theme/select_c.png`, the bar behind the selected boot entry (one pixel, which GRUB stretches)
 - `~/.config/fdwm/colors.sh`, which `.bashrc` (the prompt and the ttys) and `.xinitrc` (the desktop behind the windows) read
+- `~/.config/dunst/dunstrc.d/50-fdwm-colors.conf`, dunst's colors, from `dunst/colors.conf.in`; dunst reads it after `~/.config/dunst/dunstrc`
 
 `fdwm-theme kernel-args` prints the kernel options that color the ttys from boot. The generated files say so at the top, and git ignores the ones in the repo. To change a color, edit `palette` and run `./install.sh`.
 
@@ -52,7 +61,7 @@ fdwm-theme latte
 fdwm-theme mocha
 ```
 
-`fdwm-theme` (which `install.sh` links into `~/.local/bin`) saves the flavor and runs `install.sh`, which regenerates the colors and rebuilds dwm, st, dmenu, slock, the GRUB theme and the ttys' boot colors, so it asks for your password. Then it repaints the desktop, recolors every open st window and restarts dwm, keeping your windows where they are. dmenu and slock show the new flavor the next time they open, Neovim when it next starts, and the ttys and GRUB from the next boot. `install.sh` and `update.sh` keep the saved flavor, and `fdwm-theme` alone says which one is in use.
+`fdwm-theme` (which `install.sh` links into `~/.local/bin`) saves the flavor and runs `install.sh`, which regenerates the colors and rebuilds dwm, st, dmenu, slock, the GRUB theme and the ttys' boot colors, so it asks for your password. Then it repaints the desktop, recolors every open st window, has dunst reload its colors and restarts dwm, keeping your windows where they are. dmenu and slock show the new flavor the next time they open, Neovim when it next starts, and the ttys and GRUB from the next boot. `install.sh` and `update.sh` keep the saved flavor, and `fdwm-theme` alone says which one is in use.
 
 ## Tests
 
@@ -101,7 +110,7 @@ rm JetBrainsMono.tar.xz
 
 ### 4. Build and install
 
-Each tool is built as you and only installed as root (slock's install makes it setuid root, which it needs to check your password). `fdwm-theme generate` first writes the colors from `palette` (see "Colors" above): the tools' `colors.h`, the GRUB theme and `~/.config/fdwm/colors.sh`.
+Each tool is built as you and only installed as root (slock's install makes it setuid root, which it needs to check your password). `fdwm-theme generate` first writes the colors from `palette` (see "Colors" above): the tools' `colors.h`, the GRUB theme, `~/.config/fdwm/colors.sh` and dunst's colors.
 
 ```shell
 ./fdwm-theme generate
@@ -113,11 +122,12 @@ done
 
 ### 5. Set up the session
 
-`dotfiles/.xinitrc` starts the keyring, the polkit agent and the bar script `fdwm-bar` (see "The bar" below) before dwm, and locks the screen with slock and turns it off after 5 minutes idle (or before the laptop suspends); after 10 minutes idle the laptop suspends (see the logind step below); PipeWire gives you sound and the media keys.
+`dotfiles/.xinitrc` starts the keyring, the polkit agent, dunst for notifications and the bar script `fdwm-bar` (see "The bar" and "Notifications" above) before dwm, and locks the screen with slock and turns it off after 5 minutes idle (or before the laptop suspends); after 10 minutes idle the laptop suspends (see the logind step below); PipeWire gives you sound and the media keys.
 
 ```shell
 cp dotfiles/.xinitrc ~/.xinitrc
 install -Dm755 dotfiles/.local/bin/fdwm-bar ~/.local/bin/fdwm-bar
+install -Dm644 dotfiles/.config/dunst/dunstrc ~/.config/dunst/dunstrc
 ```
 
 Add the autostart from `dotfiles/.bash_profile` to your own `~/.bash_profile`, so logging in on tty1 starts dwm.

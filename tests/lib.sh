@@ -39,12 +39,12 @@ stub() {
 }
 
 # theme_repo DIR: a copy of what fdwm-theme reads and writes in the repo
-# (the palette, grub/, suckless/ for colors.h), so a test can generate the
-# colors without touching the checkout
+# (the palette, grub/, dunst/, suckless/ for colors.h), so a test can
+# generate the colors without touching the checkout
 theme_repo() {
     mkdir -p "$1/suckless"
     cp "$ROOT/fdwm-theme" "$ROOT/palette" "$1/"
-    cp -r "$ROOT/grub" "$1/"
+    cp -r "$ROOT/grub" "$ROOT/dunst" "$1/"
 }
 
 # git with no user or system config, so a test sees the same git everywhere

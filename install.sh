@@ -90,6 +90,8 @@ echo "==> Setting up ~/.xinitrc"
 install_dotfile .xinitrc
 # the bar script .xinitrc starts (and dwm's volume and brightness keys poke)
 install_dotfile .local/bin/fdwm-bar
+# notifications: dunst's layout (fdwm-theme writes its colors)
+install_dotfile .config/dunst/dunstrc
 # fdwm-theme on your PATH, as a link to this checkout's: it switches flavors
 # by regenerating and rebuilding from here
 theme_link=$HOME/.local/bin/fdwm-theme

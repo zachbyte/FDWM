@@ -13,6 +13,9 @@ xset xss-lock
 # awk, which fdwm-bar and fdwm-theme use (not every Fedora install has it)
 gawk
 
+# notifications: dunst shows them, notify-send (libnotify) sends them
+dunst libnotify
+
 # sound, and the volume, brightness and media keys
 pipewire wireplumber pipewire-pulseaudio brightnessctl playerctl
 
