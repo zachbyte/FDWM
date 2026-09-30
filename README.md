@@ -4,7 +4,7 @@ A minimal dwm, st, dmenu and slock setup for Fedora.
 
 ## Quick install
 
-The commands below clone the repo (step 1), then `install.sh` runs steps 2 to 7 for you (only installing packages that are missing); run it as your normal user. Any existing `~/.xinitrc`, `~/.bashrc`, `~/.bashrc.d/claude.sh` or `~/.config/nvim` that differs is moved to a `.bak.<time>` copy first.
+The commands below clone the repo (step 1), then `install.sh` runs steps 2 to 7 for you (only installing packages that are missing); run it as your normal user. Any existing `~/.xinitrc`, `~/.local/bin/fdwm-bar`, `~/.bashrc`, `~/.bashrc.d/claude.sh` or `~/.config/nvim` that differs is moved to a `.bak.<time>` copy first.
 
 ```shell
 sudo dnf install -y git
@@ -21,6 +21,18 @@ Then reboot and log in on tty1: dwm starts. (Earlier versions logged tty1 in aut
 
 ```shell
 ./update.sh
+```
+
+## The bar
+
+`fdwm-bar` (in `dotfiles/.local/bin`, installed to `~/.local/bin`) writes dwm's status text: volume (a muted icon when muted), screen brightness, battery and the clock. It redraws every minute, and at once when you press the volume, mute or brightness keys, which run `fdwm-bar refresh`. Anything the machine doesn't have, like a battery or a backlight on a desktop, is left out.
+
+When the battery is discharging and reaches 10%, the bar shows `LOW BATTERY, PLUG IN`; at 3% the laptop suspends. Each happens once per discharge and re-arms when you plug in. `on_low_battery` at the top of the script is where a notification daemon hooks in: once `notify-send` is installed, the 10% warning also pops up.
+
+To see the line it would draw, without warning or suspending:
+
+```shell
+fdwm-bar print
 ```
 
 ## Tests
@@ -81,10 +93,11 @@ done
 
 ### 5. Set up the session
 
-`dotfiles/.xinitrc` starts the keyring, the polkit agent, and the battery charge and clock in the bar before dwm, and locks the screen with slock and turns it off after 5 minutes idle (or before the laptop suspends); after 10 minutes idle the laptop suspends (see the logind step below); PipeWire gives you sound and the media keys.
+`dotfiles/.xinitrc` starts the keyring, the polkit agent and the bar script `fdwm-bar` (see "The bar" below) before dwm, and locks the screen with slock and turns it off after 5 minutes idle (or before the laptop suspends); after 10 minutes idle the laptop suspends (see the logind step below); PipeWire gives you sound and the media keys.
 
 ```shell
 cp dotfiles/.xinitrc ~/.xinitrc
+install -Dm755 dotfiles/.local/bin/fdwm-bar ~/.local/bin/fdwm-bar
 ```
 
 Add the autostart from `dotfiles/.bash_profile` to your own `~/.bash_profile`, so logging in on tty1 starts dwm.
