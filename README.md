@@ -165,6 +165,7 @@ cp dotfiles/.bashrc.d/claude.sh ~/.bashrc.d/
 | `Alt + Return` | Move the focused window into the master area |
 | `Alt + Q` / `Alt + Shift + Q` | Close the window / quit dwm |
 | `Alt + Shift + L` | Lock the screen (slock; type your password and press Return) |
+| `Print` / `Shift + Print` | Screenshot of a region / the whole screen, saved and copied (see "Screenshots") |
 
 ### 6. Neovim and GRUB theme
 
