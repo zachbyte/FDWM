@@ -1,0 +1,38 @@
+name: CI
+
+# Every push, on every branch, so a pull request shows the result for its
+# latest commit.
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  fedora:
+    name: Fedora 44
+    runs-on: ubuntu-latest
+    container: fedora:44
+    steps:
+      - name: Install git
+        run: dnf -y install git-core
+
+      - uses: actions/checkout@v5
+
+      - name: Install packages.txt, ShellCheck and runuser
+        run: dnf -y install $(sed 's/#.*//' packages.txt) ShellCheck util-linux
+
+      - name: Build dwm, st, dmenu and slock with -Werror
+        run: tests/build.sh
+
+      - name: ShellCheck every script
+        run: tests/shellcheck.sh
+
+      # install.sh and update.sh refuse to run as root, so the tests run as a
+      # normal user, like on the laptop
+      - name: Create a normal user
+        run: useradd -m tester
+
+      - name: Sandbox tests
+        run: runuser -u tester -- env HOME=/home/tester tests/run.sh
+
+      - name: Load the Neovim config headless
+        run: runuser -u tester -- env HOME=/home/tester tests/nvim-load.sh
