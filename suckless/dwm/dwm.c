@@ -197,6 +197,7 @@ static void resizeclient(Client *c, int x, int y, int w, int h);
 static void resizemouse(const Arg *arg);
 static void restack(Monitor *m);
 static void run(void);
+static void scratchgeom(Client *c);
 static void scan(void);
 static int sendevent(Client *c, Atom proto);
 static void sendmon(Client *c, Monitor *m);
@@ -313,12 +314,6 @@ applyrules(Client *c)
 		{
 			c->isfloating = r->isfloating;
 			c->tags |= r->tags;
-			if ((r->tags & SPTAGMASK) && r->isfloating) {
-				c->w = c->mon->ww * spfact;
-				c->h = c->mon->wh * spfact;
-				c->x = c->mon->wx + (c->mon->ww / 2 - WIDTH(c) / 2);
-				c->y = c->mon->wy + (c->mon->wh / 2 - HEIGHT(c) / 2);
-			}
 			for (m = mons; m && m->num != r->monitor; m = m->next);
 			if (m)
 				c->mon = m;
@@ -1117,7 +1112,9 @@ manage(Window w, XWindowAttributes *wa)
 	c->mon->sel = c;
 	arrange(c->mon);
 
-	if (c->isfloating) { /* alwayscenter: keep the requested size */
+	if (c->isfloating && (c->tags & SPTAGMASK)) /* a scratchpad */
+		scratchgeom(c);
+	else if (c->isfloating) { /* alwayscenter: keep the requested size */
 		c->x = MAX(c->mon->wx, c->mon->mx + (c->mon->mw - c->w - 2 * c->bw) / 2);
 		c->y = MAX(c->mon->wy, c->mon->my + (c->mon->mh - c->h - 2 * c->bw) / 2);
 	}
@@ -1476,6 +1473,16 @@ run(void)
 			handler[ev.type](&ev); /* call handler */
 }
 
+/* a floating scratchpad's geometry: spfact of its monitor, centered */
+void
+scratchgeom(Client *c)
+{
+	c->w = c->mon->ww * spfact;
+	c->h = c->mon->wh * spfact;
+	c->x = c->mon->wx + (c->mon->ww - WIDTH(c)) / 2;
+	c->y = c->mon->wy + (c->mon->wh - HEIGHT(c)) / 2;
+}
+
 void
 scan(void)
 {
@@ -1724,9 +1731,11 @@ showhide(Client *c)
 	if (!c)
 		return;
 	if (ISVISIBLE(c)) {
+		/* a floating scratchpad at its size, centered, whatever size it was
+		 * left at or asked for while hidden */
 		if ((c->tags & SPTAGMASK) && c->isfloating) {
-			c->x = c->mon->wx + (c->mon->ww / 2 - WIDTH(c) / 2);
-			c->y = c->mon->wy + (c->mon->wh / 2 - HEIGHT(c) / 2);
+			scratchgeom(c);
+			resizeclient(c, c->x, c->y, c->w, c->h);
 		}
 		/* show clients top down */
 		XMoveWindow(dpy, c->win, c->x, c->y);

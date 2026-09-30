@@ -1,7 +1,9 @@
-FDWM's own, after the scratchpads patch: a floating scratchpad is sized to
-spfact (0.6) of the screen, across and down, rather than by st -g in
-characters, which depends on the font and could come out bigger than the
-screen (it did on CI's virtual one).
+FDWM's own, after the scratchpads patch: scratchgeom() gives a floating
+scratchpad spfact (0.6) of its monitor, across and down, centered under the
+bar, when it is first managed and every time it shows, resizing it even if
+dwm thinks it already has that size (a hidden window's size requests are
+recorded but not applied). It replaces st -g in characters, which depends on
+the font and could come out bigger than the screen.
 
 diff --git a/config.h b/config.h
 index 4ad13c8..dce6473 100644
@@ -21,15 +23,67 @@ index 4ad13c8..dce6473 100644
  	/* name          cmd  */
  	{ "spterm",      sptermcmd },   /* Alt+`: a terminal */
 diff --git a/dwm.c b/dwm.c
-index acc6ffd..489f1e2 100644
+index acc6ffd..c55edf9 100644
 --- a/dwm.c
 +++ b/dwm.c
-@@ -314,6 +314,8 @@ applyrules(Client *c)
+@@ -197,6 +197,7 @@ static void resizeclient(Client *c, int x, int y, int w, int h);
+ static void resizemouse(const Arg *arg);
+ static void restack(Monitor *m);
+ static void run(void);
++static void scratchgeom(Client *c);
+ static void scan(void);
+ static int sendevent(Client *c, Atom proto);
+ static void sendmon(Client *c, Monitor *m);
+@@ -313,10 +314,6 @@ applyrules(Client *c)
+ 		{
  			c->isfloating = r->isfloating;
  			c->tags |= r->tags;
- 			if ((r->tags & SPTAGMASK) && r->isfloating) {
-+				c->w = c->mon->ww * spfact;
-+				c->h = c->mon->wh * spfact;
- 				c->x = c->mon->wx + (c->mon->ww / 2 - WIDTH(c) / 2);
- 				c->y = c->mon->wy + (c->mon->wh / 2 - HEIGHT(c) / 2);
- 			}
+-			if ((r->tags & SPTAGMASK) && r->isfloating) {
+-				c->x = c->mon->wx + (c->mon->ww / 2 - WIDTH(c) / 2);
+-				c->y = c->mon->wy + (c->mon->wh / 2 - HEIGHT(c) / 2);
+-			}
+ 			for (m = mons; m && m->num != r->monitor; m = m->next);
+ 			if (m)
+ 				c->mon = m;
+@@ -1115,7 +1112,9 @@ manage(Window w, XWindowAttributes *wa)
+ 	c->mon->sel = c;
+ 	arrange(c->mon);
+ 
+-	if (c->isfloating) { /* alwayscenter: keep the requested size */
++	if (c->isfloating && (c->tags & SPTAGMASK)) /* a scratchpad */
++		scratchgeom(c);
++	else if (c->isfloating) { /* alwayscenter: keep the requested size */
+ 		c->x = MAX(c->mon->wx, c->mon->mx + (c->mon->mw - c->w - 2 * c->bw) / 2);
+ 		c->y = MAX(c->mon->wy, c->mon->my + (c->mon->mh - c->h - 2 * c->bw) / 2);
+ 	}
+@@ -1474,6 +1473,16 @@ run(void)
+ 			handler[ev.type](&ev); /* call handler */
+ }
+ 
++/* a floating scratchpad's geometry: spfact of its monitor, centered */
++void
++scratchgeom(Client *c)
++{
++	c->w = c->mon->ww * spfact;
++	c->h = c->mon->wh * spfact;
++	c->x = c->mon->wx + (c->mon->ww - WIDTH(c)) / 2;
++	c->y = c->mon->wy + (c->mon->wh - HEIGHT(c)) / 2;
++}
++
+ void
+ scan(void)
+ {
+@@ -1722,9 +1731,11 @@ showhide(Client *c)
+ 	if (!c)
+ 		return;
+ 	if (ISVISIBLE(c)) {
++		/* a floating scratchpad at its size, centered, whatever size it was
++		 * left at or asked for while hidden */
+ 		if ((c->tags & SPTAGMASK) && c->isfloating) {
+-			c->x = c->mon->wx + (c->mon->ww / 2 - WIDTH(c) / 2);
+-			c->y = c->mon->wy + (c->mon->wh / 2 - HEIGHT(c) / 2);
++			scratchgeom(c);
++			resizeclient(c, c->x, c->y, c->w, c->h);
+ 		}
+ 		/* show clients top down */
+ 		XMoveWindow(dpy, c->win, c->x, c->y);
