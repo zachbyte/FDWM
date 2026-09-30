@@ -169,6 +169,7 @@ cp dotfiles/.bashrc.d/claude.sh ~/.bashrc.d/
 | `Alt + Space` | Switch to the previous layout |
 | `Alt + Return` | Move the focused window into the master area |
 | `Alt + Q` / `Alt + Shift + Q` | Close the window / quit dwm |
+| `Alt + Shift + E` | Power menu: lock, suspend, restart dwm, log out, reboot or power off (see "The power menu") |
 | `Alt + Shift + L` | Lock the screen (slock; type your password and press Return) |
 | `Print` / `Shift + Print` | Screenshot of a region / the whole screen, saved and copied (see "Screenshots") |
 
