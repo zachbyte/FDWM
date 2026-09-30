@@ -1,0 +1,35 @@
+FDWM's own, after the scratchpads patch: a floating scratchpad is sized to
+spfact (0.6) of the screen, across and down, rather than by st -g in
+characters, which depends on the font and could come out bigger than the
+screen (it did on CI's virtual one).
+
+diff --git a/config.h b/config.h
+index 4ad13c8..dce6473 100644
+--- a/config.h
++++ b/config.h
+@@ -26,9 +26,10 @@ typedef struct {
+ 	const char *name;
+ 	const void *cmd;
+ } Sp;
+-static const char *sptermcmd[] = { "st", "-n", "spterm", "-g", "120x34", NULL };
++static const float spfact = 0.6; /* their size: this share of the screen, across and down */
++static const char *sptermcmd[] = { "st", "-n", "spterm", NULL };
+ static const char *spnotescmd[] = { "/bin/sh", "-c",
+-	"exec st -n spnotes -g 120x34 -e nvim \"$HOME/notes.md\"", NULL };
++	"exec st -n spnotes -e nvim \"$HOME/notes.md\"", NULL };
+ static Sp scratchpads[] = {
+ 	/* name          cmd  */
+ 	{ "spterm",      sptermcmd },   /* Alt+`: a terminal */
+diff --git a/dwm.c b/dwm.c
+index acc6ffd..489f1e2 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -314,6 +314,8 @@ applyrules(Client *c)
+ 			c->isfloating = r->isfloating;
+ 			c->tags |= r->tags;
+ 			if ((r->tags & SPTAGMASK) && r->isfloating) {
++				c->w = c->mon->ww * spfact;
++				c->h = c->mon->wh * spfact;
+ 				c->x = c->mon->wx + (c->mon->ww / 2 - WIDTH(c) / 2);
+ 				c->y = c->mon->wy + (c->mon->wh / 2 - HEIGHT(c) / 2);
+ 			}

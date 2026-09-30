@@ -26,6 +26,7 @@ expect_match "Alt+\` toggles the terminal" "XK_grave, +togglescratch, +\{\.ui = 
 expect_match "Alt+N toggles the notes" "MODKEY, +XK_n, +togglescratch, +\{\.ui = 1 \}" "$(cat "$config")"
 expect_match "the notes are Neovim on ~/notes.md" 'nvim \\"\$HOME/notes\.md\\"' "$(sed -n '/spnotescmd\[\] = /,/NULL };/p' "$config")"
 expect_match "Alt+0 views every tag but the scratchpads" "XK_0, +view, +\{\.ui = ~SPTAGMASK \}" "$(cat "$config")"
+expect_match "scratchpads take 0.6 of the screen" "^static const float spfact = 0\.6;" "$(cat "$config")"
 
 # the live part needs X tools, and dwm and st built (tests/build.sh)
 missing=
@@ -70,13 +71,14 @@ exists() { [[ -n $(win "$1") ]]; }
 geometry() { eval "$(xdotool getwindowgeometry --shell "$(win "$1")")"; }
 shown() { geometry "$1" && ((X >= 0)); }
 hidden() { geometry "$1" && ((X < 0)); }
-# centered NAME: in the middle of the screen, across and (the bar above
-# shifting it a little) down, at a sensible size
+# centered NAME: in the middle of the 1280x800 screen, across and (the bar
+# above shifting it a little) down, at spfact (0.6) of it: 768 across, and
+# about 470 of the height under the bar
 centered() {
     geometry "$1"
     local cx=$((X + WIDTH / 2)) cy=$((Y + HEIGHT / 2))
     ((cx >= 638 && cx <= 642 && cy >= 395 && cy <= 430 &&
-        WIDTH >= 500 && WIDTH <= 1280 && HEIGHT >= 300 && HEIGHT <= 800))
+        WIDTH >= 760 && WIDTH <= 776 && HEIGHT >= 440 && HEIGHT <= 490))
 }
 key() { xdotool key "$1"; }
 

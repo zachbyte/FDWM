@@ -26,9 +26,10 @@ typedef struct {
 	const char *name;
 	const void *cmd;
 } Sp;
-static const char *sptermcmd[] = { "st", "-n", "spterm", "-g", "120x34", NULL };
+static const float spfact = 0.6; /* their size: this share of the screen, across and down */
+static const char *sptermcmd[] = { "st", "-n", "spterm", NULL };
 static const char *spnotescmd[] = { "/bin/sh", "-c",
-	"exec st -n spnotes -g 120x34 -e nvim \"$HOME/notes.md\"", NULL };
+	"exec st -n spnotes -e nvim \"$HOME/notes.md\"", NULL };
 static Sp scratchpads[] = {
 	/* name          cmd  */
 	{ "spterm",      sptermcmd },   /* Alt+`: a terminal */
