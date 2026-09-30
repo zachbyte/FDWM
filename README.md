@@ -153,7 +153,7 @@ cp dotfiles/.bashrc.d/claude.sh ~/.bashrc.d/
 
 ### 6. Neovim and GRUB theme
 
-The config needs Neovim 0.12 or newer (Fedora 44 or newer) and installs its plugins, parsers and language servers the first time it starts.
+The config needs Neovim 0.12 or newer (Fedora 44 or newer) and installs its plugins, parsers and language servers the first time it starts. Its colors are Catppuccin in the flavor `fdwm-theme` last switched to.
 
 ```shell
 mkdir -p ~/.config

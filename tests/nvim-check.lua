@@ -33,6 +33,7 @@ vim.api.nvim_create_autocmd("VimEnter", {
 				io.stderr:write("ERROR: " .. e .. "\n")
 			end
 			io.stderr:write(("%d plugins loaded, %d error(s)\n"):format(#require("lazy").plugins(), #errors))
+			io.stderr:write(("colorscheme %s\n"):format(vim.g.colors_name))
 			vim.cmd(#errors > 0 and "cquit 1" or "qall!")
 		end)
 	end,
