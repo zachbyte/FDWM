@@ -15,7 +15,7 @@ jobs:
       - name: Install git
         run: dnf -y install git-core
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install packages.txt, ShellCheck and runuser
         run: dnf -y install $(sed 's/#.*//' packages.txt) ShellCheck util-linux
