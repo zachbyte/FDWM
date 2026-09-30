@@ -25,6 +25,8 @@ trap 'rm -rf "$T"' EXIT
 
 status=0
 fail() { echo "  FAIL  $*"; status=1; }
+# the checkout's own git (safe.directory: in CI it belongs to another user)
+repo() { git -c safe.directory="$root" -C "$root" "$@"; }
 
 while read -r tool version url sum; do
     echo "== $tool $version"
@@ -64,9 +66,12 @@ while read -r tool version url sum; do
     echo "  ok    $n patches apply"
 
     # the same files as the repo, with the same content and executable bits
-    want=$(git ls-files "suckless/$tool" | sed "s#^suckless/$tool/##" | sort)
+    want=$(repo ls-files "suckless/$tool" | sed "s#^suckless/$tool/##" | sort)
     got=$(cd "$tree" && find . -path ./.git -prune -o -type f -print | sed 's#^\./##' | sort)
-    if [[ $want != "$got" ]]; then
+    if [[ -z $want ]]; then
+        fail "git lists no files in suckless/$tool"
+        continue
+    elif [[ $want != "$got" ]]; then
         fail "$tool: not the same files as suckless/$tool:"
         diff <(echo "$want") <(echo "$got") | sed -n 's/^[<>]/        &/p'
         continue
@@ -75,7 +80,7 @@ while read -r tool version url sum; do
     while read -r mode f; do
         cmp -s "suckless/$tool/$f" "$tree/$f" || differ+=" $f"
         [[ $mode != 100755 || -x $tree/$f ]] || differ+=" $f(not executable)"
-    done < <(git ls-files -s "suckless/$tool" | awk '{ sub("suckless/'"$tool"'/", "", $4); print $1, $4 }')
+    done < <(repo ls-files -s "suckless/$tool" | awk '{ sub("suckless/'"$tool"'/", "", $4); print $1, $4 }')
     if [[ -n $differ ]]; then
         fail "$tool: differs from suckless/$tool:$differ"
     else
