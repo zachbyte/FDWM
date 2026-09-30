@@ -178,7 +178,7 @@ generate() {
 # shell runs in, which st reads like any output (OSC 4 sets color 0-15,
 # 10, 11 and 12 the text, background and cursor)
 recolor_st() {
-    local seq= i pid tty n=0
+    local seq='' i pid tty n=0
     for i in {0..15}; do seq+="\e]4;$i;#${color[term$i]}\a"; done
     seq+="\e]10;#${color[term_fg]}\a\e]11;#${color[term_bg]}\a\e]12;#${color[term_cursor]}\a"
     for pid in $(pgrep -u "$(id -u)" -x st || true); do
