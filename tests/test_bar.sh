@@ -47,6 +47,7 @@ draws() { wc -l <"$DRAWN" | tr -d ' '; }
 last() { tail -1 "$DRAWN"; }
 # until N_TRIES CONDITION...: retry the condition every 0.1 s
 until_() { local n=$1; shift; while ((n-- > 0)); do "$@" && return 0; sleep 0.1; done; return 1; }
+# shellcheck disable=SC2329  # called through until_
 drawn_more_than() { (($(draws) > $1)); }
 refresh_and_wait() { local n; n=$(draws); "$bar" refresh; until_ 30 drawn_more_than "$n"; }
 

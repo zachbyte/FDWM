@@ -99,7 +99,7 @@ print)
     ;;
 esac
 
-warned= suspended= again= sleeper=
+warned='' suspended='' again='' sleeper=''
 echo $$ >"$pidfile"
 trap 'rm -f "$pidfile"; [ "$sleeper" ] && kill "$sleeper" 2>/dev/null' EXIT
 trap 'exit 0' HUP INT TERM
