@@ -14,7 +14,10 @@ if ! nvim --clean --headless +'if !has("nvim-0.12") | cquit | endif' +qa; then
 fi
 
 T=$(mktemp -d)
-trap 'rm -rf "$T"' EXIT
+# (|| true: parser downloads nvim-treesitter started can outlive the quit
+# and still be writing into $T, so rm may not get all of it; that's no
+# failure of the config)
+trap 'rm -rf "$T" || true' EXIT
 export XDG_CONFIG_HOME=$T/config XDG_DATA_HOME=$T/data XDG_STATE_HOME=$T/state XDG_CACHE_HOME=$T/cache
 mkdir -p "$XDG_CONFIG_HOME"
 cp -r "$ROOT/dotfiles/.config/nvim" "$XDG_CONFIG_HOME/"
