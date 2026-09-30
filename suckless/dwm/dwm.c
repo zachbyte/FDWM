@@ -280,8 +280,9 @@ static Window root, wmcheckwin;
 /* compile-time check if all tags fit into an unsigned int bit array. */
 struct NumTags { char limitexceeded[LENGTH(tags) > 31 ? -1 : 1]; };
 
-#define MIN_WINDOW_WIDTH 800
-#define MIN_WINDOW_HEIGHT 500
+/* size of a window floated by togglefloating() */
+#define FLOAT_WIDTH  800
+#define FLOAT_HEIGHT 500
 
 /* function implementations */
 void
@@ -386,8 +387,8 @@ applysizehints(Client *c, int *x, int *y, int *w, int *h, int interact)
 			*h = MIN(*h, c->maxh);
 	}
 	if (c->isfloating || !c->mon->lt[c->mon->sellt]->arrange) {
-		*w = MAX(*w, MIN_WINDOW_WIDTH);
-		*h = MAX(*h, MIN_WINDOW_HEIGHT);
+		*w = MAX(*w, FLOAT_WIDTH);
+		*h = MAX(*h, FLOAT_HEIGHT);
 	}
 	return *x != c->x || *y != c->y || *w != c->w || *h != c->h;
 }
@@ -1108,18 +1109,10 @@ manage(Window w, XWindowAttributes *wa)
     c->mon->sel = c;
     arrange(c->mon);
 
-    if (c->isfloating) {
-        int newWidth = MIN_WINDOW_WIDTH;
-        int newHeight = MIN_WINDOW_HEIGHT;
-    
-        int newX = c->mon->mx + (c->mon->mw - newWidth) / 2;
-        int newY = c->mon->my + (c->mon->mh - newHeight) / 2;
-    
-        c->x = newX;
-        c->y = newY;
-        c->w = newWidth;
-        c->h = newHeight;
-    }
+	if (c->isfloating) { /* alwayscenter: keep the requested size */
+		c->x = MAX(c->mon->wx, c->mon->mx + (c->mon->mw - c->w - 2 * c->bw) / 2);
+		c->y = MAX(c->mon->wy, c->mon->my + (c->mon->mh - c->h - 2 * c->bw) / 2);
+	}
 
     XMoveResizeWindow(dpy, c->win, c->x, c->y, c->w, c->h);
     XMapWindow(dpy, c->win);
@@ -1870,23 +1863,16 @@ togglebar(const Arg *arg)
 void
 togglefloating(const Arg *arg)
 {
-    if (!selmon->sel)
-        return;
-    if (selmon->sel->isfullscreen) /* no support for fullscreen windows */
-        return;
-    
-    selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
-    
-    if (selmon->sel->isfloating) {
-        int newWidth = MIN_WINDOW_WIDTH;
-        int newHeight = MIN_WINDOW_HEIGHT;
-        
-        int newX = selmon->sel->mon->mx + (selmon->sel->mon->mw - newWidth) / 2;
-        int newY = selmon->sel->mon->my + (selmon->sel->mon->mh - newHeight) / 2;
-        
-        resize(selmon->sel, newX, newY, newWidth, newHeight, 1);
-    }
-    arrange(selmon);
+	Client *c = selmon->sel;
+
+	if (!c || c->isfullscreen) /* no support for fullscreen windows */
+		return;
+	c->isfloating = !c->isfloating || c->isfixed;
+	if (c->isfloating) /* togglefloatingcenter, at a fixed size */
+		resize(c, c->mon->mx + (c->mon->mw - FLOAT_WIDTH) / 2,
+			c->mon->my + (c->mon->mh - FLOAT_HEIGHT) / 2,
+			FLOAT_WIDTH, FLOAT_HEIGHT, 1);
+	arrange(selmon);
 }
 
 void

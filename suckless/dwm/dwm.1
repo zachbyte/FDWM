@@ -15,7 +15,8 @@ right contains all other windows. The number of master area windows can be
 adjusted from zero to an arbitrary number. In monocle layout all windows are
 maximised to the screen size. In floating layout windows can be resized and
 moved freely. Dialog windows are always managed floating, regardless of the
-layout applied.
+layout applied. A new floating window keeps the size it asks for and opens
+centered on the screen.
 .P
 Windows are grouped by tags. Each window can be tagged with one or multiple
 tags. Selecting certain tags displays all windows with these tags.
@@ -120,7 +121,8 @@ Close focused window.
 Toggle fullscreen for focused window.
 .TP
 .B Mod1\-Shift\-space
-Toggle focused window between tiled and floating state.
+Toggle focused window between tiled and floating state. A window made floating
+is resized to 800\(mu500 and centered.
 .TP
 .B Mod1\-Tab
 Toggles to the previously selected tags.
@@ -154,7 +156,8 @@ Restart dwm.
 Move focused window while dragging. Tiled windows will be toggled to the floating state.
 .TP
 .B Mod1\-Button2
-Toggles focused window between floating and tiled state.
+Toggles focused window between floating and tiled state, like
+.BR Mod1\-Shift\-space .
 .TP
 .B Mod1\-Button3
 Resize focused window while dragging. Tiled windows will be toggled to the floating state.

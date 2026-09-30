@@ -143,3 +143,7 @@ The source already includes these, so there is nothing to apply.
 
 - dwm: activetagindicatorbar, actualfullscreen, alwayscenter, attachbottom, centretitle, colorbar, dragmfact, noborderflicker, preserveonrestart, resizehere, restartsig, tiledmove, togglefloatingcenter, uselessgap
 - st: anysize, scrollback, scrollback-mouse
+
+How dwm behaves with these:
+
+- A new floating window (a dialog, or a match in `rules`) keeps the size it asks for and opens centered. `Alt + Shift + Space` floats the focused window at 800×500, centered.
