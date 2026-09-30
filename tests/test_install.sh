@@ -50,7 +50,8 @@ expect "generates colors.h before building" yes "$([[ -s $T/repo/suckless/colors
 expect "generates ~/.config/fdwm/colors.sh" yes "$([[ -s $T/home/.config/fdwm/colors.sh ]] && echo yes)"
 expect "every package installed: one rpm call" 1 "$(grep -c '^RPM' "$LOG")"
 expect_match "every package installed: says so" "All installed" "$out"
-for f in .xinitrc .bashrc .bashrc.d/claude.sh .config/nvim/init.lua; do
+expect "generates dunst's colors" yes "$([[ -s $T/home/.config/dunst/dunstrc.d/50-fdwm-colors.conf ]] && echo yes)"
+for f in .xinitrc .bashrc .bashrc.d/claude.sh .config/nvim/init.lua .config/dunst/dunstrc; do
     expect "installs ~/$f" yes "$([[ -f $T/home/$f ]] && echo yes)"
 done
 expect "installs ~/.local/bin/fdwm-bar, executable" yes "$([[ -x $T/home/.local/bin/fdwm-bar ]] && echo yes)"

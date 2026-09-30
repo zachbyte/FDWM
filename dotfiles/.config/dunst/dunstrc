@@ -1,0 +1,36 @@
+# dunst: FDWM's notifications, in the top right corner under dwm's bar, in
+# dwm's font and border width. The colors come from the palette:
+# fdwm-theme writes them to dunstrc.d/50-fdwm-colors.conf, which dunst reads
+# after this file, so there are none here.
+
+[global]
+    monitor = 0
+    follow = mouse
+    width = 300
+    height = (0, 300)
+    origin = top-right
+    # dwm's 10 px gap from the right, and below the bar
+    offset = (10, 30)
+    notification_limit = 5
+    frame_width = 2
+    separator_height = 2
+    padding = 8
+    horizontal_padding = 10
+    font = JetBrainsMono Nerd Font 10
+    markup = full
+    format = "<b>%s</b>\n%b"
+    icon_position = off
+    corner_radius = 0
+    mouse_left_click = close_current
+    mouse_middle_click = do_action, close_current
+    mouse_right_click = close_all
+
+[urgency_low]
+    timeout = 5
+
+[urgency_normal]
+    timeout = 8
+
+# stays until clicked
+[urgency_critical]
+    timeout = 0

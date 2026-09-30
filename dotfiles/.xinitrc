@@ -13,6 +13,9 @@ export GNOME_KEYRING_CONTROL
 
 /usr/libexec/polkit-mate-authentication-agent-1 &
 
+# notifications: dunst, in the palette's colors (see ~/.config/dunst)
+dunst &
+
 # the status text in dwm's bar: volume, brightness, battery and the clock
 "$HOME/.local/bin/fdwm-bar" &
 
