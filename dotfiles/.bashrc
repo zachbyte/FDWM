@@ -40,7 +40,7 @@ alias push='git push'
 alias fetch='git fetch'
 alias merge='git merge'
 alias add='git add .'
-alias stash='git stash && git stash drop'
+alias discard='git reset --hard' # throw away uncommitted changes to tracked files
 alias status='git status'
 alias log='git log'
 
@@ -50,11 +50,10 @@ export VISUAL='nvim'
 export NNN_OPTS='e' # nnn opens text files in $EDITOR
 export TERMINAL='st'
 
-# stashes changes before pulling and then releases the changes
+# pull, setting uncommitted changes aside first and reapplying them after
+# (--autostash leaves your own stashes alone, unlike stash + pop)
 pull() {
-    git stash
-    git pull
-    git stash pop
+    git pull --autostash "$@"
 }
 
 # commit with a message dynamically
@@ -66,7 +65,7 @@ commit() {
 
 # cloning and cding into that cloned repo
 clone() {
-    git clone "$1" 2>/dev/null && cd "$(basename "$1" .git)"
+    git clone "$1" && cd "$(basename "$1" .git)"
 }
 
 # dynamically delete branches while on the branch you want to delete
