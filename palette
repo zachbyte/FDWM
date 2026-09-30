@@ -6,54 +6,56 @@
 # One column per flavor, each color as rrggbb. A palette name in place of a
 # color means that color, from the same column.
 
-name          mocha
-rosewater     f5e0dc
-flamingo      f2cdcd
-pink          f5c2e7
-mauve         cba6f7
-red           f38ba8
-maroon        eba0ac
-peach         fab387
-yellow        f9e2af
-green         a6e3a1
-teal          94e2d5
-sky           89dceb
-sapphire      74c7ec
-blue          89b4fa
-lavender      b4befe
-text          cdd6f4
-subtext1      bac2de
-subtext0      a6adc8
-overlay2      9399b2
-overlay1      7f849c
-overlay0      6c7086
-surface2      585b70
-surface1      45475a
-surface0      313244
-base          1e1e2e
-mantle        181825
-crust         11111b
+name          mocha     latte
+rosewater     f5e0dc    dc8a78
+flamingo      f2cdcd    dd7878
+pink          f5c2e7    ea76cb
+mauve         cba6f7    8839ef
+red           f38ba8    d20f39
+maroon        eba0ac    e64553
+peach         fab387    fe640b
+yellow        f9e2af    df8e1d
+green         a6e3a1    40a02b
+teal          94e2d5    179299
+sky           89dceb    04a5e5
+sapphire      74c7ec    209fb5
+blue          89b4fa    1e66f5
+lavender      b4befe    7287fd
+text          cdd6f4    4c4f69
+subtext1      bac2de    5c5f77
+subtext0      a6adc8    6c6f85
+overlay2      9399b2    7c7f93
+overlay1      7f849c    8c8fa1
+overlay0      6c7086    9ca0b0
+surface2      585b70    acb0be
+surface1      45475a    bcc0cc
+surface0      313244    ccd0da
+base          1e1e2e    eff1f5
+mantle        181825    e6e9ef
+crust         11111b    dce0e8
 
 # The terminal's 16 colors (0-7 normal, 8-15 bright: black, red, green,
 # yellow, blue, magenta, cyan, white), text, background and cursor: st uses
 # all of them, and the ttys the 16, except that there 0 is the background
-# and 7 the text.
-term0         surface1
-term1         mauve
-term2         green
-term3         yellow
-term4         blue
-term5         red
-term6         teal
-term7         subtext1
-term8         surface2
-term9         mauve
-term10        green
-term11        yellow
-term12        blue
-term13        red
-term14        teal
-term15        subtext0
-term_fg       text
-term_bg       base
-term_cursor   rosewater
+# and 7 the text. On Latte's light background black and white swap ends,
+# as in Catppuccin's own Latte terminal colors: black is a dark gray, white
+# a light one.
+term0         surface1  subtext1
+term1         mauve     mauve
+term2         green     green
+term3         yellow    yellow
+term4         blue      blue
+term5         red       red
+term6         teal      teal
+term7         subtext1  surface2
+term8         surface2  subtext0
+term9         mauve     mauve
+term10        green     green
+term11        yellow    yellow
+term12        blue      blue
+term13        red       red
+term14        teal      teal
+term15        subtext0  surface1
+term_fg       text      text
+term_bg       base      base
+term_cursor   rosewater rosewater

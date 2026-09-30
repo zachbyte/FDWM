@@ -37,7 +37,7 @@ fdwm-bar print
 
 ## Colors
 
-Every color is written down once, in `palette`: the Catppuccin Mocha colors as `rrggbb`, and which of them the terminal uses for its 16 colors, text, background and cursor. `fdwm-theme generate`, which `install.sh` runs before building, writes the rest from it:
+Every color is written down once, in `palette`: Catppuccin's dark Mocha and light Latte flavors as `rrggbb`, one column each, and which of their colors the terminal uses for its 16 colors, text, background and cursor. `fdwm-theme generate`, which `install.sh` runs before building, writes the rest from it, in the flavor saved in `~/.config/fdwm/flavor` (Mocha until there is one):
 
 - `suckless/colors.h`, which the `config.h` of dwm, st, dmenu and slock include (`COL_BASE`, `COL_LAVENDER` and so on)
 - `grub/theme/theme.txt`, the GRUB theme's colors, from `grub/theme.txt.in`, and `grub/theme/select_c.png`, the bar behind the selected boot entry (one pixel, which GRUB stretches)
