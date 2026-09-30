@@ -102,6 +102,8 @@ if [[ $(readlink "$theme_link" || true) != "$PWD/fdwm-theme" ]]; then
     ln -sfn "$PWD/fdwm-theme" "$theme_link"
     echo "Linked $theme_link to $PWD/fdwm-theme"
 fi
+# the power menu dwm's Alt+Shift+E opens
+install_dotfile .local/bin/fdwm-menu
 
 echo "==> Setting up ~/.bashrc"
 install_dotfile .bashrc

@@ -66,6 +66,8 @@ static char dmenumon[2] = "0";
 static const char *dmenucmd[] = { "dmenu_run", NULL };
 static const char *termcmd[] = { "st", NULL };
 static const char *lockcmd[] = { "slock", NULL };
+/* lock, suspend, restart dwm, log out, reboot, power off (fdwm-menu) */
+static const char *menucmd[] = { "/bin/sh", "-c", "exec \"$HOME/.local/bin/fdwm-menu\"", NULL };
 
 static const Key keys[] = {
 	/* modifier                     key        function        argument */
@@ -102,6 +104,7 @@ static const Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_w,      quit,           {1} }, 
 	{ MODKEY|ShiftMask,             XK_r,      resetmfact,     {0} },
 	{ MODKEY|ShiftMask,             XK_l,      spawn,          {.v = lockcmd } },
+	{ MODKEY|ShiftMask,             XK_e,      spawn,          {.v = menucmd } },
 	{ 0,                            XF86XK_MonBrightnessUp,    spawn,          SHCMD ("brightnessctl set +10%" BARREFRESH)},
 	{ 0,                            XF86XK_MonBrightnessDown,  spawn,          SHCMD ("brightnessctl set 10%-" BARREFRESH)},
 	{ 0,                            XF86XK_AudioLowerVolume,   spawn,          SHCMD ("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-" BARREFRESH)},

@@ -4,7 +4,7 @@ A minimal dwm, st, dmenu and slock setup for Fedora.
 
 ## Quick install
 
-The commands below clone the repo (step 1), then `install.sh` runs steps 2 to 7 for you (only installing packages that are missing); run it as your normal user. Any existing `~/.xinitrc`, `~/.local/bin/fdwm-bar`, `~/.local/bin/fdwm-shot`, `~/.bashrc`, `~/.bashrc.d/claude.sh`, `~/.config/nvim` or `~/.config/dunst/dunstrc` that differs is moved to a `.bak.<time>` copy first.
+The commands below clone the repo (step 1), then `install.sh` runs steps 2 to 7 for you (only installing packages that are missing); run it as your normal user. Any existing `~/.xinitrc`, `~/.local/bin/fdwm-bar`, `~/.local/bin/fdwm-shot`, `~/.local/bin/fdwm-menu`, `~/.bashrc`, `~/.bashrc.d/claude.sh`, `~/.config/nvim` or `~/.config/dunst/dunstrc` that differs is moved to a `.bak.<time>` copy first.
 
 ```shell
 sudo dnf install -y git
@@ -26,6 +26,10 @@ Then reboot and log in on tty1: dwm starts. (Earlier versions logged tty1 in aut
 ## Screenshots
 
 `Print` lets you drag out a region, outlined in the palette's lavender (`Escape` or a right click cancels); `Shift + Print` takes the whole screen. Either way `fdwm-shot` (in `dotfiles/.local/bin`, installed to `~/.local/bin`) saves a PNG named for the time in `~/Pictures/Screenshots` and copies it to the clipboard, so you can paste it straight away. maim takes the screenshot and xclip copies it.
+
+## The power menu
+
+`Alt + Shift + E` opens `fdwm-menu` (in `dotfiles/.local/bin`, installed to `~/.local/bin`), a dmenu list of lock, suspend, restart dwm, log out, reboot and power off; type a few letters or use the arrow keys, then Return. Log out, reboot and power off ask `no` / `yes` first, and `Escape` leaves either list without doing anything. Lock runs slock, suspend locks too (xss-lock), restart dwm is `Alt + Shift + W` and log out is `Alt + Shift + Q`.
 
 ## The bar
 
@@ -133,6 +137,7 @@ cp dotfiles/.xinitrc ~/.xinitrc
 install -Dm755 dotfiles/.local/bin/fdwm-shot ~/.local/bin/fdwm-shot
 install -Dm755 dotfiles/.local/bin/fdwm-bar ~/.local/bin/fdwm-bar
 install -Dm644 dotfiles/.config/dunst/dunstrc ~/.config/dunst/dunstrc
+install -Dm755 dotfiles/.local/bin/fdwm-menu ~/.local/bin/fdwm-menu
 ```
 
 Add the autostart from `dotfiles/.bash_profile` to your own `~/.bash_profile`, so logging in on tty1 starts dwm.
@@ -164,6 +169,7 @@ cp dotfiles/.bashrc.d/claude.sh ~/.bashrc.d/
 | `Alt + Space` | Switch to the previous layout |
 | `Alt + Return` | Move the focused window into the master area |
 | `Alt + Q` / `Alt + Shift + Q` | Close the window / quit dwm |
+| `Alt + Shift + E` | Power menu: lock, suspend, restart dwm, log out, reboot or power off (see "The power menu") |
 | `Alt + Shift + L` | Lock the screen (slock; type your password and press Return) |
 | `Print` / `Shift + Print` | Screenshot of a region / the whole screen, saved and copied (see "Screenshots") |
 
