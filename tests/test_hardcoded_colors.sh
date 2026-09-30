@@ -69,7 +69,7 @@ if [[ -z $found ]]; then
     pass "no file but palette spells out a color"
 else
     fail "colors spelled out outside palette (use the palette's names instead):"
-    sed 's/^/        /' <<<"$found"
+    while read -r line; do printf '        %s\n' "$line"; done <<<"$found"
 fi
 
 finish
