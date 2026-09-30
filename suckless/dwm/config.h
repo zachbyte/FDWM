@@ -54,6 +54,9 @@ static const Layout layouts[] = {
 /* helper for spawning shell commands in the pre dwm-5.0 fashion */
 #define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
 
+/* after a volume, mute or brightness key, redraw the bar at once (fdwm-bar) */
+#define BARREFRESH "; \"$HOME/.local/bin/fdwm-bar\" refresh"
+
 /* commands */
 static char dmenumon[2] = "0";
 static const char *dmenucmd[] = { "dmenu_run", NULL };
@@ -95,14 +98,14 @@ static const Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_w,      quit,           {1} }, 
 	{ MODKEY|ShiftMask,             XK_r,      resetmfact,     {0} },
 	{ MODKEY|ShiftMask,             XK_l,      spawn,          {.v = lockcmd } },
-  { 0,                            XF86XK_MonBrightnessUp,    spawn,          SHCMD ("brightnessctl set +10%")},
-  { 0,                            XF86XK_MonBrightnessDown,  spawn,          SHCMD ("brightnessctl set 10%-")},
-  { 0,                            XF86XK_AudioLowerVolume,   spawn,          SHCMD ("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-")},
-  { 0,                            XF86XK_AudioMute,          spawn,          SHCMD ("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")},
-  { 0,                            XF86XK_AudioRaiseVolume,   spawn,          SHCMD ("wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+")},
-  { 0,                            XF86XK_AudioPlay,          spawn,          SHCMD ("playerctl play-pause")},
-  { 0,                            XF86XK_AudioNext,          spawn,          SHCMD ("playerctl next")},
-  { 0,                            XF86XK_AudioPrev,          spawn,          SHCMD ("playerctl previous")},
+	{ 0,                            XF86XK_MonBrightnessUp,    spawn,          SHCMD ("brightnessctl set +10%" BARREFRESH)},
+	{ 0,                            XF86XK_MonBrightnessDown,  spawn,          SHCMD ("brightnessctl set 10%-" BARREFRESH)},
+	{ 0,                            XF86XK_AudioLowerVolume,   spawn,          SHCMD ("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-" BARREFRESH)},
+	{ 0,                            XF86XK_AudioMute,          spawn,          SHCMD ("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle" BARREFRESH)},
+	{ 0,                            XF86XK_AudioRaiseVolume,   spawn,          SHCMD ("wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+" BARREFRESH)},
+	{ 0,                            XF86XK_AudioPlay,          spawn,          SHCMD ("playerctl play-pause")},
+	{ 0,                            XF86XK_AudioNext,          spawn,          SHCMD ("playerctl next")},
+	{ 0,                            XF86XK_AudioPrev,          spawn,          SHCMD ("playerctl previous")},
 };
 
 /* button definitions */

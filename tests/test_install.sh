@@ -51,6 +51,7 @@ expect_match "every package installed: says so" "All installed" "$out"
 for f in .xinitrc .bashrc .bashrc.d/claude.sh .config/nvim/init.lua; do
     expect "installs ~/$f" yes "$([[ -f $T/home/$f ]] && echo yes)"
 done
+expect "installs ~/.local/bin/fdwm-bar, executable" yes "$([[ -x $T/home/.local/bin/fdwm-bar ]] && echo yes)"
 expect_match "sets up suspend" "==> Setting up suspend" "$out"
 
 MISSING=nnn run
