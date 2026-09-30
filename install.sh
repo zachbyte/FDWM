@@ -65,6 +65,7 @@ done
 install_dotfile() {
     local src=dotfiles/$1 dest=$HOME/$1
     if [[ -e $dest ]] && diff -rq -x lazy-lock.json "$src" "$dest" >/dev/null; then
+        # shellcheck disable=SC2088  # ~ is printed as is, for you to read
         echo "~/$1 is up to date"
         return
     fi
@@ -100,6 +101,7 @@ if [[ ! -e ~/.bash_profile ]]; then
     cp dotfiles/.bash_profile ~/.bash_profile
     echo "Installed ~/.bash_profile"
 elif grep -q 'exec startx' ~/.bash_profile; then
+    # shellcheck disable=SC2088  # ~ is printed as is, for you to read
     echo "~/.bash_profile already starts X"
 else
     { echo; sed -n '/^# Start dwm/,$p' dotfiles/.bash_profile; } >> ~/.bash_profile

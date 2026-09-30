@@ -36,7 +36,9 @@ HISTFILESIZE=-1
 HISTCONTROL=ignoredups
 shopt -s histappend
 # write each command to the history file right away and pick up other terminals' commands
-PROMPT_COMMAND="history -a; history -n${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
+# (as the first element of an array, which bash 5.1+ runs in turn, so whatever
+# PROMPT_COMMAND already held, string or array, still runs after it)
+PROMPT_COMMAND=("history -a; history -n" "${PROMPT_COMMAND[@]}")
 
 # essentials
 alias grep='grep --color=auto'
@@ -77,7 +79,7 @@ commit() {
 
 # cloning and cding into that cloned repo
 clone() {
-    git clone "$1" && cd "$(basename "$1" .git)"
+    git clone "$1" && cd "$(basename "$1" .git)" || return
 }
 
 # dynamically delete branches while on the branch you want to delete
@@ -112,6 +114,7 @@ esac
 if [ -d ~/.bashrc.d ]; then
     for rc in ~/.bashrc.d/*; do
         if [ -f "$rc" ] && [[ $rc != *.bak.* ]]; then
+            # shellcheck source=/dev/null
             . "$rc"
         fi
     done
