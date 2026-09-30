@@ -13,15 +13,17 @@ export HOME=/nonexistent  # so \w shows full paths, never ~
 
 prompt_block=$(sed -n '/^# prompt:/,/^unset -f fdwm_fg$/p' "$ROOT/dotfiles/.bashrc")
 eval "$(sed -n '/^parse_git_branch() {/,/^}/p' "$ROOT/dotfiles/.bashrc")"
-# without FDWM's colors: no color for the directory, and no error
-expect "no colors.sh: no 24-bit color, nothing on stderr" "" \
-    "$(unset fdwm_blue; eval "$prompt_block" 2>&1; grep -o '38;2;' <<<"$PS1")"
-# with them: the directory in the palette's blue
+# without FDWM's colors: no colors, and no error
+expect "no colors.sh: no colors, nothing on stderr" "" \
+    "$(eval "$prompt_block" 2>&1; grep -o '38;' <<<"$PS1")"
+# with them: the branch in the palette's red, the directory in its blue
 # shellcheck source=/dev/null
 . "$T/home/.config/fdwm/colors.sh"
 eval "$prompt_block"
-expect_match "the directory is in the palette's blue" \
-    "$(printf '38;2;%d;%d;%dm' "0x${fdwm_blue:1:2}" "0x${fdwm_blue:3:2}" "0x${fdwm_blue:5:2}")"'\\\]\\w' "$PS1"
+rgb() { printf '38;2;%d;%d;%dm' "0x${1:1:2}" "0x${1:3:2}" "0x${1:5:2}"; }
+expect_match "the branch is in the palette's red" "^\\\\\\[\\\\e\\[$(rgb "$fdwm_red")"'\\\]\$\(parse_git_branch\)' "$PS1"
+expect_match "the directory is in the palette's blue" "$(rgb "$fdwm_blue")"'\\\]\\w' "$PS1"
+expect_no_match "no other colors (such as the 256-color pink it had)" '38;5;' "$PS1"
 
 git init -q -b main "$T/repo"
 (cd "$T/repo" && echo a >a && git add a && git commit -qm c1 && echo b >a && git commit -qam c2)

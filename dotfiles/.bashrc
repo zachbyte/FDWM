@@ -36,12 +36,13 @@ parse_git_branch() {
     printf '%s ' "$b"
 }
 
-# prompt: pink git branch, blue directory; fdwm_fg COLOR is the escape for
-# text in #rrggbb, as a 24-bit color: \e[38;2;<red>;<green>;<blue>m
+# prompt: the git branch in the palette's red (a pink in Mocha), the
+# directory in its blue; fdwm_fg COLOR is the escape for text in #rrggbb,
+# as a 24-bit color: \e[38;2;<red>;<green>;<blue>m
 fdwm_fg() {
     [ -n "$1" ] && printf '\\[\\e[38;2;%d;%d;%dm\\]' "0x${1:1:2}" "0x${1:3:2}" "0x${1:5:2}"
 }
-PS1='\[\e[38;5;204m\]$(parse_git_branch)'"$(fdwm_fg "${fdwm_blue:-}")"'\w $ \[\e[0m\]'
+PS1="$(fdwm_fg "${fdwm_red:-}")"'$(parse_git_branch)'"$(fdwm_fg "${fdwm_blue:-}")"'\w $ \[\e[0m\]'
 unset -f fdwm_fg
 
 # essential stuff
