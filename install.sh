@@ -158,6 +158,20 @@ if [[ -f /etc/default/grub ]] && command -v grub2-mkconfig >/dev/null; then
         /etc/kernel/install.d/60-fdwm-title.install add "$(sed -n "s/^version[[:space:]]*//p" "$entry")"
     done'
 
+    # Catppuccin on the ttys from the moment the kernel starts, login prompt
+    # included: the kernel's console palette, the same 16 colors .bashrc loads
+    # after login (0 = background #1e1e2e, 7 = text #cdd6f4). grubby adds them
+    # to every kernel entry and keeps them for future kernels.
+    vt_red='vt.default_red=30,203,166,249,137,243,148,205,88,203,166,249,137,243,148,166'
+    vt_grn='vt.default_grn=30,166,227,226,180,139,226,214,91,166,227,226,180,139,226,173'
+    vt_blu='vt.default_blu=46,247,161,175,250,168,213,244,112,247,161,175,250,168,213,200'
+    # (grep reads everything rather than -q, which could SIGPIPE the pipeline
+    # and make pipefail report a failure even when a kernel needs the colors)
+    if sudo grubby --info=ALL | grep '^args=' | grep -vF "$vt_blu" >/dev/null; then
+        sudo grubby --update-kernel=ALL --args="$vt_red $vt_grn $vt_blu"
+        echo "Console colors set for every kernel; they apply from the next boot"
+    fi
+
     if [[ $grub_stale || $(grub_state) != "$grub_before" ]]; then
         sudo grub2-mkconfig -o /boot/grub2/grub.cfg
     else

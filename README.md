@@ -118,8 +118,11 @@ sudo dnf remove dracut-config-rescue
 sudo sh -c 'rm -f /boot/loader/entries/*-0-rescue.conf /boot/vmlinuz-0-rescue-* /boot/initramfs-0-rescue-*.img'
 sudo install -m 755 grub/60-fdwm-title.install /etc/kernel/install.d/
 sudo sh -c 'for e in /boot/loader/entries/*.conf; do /etc/kernel/install.d/60-fdwm-title.install add "$(sed -n "s/^version[[:space:]]*//p" "$e")"; done'
+sudo grubby --update-kernel=ALL --args="vt.default_red=30,203,166,249,137,243,148,205,88,203,166,249,137,243,148,166 vt.default_grn=30,166,227,226,180,139,226,214,91,166,227,226,180,139,226,173 vt.default_blu=46,247,161,175,250,168,213,244,112,247,161,175,250,168,213,200"
 sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 ```
+
+The `grubby` line gives the ttys the Catppuccin palette from boot, login prompt included (the `vt.default_*` numbers are the red, green and blue of the same 16 colors `.bashrc` uses).
 
 ### 7. File manager
 
