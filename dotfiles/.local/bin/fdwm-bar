@@ -1,0 +1,119 @@
+#!/bin/sh
+# fdwm-bar: dwm's status text. Volume, brightness, battery and the clock,
+# redrawn every minute, and at once when dwm's volume, mute and brightness
+# keys run "fdwm-bar refresh". At 10% battery it warns in the bar; at 3% it
+# suspends the laptop.
+#
+#   fdwm-bar          run the bar (.xinitrc starts it)
+#   fdwm-bar refresh  make the running bar redraw now
+#   fdwm-bar print    print the status text once, without warning or
+#                     suspending
+
+sys=${FDWM_SYS:-/sys}  # the tests point this at a fake /sys
+pidfile=${XDG_RUNTIME_DIR:-/tmp}/fdwm-bar-$(id -u).pid
+
+# Called once each time the battery drops to 10% while discharging. The bar
+# shows the warning either way; this is the hook for a notification daemon
+# (dunst): once notify-send is installed, the warning pops up too.
+on_low_battery() {
+    command -v notify-send >/dev/null 2>&1 &&
+        notify-send -u critical "Battery at $1%" "Plug in: the laptop suspends at 3%."
+}
+
+# "Volume: 0.45" or "Volume: 0.45 [MUTED]" from wpctl
+volume() {
+    wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '
+        { v = int($2 * 100 + 0.5) }
+        /MUTED/ { printf "󰝟  %d%%", v; exit }
+        { printf "%s  %d%%", v >= 60 ? "󰕾" : v >= 20 ? "󰖀" : "󰕿", v }'
+}
+
+brightness() {
+    for d in "$sys"/class/backlight/*; do
+        [ -r "$d/brightness" ] || continue
+        read -r b <"$d/brightness"
+        read -r m <"$d/max_brightness"
+        [ "$m" -gt 0 ] && printf '󰃠  %d%%' $(((b * 100 + m / 2) / m))
+        return
+    done
+}
+
+# Sets $bat. Runs in the bar's own shell, not a subshell, because it
+# remembers ($warned, $suspended) that it already warned or suspended for
+# this discharge; each re-arms once the laptop charges or the level rises.
+battery() {
+    bat=
+    for d in "$sys"/class/power_supply/BAT*; do
+        [ -r "$d/capacity" ] || continue
+        read -r cap <"$d/capacity"
+        read -r state <"$d/status"
+        if [ "$state" = Charging ]; then
+            icon=󰂄
+        else
+            case $((cap / 10)) in
+            0) icon=󰂎 ;; 1) icon=󰁺 ;; 2) icon=󰁻 ;; 3) icon=󰁼 ;; 4) icon=󰁽 ;;
+            5) icon=󰁾 ;; 6) icon=󰁿 ;; 7) icon=󰂀 ;; 8) icon=󰂁 ;; 9) icon=󰂂 ;; *) icon=󰁹 ;;
+            esac
+        fi
+        bat="$icon  $cap%"
+
+        if [ "$state" = Discharging ] && [ "$cap" -le 10 ]; then
+            bat="󰂃  $cap%  LOW BATTERY, PLUG IN"
+            [ "$warned" ] || { warned=1; on_low_battery "$cap"; }
+        else
+            warned=
+        fi
+        if [ "$state" = Discharging ] && [ "$cap" -le 3 ]; then
+            [ "$suspended" ] || { suspended=1; systemctl suspend; }
+        else
+            suspended=
+        fi
+        return
+    done
+}
+
+# Sets $line: the parts that exist, four spaces apart
+draw() {
+    battery
+    line=
+    for part in "$(volume)" "$(brightness)" "$bat" "$(date '+󰃭  %Y-%m-%d    %I:%M %p')"; do
+        [ -n "$part" ] && line="$line${line:+    }$part"
+    done
+}
+
+case ${1:-} in
+refresh)
+    [ -r "$pidfile" ] && kill -USR1 "$(cat "$pidfile")" 2>/dev/null
+    exit 0
+    ;;
+print)
+    warned=1 suspended=1  # just print: never warn or suspend
+    draw
+    printf '%s\n' "$line"
+    exit 0
+    ;;
+"") ;;
+*)
+    echo "usage: fdwm-bar [refresh | print]" >&2
+    exit 2
+    ;;
+esac
+
+warned= suspended= again= sleeper=
+echo $$ >"$pidfile"
+trap 'rm -f "$pidfile"; [ "$sleeper" ] && kill "$sleeper" 2>/dev/null' EXIT
+trap 'exit 0' HUP INT TERM
+trap 'again=1' USR1
+while :; do
+    again=
+    draw
+    xsetroot -name "$line"
+    [ "$again" ] && continue  # a refresh came in while drawing: draw again
+    # sleep to the next minute in the background and wait for it, so a
+    # refresh signal ends the wait at once
+    sleep $((60 - $(date +%-S))) &
+    sleeper=$!
+    wait "$sleeper"
+    kill "$sleeper" 2>/dev/null
+    sleeper=
+done
