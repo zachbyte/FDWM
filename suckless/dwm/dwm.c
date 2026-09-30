@@ -1056,24 +1056,27 @@ manage(Window w, XWindowAttributes *wa)
         applyrules(c);
     }
 
-    unsigned long *data = NULL;
-    Atom actual_type;
-    int actual_format;
-    unsigned long nitems, bytes_after;
+	/* preserveonrestart: a window left open across a restart keeps its tags;
+	 * any other window keeps what applyrules() or its parent gave it */
+	{
+		unsigned long *data = NULL, nitems, bytes_after;
+		Atom actual_type;
+		int actual_format;
+		Monitor *m;
 
-    if (XGetWindowProperty(dpy, c->win, netatom[NetClientInfo], 0L, 2L, False, XA_CARDINAL,
-            &actual_type, &actual_format, &nitems, &bytes_after, (unsigned char **)&data) == Success && nitems == 2) {
-        c->tags = data[0];
-        for (Monitor *m = mons; m; m = m->next) {
-            if (m->num == data[1]) {
-                c->mon = m;
-                break;
-            }
-        }
-        XFree(data);
-    } else {
-        c->tags = c->mon->tagset[c->mon->seltags];
-    }
+		if (XGetWindowProperty(dpy, c->win, netatom[NetClientInfo], 0L, 2L, False, XA_CARDINAL,
+				&actual_type, &actual_format, &nitems, &bytes_after, (unsigned char **)&data) == Success
+		&& nitems == 2) {
+			c->tags = data[0];
+			for (m = mons; m; m = m->next)
+				if (m->num == data[1]) {
+					c->mon = m;
+					break;
+				}
+		}
+		if (data)
+			XFree(data);
+	}
 
     if (c->x + WIDTH(c) > c->mon->wx + c->mon->ww)
         c->x = c->mon->wx + c->mon->ww - WIDTH(c);

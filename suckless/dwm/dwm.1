@@ -19,7 +19,9 @@ layout applied. A new floating window keeps the size it asks for and opens
 centered on the screen.
 .P
 Windows are grouped by tags. Each window can be tagged with one or multiple
-tags. Selecting certain tags displays all windows with these tags.
+tags. Selecting certain tags displays all windows with these tags. A new window
+gets the tags named by its rule in config.h, or else the tags currently viewed;
+windows that are open when dwm restarts keep their tags.
 .P
 Each screen contains a small status bar which displays all available tags, the
 layout, the title of the focused window, and the text read from the root window
