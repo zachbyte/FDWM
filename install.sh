@@ -90,6 +90,14 @@ echo "==> Setting up ~/.xinitrc"
 install_dotfile .xinitrc
 # the bar script .xinitrc starts (and dwm's volume and brightness keys poke)
 install_dotfile .local/bin/fdwm-bar
+# fdwm-theme on your PATH, as a link to this checkout's: it switches flavors
+# by regenerating and rebuilding from here
+theme_link=$HOME/.local/bin/fdwm-theme
+if [[ $(readlink "$theme_link" || true) != "$PWD/fdwm-theme" ]]; then
+    mkdir -p "${theme_link%/*}"
+    ln -sfn "$PWD/fdwm-theme" "$theme_link"
+    echo "Linked $theme_link to $PWD/fdwm-theme"
+fi
 
 echo "==> Setting up ~/.bashrc"
 install_dotfile .bashrc

@@ -120,8 +120,8 @@ echo 'color = "@nosuchcolor@"' >>"$T/repo/grub/theme.txt.in"
 refuse "a template color that isn't in the palette" "not in the palette: @nosuchcolor@"
 cp "$T/template.good" "$T/repo/grub/theme.txt.in"
 
-out=$(bash "$T/repo/fdwm-theme" 2>&1)
-expect "no command: exits 2" 2 "$?"
-expect_match "no command: usage" "^usage: fdwm-theme" "$out"
+out=$(bash "$T/repo/fdwm-theme" --help 2>&1)
+expect "an option: exits 2" 2 "$?"
+expect_match "an option: usage" "^usage: fdwm-theme" "$out"
 
 finish

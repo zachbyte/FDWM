@@ -54,6 +54,11 @@ for f in .xinitrc .bashrc .bashrc.d/claude.sh .config/nvim/init.lua; do
     expect "installs ~/$f" yes "$([[ -f $T/home/$f ]] && echo yes)"
 done
 expect "installs ~/.local/bin/fdwm-bar, executable" yes "$([[ -x $T/home/.local/bin/fdwm-bar ]] && echo yes)"
+if ln -s probe "$T/probe" 2>/dev/null && [[ -L $T/probe ]]; then
+    expect "links ~/.local/bin/fdwm-theme to the checkout's" "$T/repo/fdwm-theme" "$(readlink "$T/home/.local/bin/fdwm-theme")"
+else
+    echo "  skip  the ~/.local/bin/fdwm-theme link (no symlinks here)"
+fi
 expect_match "sets up suspend" "==> Setting up suspend" "$out"
 
 MISSING=nnn run

@@ -2,6 +2,12 @@
 # fdwm-theme: FDWM's colors, generated from the palette file next to it, in
 # the flavor saved in ~/.config/fdwm/flavor (Mocha until there is one).
 #
+#   fdwm-theme               say which flavor is in use, and which there are
+#   fdwm-theme FLAVOR        switch to FLAVOR (mocha, latte): save it, run
+#                            install.sh (which generates the colors and
+#                            rebuilds dwm, st, dmenu and slock, the GRUB
+#                            theme and the ttys' colors), then recolor the
+#                            desktop and the open st windows and restart dwm
 #   fdwm-theme generate      write the files below from the palette
 #   fdwm-theme kernel-args   print the vt.default_* boot options that give
 #                            the ttys the palette from boot (install.sh
@@ -17,6 +23,7 @@ set -euo pipefail
 
 root=$(dirname "$(readlink -f "$0")")
 conf=${XDG_CONFIG_HOME:-$HOME/.config}/fdwm
+dev=${FDWM_DEV:-/dev}  # the tests point this at fake terminals
 flavor=mocha
 if [[ -r $conf/flavor ]]; then flavor=$(<"$conf/flavor"); fi
 
@@ -167,11 +174,58 @@ generate() {
     echo "Generated the $flavor colors: suckless/colors.h, the GRUB theme and $conf/colors.sh"
 }
 
+# the open st windows: the new colors written to the terminal each one's
+# shell runs in, which st reads like any output (OSC 4 sets color 0-15,
+# 10, 11 and 12 the text, background and cursor)
+recolor_st() {
+    local seq= i pid tty n=0
+    for i in {0..15}; do seq+="\e]4;$i;#${color[term$i]}\a"; done
+    seq+="\e]10;#${color[term_fg]}\a\e]11;#${color[term_bg]}\a\e]12;#${color[term_cursor]}\a"
+    for pid in $(pgrep -u "$(id -u)" -x st || true); do
+        for tty in $(ps -o tty= --ppid "$pid" | sort -u); do
+            if [[ -w $dev/$tty ]]; then
+                printf '%b' "$seq" >"$dev/$tty"
+                n=$((n + 1))
+            fi
+        done
+    done
+    echo "Recolored $n open st window(s)"
+}
+
+# switch FLAVOR
+switch() {
+    # (grep reads it all rather than -q, which could SIGPIPE flavors and
+    # make pipefail call a match a failure)
+    flavors | grep -xF -- "$1" >/dev/null ||
+        die "no flavor called $1 (the palette has: $(flavors | paste -sd' '))"
+    mkdir -p "$conf"
+    printf '%s\n' "$1" >"$conf/flavor"
+    flavor=$1
+    echo "==> Switching to $flavor"
+    "$root/install.sh" ||
+        die "install.sh failed; $flavor is saved, so run fdwm-theme $flavor again once that's fixed"
+    load
+    if [[ -z ${DISPLAY:-} ]]; then
+        echo "==> $flavor from the next time X starts"
+        return
+    fi
+    echo "==> Recoloring what's open"
+    xsetroot -solid "#${color[base]}"
+    recolor_st
+    # dwm restarts on its new build (restartsig), windows and tags kept
+    pkill -HUP -u "$(id -u)" -x dwm || true
+    echo "==> Switched to $flavor. Neovim takes it from its next start, the ttys and GRUB from the next boot."
+}
+
 case ${1:-} in
 generate) load; generate ;;
 kernel-args) load; kernel_args ;;
-*)
-    echo "usage: fdwm-theme generate | kernel-args" >&2
+"")
+    echo "$flavor (the palette has: $(flavors | paste -sd' '); switch with fdwm-theme <flavor>)"
+    ;;
+-*)
+    echo "usage: fdwm-theme [flavor] | generate | kernel-args" >&2
     exit 2
     ;;
+*) switch "$1" ;;
 esac
