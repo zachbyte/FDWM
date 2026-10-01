@@ -86,6 +86,7 @@ typedef struct {
 } Button;
 
 typedef struct Monitor Monitor;
+typedef struct Pertag Pertag;
 typedef struct Client Client;
 struct Client {
 	char name[256];
@@ -133,6 +134,7 @@ struct Monitor {
 	Monitor *next;
 	Window barwin;
 	const Layout *lt[2];
+	Pertag *pertag;
 };
 
 typedef struct {
@@ -188,17 +190,20 @@ static void monocle(Monitor *m);
 static void motionnotify(XEvent *e);
 static void movemouse(const Arg *arg);
 static void movestack(const Arg *arg);
+static unsigned int pertagslot(unsigned int ts);
 static Client *nexttiled(Client *c);
 static void pop(Client *c);
 static void propertynotify(XEvent *e);
 static void quit(const Arg *arg);
 static Monitor *recttomon(int x, int y, int w, int h);
 static void resize(Client *c, int x, int y, int w, int h, int interact);
+static void restorepertag(void);
 static void resizeclient(Client *c, int x, int y, int w, int h);
 static void resizemouse(const Arg *arg);
 static void restack(Monitor *m);
 static void run(void);
 static void scratchgeom(Client *c);
+static void savepertag(Monitor *m);
 static void scan(void);
 static int sendevent(Client *c, Atom proto);
 static void sendmon(Client *c, Monitor *m);
@@ -285,6 +290,18 @@ static Window root, wmcheckwin;
 
 /* compile-time check if all tags fit into an unsigned int bit array. */
 struct NumTags { char limitexceeded[NUMTAGS > 31 ? -1 : 1]; };
+
+/* pertag (after upstream's pertag patch): each tag's own layouts, master
+ * area and bar. Slot 0 is the view of all nine tags (Alt+0), slots 1 to 9
+ * the tags; the scratchpads' tags have none, and never change the slot. */
+struct Pertag {
+	unsigned int curtag, prevtag; /* the slots of the view and the one before */
+	int nmasters[LENGTH(tags) + 1];
+	float mfacts[LENGTH(tags) + 1];
+	unsigned int sellts[LENGTH(tags) + 1];
+	const Layout *ltidxs[LENGTH(tags) + 1][2];
+	int showbars[LENGTH(tags) + 1];
+};
 
 /* size of a window floated by togglefloating() */
 #define FLOAT_WIDTH  800
@@ -534,6 +551,7 @@ cleanupmon(Monitor *mon)
 	}
 	XUnmapWindow(dpy, mon->barwin);
 	XDestroyWindow(dpy, mon->barwin);
+	free(mon->pertag);
 	free(mon);
 }
 
@@ -669,6 +687,11 @@ createmon(void)
 	m->lt[0] = &layouts[0];
 	m->lt[1] = &layouts[1 % LENGTH(layouts)];
 	strncpy(m->ltsymbol, layouts[0].symbol, sizeof m->ltsymbol);
+	/* every slot starts with these settings; the view starts on tag 1 */
+	m->pertag = ecalloc(1, sizeof(Pertag));
+	for (m->pertag->curtag = 0; m->pertag->curtag <= LENGTH(tags); m->pertag->curtag++)
+		savepertag(m);
+	m->pertag->curtag = m->pertag->prevtag = 1;
 	return m;
 }
 
@@ -998,6 +1021,7 @@ void
 incnmaster(const Arg *arg)
 {
 	selmon->nmaster = MAX(selmon->nmaster + arg->i, 0);
+	savepertag(selmon);
 	arrange(selmon);
 }
 
@@ -1302,6 +1326,23 @@ nexttiled(Client *c)
 	return c;
 }
 
+/* pertagslot: the per-tag slot for a view of the tags in TS: 0 for all
+ * nine, else the lowest of them; the scratchpads' tags don't count, and TS
+ * without any of the nine leaves the slot as it is. */
+unsigned int
+pertagslot(unsigned int ts)
+{
+	unsigned int i;
+
+	ts &= TAGMASK & ~SPTAGMASK;
+	if (!ts)
+		return selmon->pertag->curtag;
+	if (ts == (TAGMASK & ~SPTAGMASK))
+		return 0;
+	for (i = 0; !(ts & 1 << i); i++);
+	return i + 1;
+}
+
 void
 pop(Client *c)
 {
@@ -1457,6 +1498,7 @@ resizemouse(const Arg *arg)
 						selmon->mfact = 0.05;
 					else if (selmon->mfact > 0.95)
 						selmon->mfact = 0.95;
+					savepertag(selmon);
 					arrange(selmon);
 				}
 			}
@@ -1500,6 +1542,22 @@ restack(Monitor *m)
 	while (XCheckMaskEvent(dpy, EnterWindowMask, &ev));
 }
 
+/* restorepertag: selmon's layouts, master area and bar from its current
+ * slot (after the view moved to another tag) */
+void
+restorepertag(void)
+{
+	Pertag *p = selmon->pertag;
+
+	selmon->nmaster = p->nmasters[p->curtag];
+	selmon->mfact = p->mfacts[p->curtag];
+	selmon->sellt = p->sellts[p->curtag];
+	selmon->lt[0] = p->ltidxs[p->curtag][0];
+	selmon->lt[1] = p->ltidxs[p->curtag][1];
+	if (selmon->showbar != p->showbars[p->curtag])
+		togglebar(NULL);
+}
+
 void
 run(void)
 {
@@ -1520,6 +1578,21 @@ scratchgeom(Client *c)
 	/* (not WIDTH() and HEIGHT(), which uselessgap widens by gappx) */
 	c->x = c->mon->wx + (c->mon->ww - c->w - 2 * c->bw) / 2;
 	c->y = c->mon->wy + (c->mon->wh - c->h - 2 * c->bw) / 2;
+}
+
+/* savepertag: m's layouts, master area and bar as its current slot's
+ * (after any of them changed) */
+void
+savepertag(Monitor *m)
+{
+	Pertag *p = m->pertag;
+
+	p->nmasters[p->curtag] = m->nmaster;
+	p->mfacts[p->curtag] = m->mfact;
+	p->sellts[p->curtag] = m->sellt;
+	p->ltidxs[p->curtag][0] = m->lt[0];
+	p->ltidxs[p->curtag][1] = m->lt[1];
+	p->showbars[p->curtag] = m->showbar;
 }
 
 void
@@ -1649,6 +1722,7 @@ setlayout(const Arg *arg)
 	if (arg && arg->v)
 		selmon->lt[selmon->sellt] = (Layout *)arg->v;
 	strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbol, sizeof selmon->ltsymbol);
+	savepertag(selmon);
 	if (selmon->sel)
 		arrange(selmon);
 	else
@@ -1666,6 +1740,7 @@ setmfact(const Arg *arg)
 	if (f < 0.05 || f > 0.95)
 		return;
 	selmon->mfact = f;
+	savepertag(selmon);
 	arrange(selmon);
 }
 
@@ -1900,6 +1975,7 @@ void
 togglebar(const Arg *arg)
 {
 	selmon->showbar = !selmon->showbar;
+	savepertag(selmon);
 	updatebarpos(selmon);
 	XMoveResizeWindow(dpy, selmon->barwin, selmon->wx, selmon->by, selmon->ww, bh);
 	arrange(selmon);
@@ -1973,9 +2049,19 @@ void
 toggleview(const Arg *arg)
 {
 	unsigned int newtagset = selmon->tagset[selmon->seltags] ^ (arg->ui & TAGMASK);
+	unsigned int cur, slot;
 
 	if (newtagset) {
 		selmon->tagset[selmon->seltags] = newtagset;
+		/* the settings stay the current tag's while it's still in view,
+		 * unless now all nine are */
+		cur = selmon->pertag->curtag;
+		slot = pertagslot(newtagset);
+		if (slot != cur && (!slot || !cur || !(newtagset & 1 << (cur - 1)))) {
+			selmon->pertag->prevtag = cur;
+			selmon->pertag->curtag = slot;
+			restorepertag();
+		}
 		focus(NULL);
 		arrange(selmon);
 	}
@@ -2274,11 +2360,21 @@ updatewmhints(Client *c)
 void
 view(const Arg *arg)
 {
+	unsigned int t;
+
 	if ((arg->ui & TAGMASK) == selmon->tagset[selmon->seltags])
 		return;
 	selmon->seltags ^= 1; /* toggle sel tagset */
-	if (arg->ui & TAGMASK)
+	if (arg->ui & TAGMASK) {
 		selmon->tagset[selmon->seltags] = arg->ui & TAGMASK;
+		selmon->pertag->prevtag = selmon->pertag->curtag;
+		selmon->pertag->curtag = pertagslot(arg->ui);
+	} else { /* back to the tags viewed before, and their slot */
+		t = selmon->pertag->prevtag;
+		selmon->pertag->prevtag = selmon->pertag->curtag;
+		selmon->pertag->curtag = t;
+	}
+	restorepertag();
 	focus(NULL);
 	arrange(selmon);
 }
@@ -2365,6 +2461,7 @@ void
 resetmfact(const Arg *arg)
 {
 	selmon->mfact = mfact;
+	savepertag(selmon);
 	arrange(selmon);
 }
 

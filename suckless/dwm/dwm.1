@@ -22,6 +22,10 @@ Windows are grouped by tags. Each window can be tagged with one or multiple
 tags. Selecting certain tags displays all windows with these tags. A new window
 gets the tags named by its rule in config.h, or else the tags currently viewed;
 windows that are open when dwm restarts keep their tags.
+Each tag also keeps its own layout, master area size, number of master
+windows and whether the bar shows, and so does the view of all tags; the
+scratchpads have none of their own. They start as configured and last until
+dwm restarts.
 .P
 Each screen contains a small status bar which displays all available tags, the
 layout, the title of the focused window (centered), and the text read from the

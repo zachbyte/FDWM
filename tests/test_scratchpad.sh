@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2016  # regexes and stubs with a literal $
-# shellcheck disable=SC2329  # wm_running, exists, shown and hidden run through until_
+# shellcheck disable=SC2329  # wm_running, exists, shown, hidden and bar_is run through until_
 # dwm's scratchpads. First config.h: each scratchpad's command starts st with
 # the instance name its rule matches, the rule floats it on its own tag, and
 # the keys toggle the right one. Then, where Xvfb and xdotool are (CI
 # installs them), the built dwm and st on a virtual screen: Alt+` and Alt+N
 # show their scratchpad centered and hide it again, and Alt+0 leaves a hidden
-# one hidden.
+# one hidden. Last, with pertag (each tag its own layout, master area and
+# bar): scratchpads keep out of it, so showing and hiding one, on a tag
+# whose bar is hidden or on one whose bar shows, or alone in view, never
+# changes whose settings are in force, and they work the same on both.
 # shellcheck source=tests/lib.sh
 source "$(dirname "$0")/lib.sh"
 sandbox
@@ -106,5 +109,39 @@ until_ 5 hidden spterm
 key alt+0
 sleep 0.5
 expect "Alt+0: the scratchpads stay hidden" yes "$(hidden spterm && hidden spnotes && echo yes)"
+
+# pertag: the bar, which each tag keeps for itself, tells whose settings
+# are in force
+bar() {
+    eval "$(xdotool getwindowgeometry --shell "$(xdotool search --classname '^dwm$' | head -n1)")"
+    if ((Y >= 0)); then echo shown; else echo hidden; fi
+}
+bar_is() { [[ $(bar) == "$1" ]]; }
+key alt+1
+key alt+b
+until_ 5 bar_is hidden
+expect "pertag: tag 1's bar hidden" hidden "$(bar)"
+key alt+grave
+expect "a scratchpad on tag 1: shown, centered" yes "$(until_ 5 shown spterm; centered spterm && echo yes || echo "no, at ${X},${Y} ${WIDTH}x${HEIGHT}")"
+expect "showing it keeps tag 1's settings (bar hidden)" hidden "$(bar)"
+key ctrl+alt+1
+sleep 0.5
+expect "tag 1 taken out of view, the scratchpad alone: dwm runs on" yes "$(wm_running && echo yes)"
+expect "and the settings stay tag 1's" hidden "$(bar)"
+key alt+1
+until_ 5 hidden spterm
+expect "back on tag 1: the scratchpad hidden, as on any view of a tag" yes "$(hidden spterm && echo yes)"
+expect "and tag 1's bar still hidden" hidden "$(bar)"
+key alt+2
+until_ 5 bar_is shown
+expect "tag 2: its own bar, shown" shown "$(bar)"
+key alt+grave
+expect "a scratchpad on tag 2: shown, centered" yes "$(until_ 5 shown spterm; centered spterm && echo yes || echo "no, at ${X},${Y} ${WIDTH}x${HEIGHT}")"
+expect "the same window as on tag 1" 1 "$(xdotool search --classname '^spterm$' | wc -l)"
+expect "showing it keeps tag 2's settings (bar shown)" shown "$(bar)"
+key alt+grave
+expect "hidden again" yes "$(until_ 5 hidden spterm && echo yes)"
+key alt+1
+expect "and tag 1 still has its own (bar hidden)" hidden "$(until_ 5 bar_is hidden; bar)"
 
 finish
