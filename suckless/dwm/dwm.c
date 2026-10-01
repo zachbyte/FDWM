@@ -187,6 +187,7 @@ static void maprequest(XEvent *e);
 static void monocle(Monitor *m);
 static void motionnotify(XEvent *e);
 static void movemouse(const Arg *arg);
+static void movestack(const Arg *arg);
 static Client *nexttiled(Client *c);
 static void pop(Client *c);
 static void propertynotify(XEvent *e);
@@ -1189,6 +1190,33 @@ motionnotify(XEvent *e)
 		focus(NULL);
 	}
 	mon = m;
+}
+
+/* movestack (after upstream's movestack patch): swap the focused tiled
+ * window with the next tiled one (arg->i > 0) or the previous one, wrapping
+ * around at either end; the focus stays on it. A floating window (a
+ * scratchpad, say) isn't in the stack, so it stays where it is. */
+void
+movestack(const Arg *arg)
+{
+	Client *c, *sel = selmon->sel, *t = NULL;
+
+	if (!sel || sel->isfloating)
+		return;
+	if (arg->i > 0) {
+		if (!(t = nexttiled(sel->next)))
+			t = nexttiled(selmon->clients);
+	} else {
+		for (c = nexttiled(selmon->clients); c && c != sel; c = nexttiled(c->next))
+			t = c;
+		if (!t)
+			for (c = nexttiled(sel->next); c; c = nexttiled(c->next))
+				t = c;
+	}
+	if (t && t != sel) {
+		swapclients(sel, t);
+		arrange(selmon);
+	}
 }
 
 void

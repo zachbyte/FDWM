@@ -197,6 +197,7 @@ cp dotfiles/.bashrc.d/claude.sh ~/.bashrc.d/
 | `Alt + T` / `F` / `M` | Tiled / floating / monocle layout |
 | `Alt + Space` | Switch to the previous layout |
 | `Alt + Return` | Move the focused window into the master area |
+| `Alt + Shift + J` / `K` | Move the focused window down / up the stack |
 | `Alt + Q` / `Alt + Shift + Q` | Close the window / quit dwm |
 | `Alt + Shift + E` | Power menu: lock, suspend, restart dwm, log out, reboot or power off (see "The power menu") |
 | `Alt + Shift + T` | Theme menu: switch to mocha, tokyonight or thinkpad (see "Colors") |
@@ -242,7 +243,7 @@ The source in `suckless/` already includes every patch, so there is nothing to a
 
 The order:
 
-- dwm (46)
+- dwm (47)
   - 01–14: the upstream patches activetagindicatorbar, actualfullscreen, alwayscenter, attachbottom, centretitle, colorbar, dragmfact, noborderflicker, preserveonrestart, resizehere, restartsig, tiledmove, togglefloatingcenter and uselessgap, as they apply to 6.5. The three that needed fixing by hand (attachbottom, colorbar, resizehere) say how.
   - 15: FDWM's `config.h`.
   - 16: `import-edits`, the hand edits made when the patched dwm was first imported, before the repo had history.
@@ -254,6 +255,7 @@ The order:
   - 44: cleanup: colorbar's extra color schemes, which all drew in the same colors as the normal one (the bar looks the same without them), `dmenumon`, unused since dmenu stopped being given a monitor, and the rule for feh, which FDWM doesn't install.
   - 45: a small square on each tag holding windows, in the bar's text color, filled on the focused window's tags: upstream dwm's marker, which activetagindicatorbar had turned into the underline and `import-edits` had taken out.
   - 46: each key and mouse button described in a comment, `/* group: what it does */`, for the list `fdwm-keys` shows, and `Alt + /`, which opens it; the man page says so.
+  - 47: movestack, after the upstream patch of that name (https://dwm.suckless.org/patches/movestack/) but written on swapclients(): `Alt + Shift + J` / `K` swap the focused window with the next / previous tiled one, wrapping at the ends; a floating window stays put.
 - st (10): the upstream patches anysize, scrollback and scrollback-mouse; `config.h`; `upstream-csi-colon`, a fix from st's development version after 0.9.2; `import-edits`; then FDWM's changes: scrollback-mouse-altscreen (the wheel scrolls pagers on the alternate screen, #7), the Makefile changes and the palette.
 - dmenu (11): `config.h`; `upstream-drw-utf8`, drw.c from dmenu's development version after 5.3; `import-edits`; then FDWM's changes: one monitor, the version fixed to 5.3, the Makefile changes, the palette, and its text and selection from the same palette entries as dwm's.
 - slock (4): `config.h` (Catppuccin colors, dropping privileges to Fedora's `nobody` group) and the Makefile, as slock was built from source; the softer colors (base while locked, surface1 while you type, red only after a wrong password); and the palette.
