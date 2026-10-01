@@ -28,8 +28,10 @@ exit $n'
 PATH="$T/bin:$PATH"
 
 theme_repo "$T/repo"
-cp "$ROOT/install.sh" "$ROOT/packages.txt" "$T/repo/"
+cp "$ROOT/install.sh" "$ROOT/packages.txt" "$ROOT/keys.awk" "$T/repo/"
 cp -r "$ROOT/dotfiles" "$T/repo/"
+mkdir -p "$T/repo/suckless/dwm"
+cp "$ROOT/suckless/dwm/config.h" "$T/repo/suckless/dwm/"
 npackages=$(sed 's/#.*//' "$ROOT/packages.txt" | wc -w | tr -d ' ')
 
 # run: a fresh home and log, then install.sh; sets $out and $rc
@@ -63,6 +65,8 @@ else
 fi
 expect "installs ~/.local/bin/fdwm-menu, executable" yes "$([[ -x $T/home/.local/bin/fdwm-menu ]] && echo yes)"
 expect "installs ~/.local/bin/fdwm-theme-menu, executable" yes "$([[ -x $T/home/.local/bin/fdwm-theme-menu ]] && echo yes)"
+expect "installs ~/.local/bin/fdwm-keys, executable" yes "$([[ -x $T/home/.local/bin/fdwm-keys ]] && echo yes)"
+expect "lists dwm's keys in ~/.config/fdwm/keys, from config.h" "$(awk -f "$ROOT/keys.awk" "$ROOT/suckless/dwm/config.h")" "$(cat "$T/home/.config/fdwm/keys" 2>/dev/null)"
 expect_match "sets up suspend" "==> Setting up suspend" "$out"
 
 MISSING=nnn run
@@ -72,6 +76,18 @@ expect "one package missing: one rpm call, then one per package" $((npackages + 
 
 MISSING='/usr/bin/npm nnn' run
 expect "a path-style package missing: installed too" "SUDO dnf install -y nnn /usr/bin/npm" "$(grep '^SUDO dnf' "$LOG")"
+
+# a key in config.h without its description: install.sh stops there, naming
+# the line, before building or installing anything
+cp "$T/repo/suckless/dwm/config.h" "$T/config.h.good"
+sed -i 's| /\* windows: close the focused window \*/||' "$T/repo/suckless/dwm/config.h"
+n=$(grep -n 'killclient' "$T/repo/suckless/dwm/config.h" | cut -d: -f1)
+run
+cp "$T/config.h.good" "$T/repo/suckless/dwm/config.h"
+expect "a key without its description: fails" yes "$([[ $rc -ne 0 ]] && echo yes)"
+expect_match "a key without its description: names config.h's line" "suckless/dwm/config.h:$n: no \"/\* group: what it does \*/\" at the end" "$out"
+expect "a key without its description: nothing built or installed" "" "$(grep -E '^(MAKE|SUDO make)' "$LOG")"
+expect "a key without its description: no half-written list" no "$([[ -e $T/home/.config/fdwm/keys || -e $T/home/.config/fdwm/keys.tmp ]] && echo yes || echo no)"
 
 # a failure inside a function must still reach the ERR trap (set -E)
 stub cp 'exit 1'

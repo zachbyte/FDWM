@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
 
       # and a virtual X screen with xdotool, on which tests/test_scratchpad.sh
-      # drives the built dwm
+      # and tests/test_tag_marker.sh drive dwm
       - name: Install packages.txt, ShellCheck, runuser and Xvfb
         run: dnf -y install $(sed 's/#.*//' packages.txt) ShellCheck util-linux xorg-x11-server-Xvfb xdotool xprop
 

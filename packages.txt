@@ -12,12 +12,19 @@ xsetroot gnome-keyring mate-polkit dejavu-sans-mono-fonts
 xset xss-lock
 # awk, which fdwm-bar and fdwm-theme use (not every Fedora install has it)
 gawk
+# pgrep and pkill (procps-ng), which fdwm-bar, fdwm-menu and fdwm-theme use
+# (Fedora's container image doesn't have them)
+procps-ng
 
 # notifications: dunst shows them, notify-send (libnotify) sends them
 dunst libnotify
 
-# sound, and the volume, brightness and media keys
-pipewire wireplumber pipewire-pulseaudio brightnessctl playerctl
+# sound, and the volume, brightness and media keys; pactl (pulseaudio-utils)
+# tells fdwm-bar when the volume changes
+pipewire wireplumber pipewire-pulseaudio pulseaudio-utils brightnessctl playerctl
+# udevadm (systemd-udev), which tells fdwm-bar when a charger is plugged in
+# or out
+systemd-udev
 
 # screenshots (fdwm-shot): maim takes them, xclip copies them
 maim xclip

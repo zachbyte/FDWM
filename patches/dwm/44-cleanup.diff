@@ -1,0 +1,104 @@
+FDWM's own cleanup. colorbar's extra color schemes (SchemeStatus,
+SchemeTagsNorm, SchemeInfoSel and SchemeInfoNorm) all drew in col_fg on
+col_bg, like SchemeNorm, so the status text, the tags, the layout symbol and
+the title are drawn with SchemeNorm again and the schemes are gone, as is the
+fourth color in each scheme, which nothing read: the bar looks the same.
+dmenumon, which spawn() set for dmenu's -m, is gone too: dmenucmd hasn't
+passed -m since FDWM went to one monitor. And the rule floating feh, which
+FDWM doesn't install.
+
+diff --git a/config.h b/config.h
+index ec17eaf..58da645 100644
+--- a/config.h
++++ b/config.h
+@@ -11,14 +11,10 @@ static const char col_bg[] = COL_BASE;
+ static const char col_fg[] = COL_UI_TEXT;
+ static const char col_accent[] = COL_UI_ACCENT;
+ static const char col_border[] = COL_UI_BORDER;
+-static const char *colors[][4] = {
+-    /*               fg         bg         border   */
+-    [SchemeNorm] = { col_fg, col_bg, col_border },
+-    [SchemeSel]  = { col_accent, col_bg, col_accent }, // the focused window's border, the selected tag's underline
+-	[SchemeStatus]  = { col_fg, col_bg,  col_bg  }, // Statusbar right {text,background,not used but cannot be empty}
+-	[SchemeTagsNorm]  = { col_fg, col_bg,  col_bg  }, // Tagbar left unselected {text,background,not used but cannot be empty}
+-	[SchemeInfoSel]  = { col_fg, col_bg,  col_bg  }, // infobar middle  selected {text,background,not used but cannot be empty}
+-	[SchemeInfoNorm]  = { col_fg, col_bg,  col_bg  }, // infobar middle  unselected {text,background,not used but cannot be empty}
++static const char *colors[][3] = {
++	/*               fg          bg      border   */
++	[SchemeNorm] = { col_fg,     col_bg, col_border }, /* the whole bar, the other windows' borders */
++	[SchemeSel]  = { col_accent, col_bg, col_accent }, /* the focused window's border, the selected tag's underline */
+ };
+ 
+ /* scratchpads: a floating window a key shows and hides again, started the
+@@ -47,7 +43,6 @@ static const Rule rules[] = {
+ 	 *	WM_NAME(STRING) = title
+ 	 */
+ 	/* class     instance  title           tags mask  isfloating  monitor */
+-	{ "feh",     NULL,     NULL,           0,         1,          -1 },
+ 	{ NULL,      "spterm", NULL,           SPTAG(0),  1,          -1 },
+ 	{ NULL,      "spnotes", NULL,          SPTAG(1),  1,          -1 },
+ 	{ NULL,      "fdwm-theme", NULL,       0,         1,          -1 }, /* fdwm-theme-menu's st */
+@@ -84,7 +79,6 @@ static const Layout layouts[] = {
+ #define SHOT(what) SHCMD ("\"$HOME/.local/bin/fdwm-shot\" " what)
+ 
+ /* commands */
+-static char dmenumon[2] = "0";
+ static const char *dmenucmd[] = { "dmenu_run", NULL };
+ static const char *termcmd[] = { "st", NULL };
+ static const char *lockcmd[] = { "slock", NULL };
+diff --git a/dwm.c b/dwm.c
+index 7d831de..946845e 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -62,7 +62,7 @@
+ 
+ /* enums */
+ enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
+-enum { SchemeNorm, SchemeSel, SchemeStatus, SchemeTagsNorm, SchemeInfoSel, SchemeInfoNorm }; /* color schemes */
++enum { SchemeNorm, SchemeSel }; /* color schemes */
+ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
+        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
+        NetWMWindowTypeDialog, NetClientList, NetClientInfo, NetLast }; /* EWMH atoms */
+@@ -719,7 +719,7 @@ drawbar(Monitor *m)
+ 
+ 	/* draw status first so it can be overdrawn by tags later */
+ 	if (m == selmon) { /* status is only drawn on selected monitor */
+-		drw_setscheme(drw, scheme[SchemeStatus]);
++		drw_setscheme(drw, scheme[SchemeNorm]);
+ 		tw = TEXTW(stext) - lrpad + 2; /* 2px right padding */
+ 		drw_text(drw, m->ww - tw, 0, tw, bh, 0, stext, 0);
+ 	}
+@@ -731,7 +731,7 @@ drawbar(Monitor *m)
+ 	x = 0;
+ 	for (i = 0; i < LENGTH(tags); i++) {
+ 		w = TEXTW(tags[i]);
+-		drw_setscheme(drw, scheme[SchemeTagsNorm]);  // Normal scheme for all tags
++		drw_setscheme(drw, scheme[SchemeNorm]);
+ 		drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
+ 
+ 		// Only draw underline for the selected tag, in the accent
+@@ -744,13 +744,13 @@ drawbar(Monitor *m)
+ 	}
+ 
+ 	w = TEXTW(m->ltsymbol);
+-	drw_setscheme(drw, scheme[SchemeTagsNorm]);  // Normal scheme for layout symbol
++	drw_setscheme(drw, scheme[SchemeNorm]);
+ 	x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
+ 
+ 	// Center the window title in the remaining space
+ 	if ((w = m->ww - tw - x) > bh) {
+ 		if (m->sel) {
+-			drw_setscheme(drw, scheme[m == selmon ? SchemeInfoSel : SchemeInfoNorm]);
++			drw_setscheme(drw, scheme[SchemeNorm]);
+ 			tlpad = MAX((m->ww - ((int)TEXTW(m->sel->name) - lrpad)) / 2 - x, lrpad / 2);
+ 			drw_text(drw, x, 0, w, bh, tlpad, m->sel->name, 0);
+ 			if (m->sel->isfloating)
+@@ -1771,8 +1771,6 @@ spawn(const Arg *arg)
+ {
+ 	struct sigaction sa;
+ 
+-	if (arg->v == dmenucmd)
+-		dmenumon[0] = '0' + selmon->num;
+ 	if (fork() == 0) {
+ 		if (dpy)
+ 			close(ConnectionNumber(dpy));

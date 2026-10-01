@@ -1,0 +1,17 @@
+#!/bin/sh
+# fdwm-keys: every key and mouse button dwm has, described and grouped
+# (windows, tags, layouts, apps, system), in dmenu (Alt+/). Type to filter
+# the list; Escape or Return closes it. The list is ~/.config/fdwm/keys,
+# which install.sh writes from dwm's config.h (keys.awk), so it is read here
+# as it is.
+
+keys=${XDG_CONFIG_HOME:-$HOME/.config}/fdwm/keys
+if [ ! -s "$keys" ]; then
+    msg="there's no list of keys yet; install.sh writes it"
+    echo "fdwm-keys: $msg" >&2
+    command -v notify-send >/dev/null 2>&1 &&
+        notify-send -a fdwm-keys "fdwm-keys" "$msg" 2>/dev/null
+    exit 1
+fi
+dmenu -i -l 20 -p keys <"$keys" >/dev/null
+exit 0

@@ -76,7 +76,6 @@ PROMPT_COMMAND=(fdwm_prompt "history -a; history -n" "${PROMPT_COMMAND[@]}")
 alias grep='grep --color=auto'
 alias c='clear'
 alias vim='nvim'
-alias mpv='mpv --keep-open'
 alias ls='ls -hN --group-directories-first --color=auto'
 alias ..='cd ..'
 
