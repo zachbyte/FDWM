@@ -1,0 +1,120 @@
+From FDWM commit 5170ed8 fix(dwm): keep new floating windows at their requested size (#2)
+
+diff --git a/dwm.1 b/dwm.1
+index 837d02a..36d2883 100644
+--- a/dwm.1
++++ b/dwm.1
+@@ -15,7 +15,8 @@ right contains all other windows. The number of master area windows can be
+ adjusted from zero to an arbitrary number. In monocle layout all windows are
+ maximised to the screen size. In floating layout windows can be resized and
+ moved freely. Dialog windows are always managed floating, regardless of the
+-layout applied.
++layout applied. A new floating window keeps the size it asks for and opens
++centered on the screen.
+ .P
+ Windows are grouped by tags. Each window can be tagged with one or multiple
+ tags. Selecting certain tags displays all windows with these tags.
+@@ -120,7 +121,8 @@ Close focused window.
+ Toggle fullscreen for focused window.
+ .TP
+ .B Mod1\-Shift\-space
+-Toggle focused window between tiled and floating state.
++Toggle focused window between tiled and floating state. A window made floating
++is resized to 800\(mu500 and centered.
+ .TP
+ .B Mod1\-Tab
+ Toggles to the previously selected tags.
+@@ -154,7 +156,8 @@ Restart dwm.
+ Move focused window while dragging. Tiled windows will be toggled to the floating state.
+ .TP
+ .B Mod1\-Button2
+-Toggles focused window between floating and tiled state.
++Toggles focused window between floating and tiled state, like
++.BR Mod1\-Shift\-space .
+ .TP
+ .B Mod1\-Button3
+ Resize focused window while dragging. Tiled windows will be toggled to the floating state.
+diff --git a/dwm.c b/dwm.c
+index 35763a4..fda0dea 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -280,8 +280,9 @@ static Window root, wmcheckwin;
+ /* compile-time check if all tags fit into an unsigned int bit array. */
+ struct NumTags { char limitexceeded[LENGTH(tags) > 31 ? -1 : 1]; };
+ 
+-#define MIN_WINDOW_WIDTH 800
+-#define MIN_WINDOW_HEIGHT 500
++/* size of a window floated by togglefloating() */
++#define FLOAT_WIDTH  800
++#define FLOAT_HEIGHT 500
+ 
+ /* function implementations */
+ void
+@@ -386,8 +387,8 @@ applysizehints(Client *c, int *x, int *y, int *w, int *h, int interact)
+ 			*h = MIN(*h, c->maxh);
+ 	}
+ 	if (c->isfloating || !c->mon->lt[c->mon->sellt]->arrange) {
+-		*w = MAX(*w, MIN_WINDOW_WIDTH);
+-		*h = MAX(*h, MIN_WINDOW_HEIGHT);
++		*w = MAX(*w, FLOAT_WIDTH);
++		*h = MAX(*h, FLOAT_HEIGHT);
+ 	}
+ 	return *x != c->x || *y != c->y || *w != c->w || *h != c->h;
+ }
+@@ -1108,18 +1109,10 @@ manage(Window w, XWindowAttributes *wa)
+     c->mon->sel = c;
+     arrange(c->mon);
+ 
+-    if (c->isfloating) {
+-        int newWidth = MIN_WINDOW_WIDTH;
+-        int newHeight = MIN_WINDOW_HEIGHT;
+-    
+-        int newX = c->mon->mx + (c->mon->mw - newWidth) / 2;
+-        int newY = c->mon->my + (c->mon->mh - newHeight) / 2;
+-    
+-        c->x = newX;
+-        c->y = newY;
+-        c->w = newWidth;
+-        c->h = newHeight;
+-    }
++	if (c->isfloating) { /* alwayscenter: keep the requested size */
++		c->x = MAX(c->mon->wx, c->mon->mx + (c->mon->mw - c->w - 2 * c->bw) / 2);
++		c->y = MAX(c->mon->wy, c->mon->my + (c->mon->mh - c->h - 2 * c->bw) / 2);
++	}
+ 
+     XMoveResizeWindow(dpy, c->win, c->x, c->y, c->w, c->h);
+     XMapWindow(dpy, c->win);
+@@ -1870,23 +1863,16 @@ togglebar(const Arg *arg)
+ void
+ togglefloating(const Arg *arg)
+ {
+-    if (!selmon->sel)
+-        return;
+-    if (selmon->sel->isfullscreen) /* no support for fullscreen windows */
+-        return;
+-    
+-    selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
+-    
+-    if (selmon->sel->isfloating) {
+-        int newWidth = MIN_WINDOW_WIDTH;
+-        int newHeight = MIN_WINDOW_HEIGHT;
+-        
+-        int newX = selmon->sel->mon->mx + (selmon->sel->mon->mw - newWidth) / 2;
+-        int newY = selmon->sel->mon->my + (selmon->sel->mon->mh - newHeight) / 2;
+-        
+-        resize(selmon->sel, newX, newY, newWidth, newHeight, 1);
+-    }
+-    arrange(selmon);
++	Client *c = selmon->sel;
++
++	if (!c || c->isfullscreen) /* no support for fullscreen windows */
++		return;
++	c->isfloating = !c->isfloating || c->isfixed;
++	if (c->isfloating) /* togglefloatingcenter, at a fixed size */
++		resize(c, c->mon->mx + (c->mon->mw - FLOAT_WIDTH) / 2,
++			c->mon->my + (c->mon->mh - FLOAT_HEIGHT) / 2,
++			FLOAT_WIDTH, FLOAT_HEIGHT, 1);
++	arrange(selmon);
+ }
+ 
+ void

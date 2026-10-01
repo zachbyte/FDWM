@@ -1,0 +1,108 @@
+FDWM's settings: upstream's config.def.h, as config.h (which FDWM builds from
+directly), with FDWM's fonts, colors, tags, rules and keys.
+
+diff --git a/config.def.h b/config.h
+similarity index 96%
+rename from config.def.h
+rename to config.h
+index d259675..be1277b 100644
+--- a/config.def.h
++++ b/config.h
+@@ -5,7 +5,7 @@
+  *
+  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
+  */
+-static char *font = "Liberation Mono:pixelsize=12:antialias=true:autohint=true";
++static char *font = "JetBrainsMono Nerd Font:pixelsize=18:antialias=true:autohint=true";
+ static int borderpx = 2;
+ 
+ /*
+@@ -96,43 +96,39 @@ unsigned int tabspaces = 8;
+ /* Terminal colors (16 first used in escape sequence) */
+ static const char *colorname[] = {
+ 	/* 8 normal colors */
+-	"black",
+-	"red3",
+-	"green3",
+-	"yellow3",
+-	"blue2",
+-	"magenta3",
+-	"cyan3",
+-	"gray90",
++	"#45475a",
++	"#cba6f7",
++	"#a6e3a1",
++	"#f9e2af",
++	"#89b4fa",
++	"#f38ba8",
++	"#94e2d5",
++	"#bac2de",
+ 
+ 	/* 8 bright colors */
+-	"gray50",
+-	"red",
+-	"green",
+-	"yellow",
+-	"#5c5cff",
+-	"magenta",
+-	"cyan",
+-	"white",
+-
+-	[255] = 0,
+-
+-	/* more colors can be added after 255 to use with DefaultXX */
+-	"#cccccc",
+-	"#555555",
+-	"gray90", /* default foreground colour */
+-	"black", /* default background colour */
++	"#585b70",
++	"#cba6f7",
++	"#a6e3a1",
++	"#f9e2af",
++	"#89b4fa",
++	"#f38ba8",
++	"#94e2d5",
++	"#a6adc8",
++
++[256] = "#cdd6f4", /* default foreground colour */
++[257] = "#1e1e2e", /* default background colour */
++[258] = "#f5e0dc", /*575268*/
++
+ };
+ 
+ 
+ /*
+- * Default colors (colorname index)
+  * foreground, background, cursor, reverse cursor
+  */
+-unsigned int defaultfg = 258;
+-unsigned int defaultbg = 259;
+-unsigned int defaultcs = 256;
+-static unsigned int defaultrcs = 257;
++unsigned int defaultfg = 256;
++unsigned int defaultbg = 257;
++unsigned int defaultcs = 258;
++static unsigned int defaultrcs = 258;
+ 
+ /*
+  * Default shape of cursor
+@@ -141,7 +137,7 @@ static unsigned int defaultrcs = 257;
+  * 6: Bar ("|")
+  * 7: Snowman ("☃")
+  */
+-static unsigned int cursorshape = 2;
++static unsigned int cursorshape = 6;
+ 
+ /*
+  * Default columns and rows numbers
+@@ -176,8 +172,8 @@ static uint forcemousemod = ShiftMask;
+  */
+ static MouseShortcut mshortcuts[] = {
+ 	/* mask                 button   function        argument       release */
+-	{ ShiftMask,            Button4, kscrollup,      {.i = 1} },
+-	{ ShiftMask,            Button5, kscrolldown,    {.i = 1} },
++	{ XK_NO_MOD,            Button4, kscrollup,      {.i = 1} },
++	{ XK_NO_MOD,            Button5, kscrolldown,    {.i = 1} },
+ 	{ XK_ANY_MOD,           Button2, selpaste,       {.i = 0},      1 },
+ 	{ ShiftMask,            Button4, ttysend,        {.s = "\033[5;2~"} },
+ 	{ XK_ANY_MOD,           Button4, ttysend,        {.s = "\031"} },

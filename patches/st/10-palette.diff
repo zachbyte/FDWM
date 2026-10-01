@@ -1,0 +1,61 @@
+From FDWM commit 9327245 refactor(palette): generate every color from one palette file
+
+diff --git a/config.h b/config.h
+index c0878f6..00042ab 100644
+--- a/config.h
++++ b/config.h
+@@ -93,31 +93,33 @@ char *termname = "st-256color";
+  */
+ unsigned int tabspaces = 8;
+ 
+-/* Terminal colors (16 first used in escape sequence) */
++/* Terminal colors (16 first used in escape sequence): term0-15, term_fg,
++ * term_bg and term_cursor in the palette file */
++#include "../colors.h" /* COL_*: the palette's colors, written by fdwm-theme */
+ static const char *colorname[] = {
+ 	/* 8 normal colors */
+-	"#45475a",
+-	"#cba6f7",
+-	"#a6e3a1",
+-	"#f9e2af",
+-	"#89b4fa",
+-	"#f38ba8",
+-	"#94e2d5",
+-	"#bac2de",
++	COL_TERM0,
++	COL_TERM1,
++	COL_TERM2,
++	COL_TERM3,
++	COL_TERM4,
++	COL_TERM5,
++	COL_TERM6,
++	COL_TERM7,
+ 
+ 	/* 8 bright colors */
+-	"#585b70",
+-	"#cba6f7",
+-	"#a6e3a1",
+-	"#f9e2af",
+-	"#89b4fa",
+-	"#f38ba8",
+-	"#94e2d5",
+-	"#a6adc8",
+-
+-[256] = "#cdd6f4", /* default foreground colour */
+-[257] = "#1e1e2e", /* default background colour */
+-[258] = "#f5e0dc", /*575268*/
++	COL_TERM8,
++	COL_TERM9,
++	COL_TERM10,
++	COL_TERM11,
++	COL_TERM12,
++	COL_TERM13,
++	COL_TERM14,
++	COL_TERM15,
++
++[256] = COL_TERM_FG, /* default foreground colour */
++[257] = COL_TERM_BG, /* default background colour */
++[258] = COL_TERM_CURSOR, /* cursor */
+ 
+ };
+ 

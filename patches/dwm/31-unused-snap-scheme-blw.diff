@@ -1,0 +1,45 @@
+From FDWM commit 9c0d887 chore(dwm): remove the unused snap setting, SchemeTagsSel and blw (#D3)
+
+diff --git a/config.h b/config.h
+index acd15db..7033541 100644
+--- a/config.h
++++ b/config.h
+@@ -3,7 +3,6 @@
+ /* appearance */
+ static const unsigned int borderpx  = 2;        /* border pixel of windows */
+ static const unsigned int gappx     = 10;        /* gaps between windows */
+-static const unsigned int snap      = 32;       /* snap pixel */
+ static const int showbar            = 1;        /* 0 means no bar */
+ static const int topbar             = 1;        /* 0 means bottom bar */
+ static const char *fonts[]          = { "JetBrainsMono Nerd Font:size=10" };
+@@ -14,7 +13,6 @@ static const char *colors[][4] = {
+     [SchemeNorm] = { col_fg, col_bg, col_fg },
+     [SchemeSel]  = { col_fg, col_fg, col_fg },
+ 	[SchemeStatus]  = { col_fg, col_bg,  "#000000"  }, // Statusbar right {text,background,not used but cannot be empty}
+-	[SchemeTagsSel]  = { col_bg, col_fg,  "#000000"  }, // Tagbar left selected {text,background,not used but cannot be empty}
+ 	[SchemeTagsNorm]  = { col_fg, col_bg,  "#000000"  }, // Tagbar left unselected {text,background,not used but cannot be empty}
+ 	[SchemeInfoSel]  = { col_fg, col_bg,  "#000000"  }, // infobar middle  selected {text,background,not used but cannot be empty}
+ 	[SchemeInfoNorm]  = { col_fg, col_bg,  "#000000"  }, // infobar middle  unselected {text,background,not used but cannot be empty}
+diff --git a/dwm.c b/dwm.c
+index 2c21e86..23cf3c8 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -59,7 +59,7 @@
+ 
+ /* enums */
+ enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
+-enum { SchemeNorm, SchemeSel, SchemeStatus, SchemeTagsSel, SchemeTagsNorm, SchemeInfoSel, SchemeInfoNorm }; /* color schemes */
++enum { SchemeNorm, SchemeSel, SchemeStatus, SchemeTagsNorm, SchemeInfoSel, SchemeInfoNorm }; /* color schemes */
+ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
+        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
+        NetWMWindowTypeDialog, NetClientList, NetClientInfo, NetLast }; /* EWMH atoms */
+@@ -737,8 +737,7 @@ drawbar(Monitor *m)
+ 		x += w;
+ 	}
+ 
+-	int blw;
+-	w = blw = TEXTW(m->ltsymbol);
++	w = TEXTW(m->ltsymbol);
+ 	drw_setscheme(drw, scheme[SchemeTagsNorm]);  // Normal scheme for layout symbol
+ 	x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
+ 

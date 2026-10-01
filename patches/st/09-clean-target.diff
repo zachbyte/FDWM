@@ -1,0 +1,15 @@
+From FDWM commit 6f112ee chore(suckless): drop Makefile cleanup of files the repo doesn't have (#D6)
+
+diff --git a/Makefile b/Makefile
+index 4c62630..d1eb94d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -21,7 +21,7 @@ st: $(OBJ)
+ 	$(CC) -o $@ $(OBJ) $(STLDFLAGS)
+ 
+ clean:
+-	rm -f st $(OBJ) *.rej *.orig *.o config.def.h README TODO FAQ LEGACY
++	rm -f st $(OBJ) *.rej *.orig *.o
+ 
+ install: st
+ 	mkdir -p $(DESTDIR)$(PREFIX)/bin

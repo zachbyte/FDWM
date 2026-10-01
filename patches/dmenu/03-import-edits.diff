@@ -1,0 +1,79 @@
+The Makefile and config.mk as first imported: VERSION wrongly 5.0 (a later
+patch sets 5.3), libXrender linked directly, and cleanup of the files FDWM
+doesn't ship. Drops README.
+
+diff --git a/Makefile b/Makefile
+index 458c524..86f9ef2 100644
+--- a/Makefile
++++ b/Makefile
+@@ -23,11 +23,11 @@ stest: stest.o
+ 	$(CC) -o $@ stest.o $(LDFLAGS)
+ 
+ clean:
+-	rm -f dmenu stest $(OBJ) dmenu-$(VERSION).tar.gz
++	rm -f dmenu stest $(OBJ) dmenu-$(VERSION).tar.gz *.rej *.orig config.def.h README
+ 
+ dist: clean
+ 	mkdir -p dmenu-$(VERSION)
+-	cp LICENSE Makefile README arg.h config.def.h config.mk dmenu.1\
++	cp LICENSE Makefile arg.h config.h config.mk dmenu.1\
+ 		drw.h util.h dmenu_path dmenu_run stest.1 $(SRC)\
+ 		dmenu-$(VERSION)
+ 	tar -cf dmenu-$(VERSION).tar dmenu-$(VERSION)
+diff --git a/README b/README
+deleted file mode 100644
+index a8fcdfe..0000000
+--- a/README
++++ /dev/null
+@@ -1,24 +0,0 @@
+-dmenu - dynamic menu
+-====================
+-dmenu is an efficient dynamic menu for X.
+-
+-
+-Requirements
+-------------
+-In order to build dmenu you need the Xlib header files.
+-
+-
+-Installation
+-------------
+-Edit config.mk to match your local setup (dmenu is installed into
+-the /usr/local namespace by default).
+-
+-Afterwards enter the following command to build and install dmenu
+-(if necessary as root):
+-
+-    make clean install
+-
+-
+-Running dmenu
+--------------
+-See the man page for details.
+diff --git a/config.mk b/config.mk
+index 137f7c8..78a464b 100644
+--- a/config.mk
++++ b/config.mk
+@@ -1,5 +1,5 @@
+ # dmenu version
+-VERSION = 5.3
++VERSION = 5.0
+ 
+ # paths
+ PREFIX = /usr/local
+@@ -21,7 +21,7 @@ FREETYPEINC = /usr/include/freetype2
+ 
+ # includes and libs
+ INCS = -I$(X11INC) -I$(FREETYPEINC)
+-LIBS = -L$(X11LIB) -lX11 $(XINERAMALIBS) $(FREETYPELIBS)
++LIBS = -L$(X11LIB) -lX11 $(XINERAMALIBS) $(FREETYPELIBS) -lXrender
+ 
+ # flags
+ CPPFLAGS = -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L -DVERSION=\"$(VERSION)\" $(XINERAMAFLAGS)
+@@ -29,4 +29,4 @@ CFLAGS   = -std=c99 -pedantic -Wall -Os $(INCS) $(CPPFLAGS)
+ LDFLAGS  = $(LIBS)
+ 
+ # compiler and linker
+-CC = cc
++CC = cc
+\ No newline at end of file

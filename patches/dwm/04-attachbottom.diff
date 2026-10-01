@@ -1,0 +1,59 @@
+Upstream patch dwm-attachbottom-6.3.diff (https://dwm.suckless.org/patches/attachbottom/),
+applied in this order to dwm 6.5.
+The hunk in updategeom() was applied by hand: dwm 6.5 indents it one level less.
+
+diff --git a/dwm.c b/dwm.c
+index f213135..f13b532 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -147,6 +147,7 @@ static int applysizehints(Client *c, int *x, int *y, int *w, int *h, int interac
+ static void arrange(Monitor *m);
+ static void arrangemon(Monitor *m);
+ static void attach(Client *c);
++static void attachbottom(Client *c);
+ static void attachstack(Client *c);
+ static void buttonpress(XEvent *e);
+ static void checkotherwm(void);
+@@ -409,6 +410,15 @@ attach(Client *c)
+ 	c->mon->clients = c;
+ }
+ 
++void
++attachbottom(Client *c)
++{
++	Client **tc;
++	c->next = NULL;
++	for (tc = &c->mon->clients; *tc; tc = &(*tc)->next);
++	*tc = c;
++}
++
+ void
+ attachstack(Client *c)
+ {
+@@ -1078,7 +1088,7 @@ manage(Window w, XWindowAttributes *wa)
+ 		c->isfloating = c->oldstate = trans != None || c->isfixed;
+ 	if (c->isfloating)
+ 		XRaiseWindow(dpy, c->win);
+-	attach(c);
++	attachbottom(c);
+ 	attachstack(c);
+ 	XChangeProperty(dpy, root, netatom[NetClientList], XA_WINDOW, 32, PropModeAppend,
+ 		(unsigned char *) &(c->win), 1);
+@@ -1431,7 +1441,7 @@ sendmon(Client *c, Monitor *m)
+ 	detachstack(c);
+ 	c->mon = m;
+ 	c->tags = m->tagset[m->seltags]; /* assign tags of target monitor */
+-	attach(c);
++	attachbottom(c);
+ 	attachstack(c);
+ 	focus(NULL);
+ 	arrange(NULL);
+@@ -1926,7 +1936,7 @@ updategeom(void)
+ 				m->clients = c->next;
+ 				detachstack(c);
+ 				c->mon = mons;
+-				attach(c);
++				attachbottom(c);
+ 				attachstack(c);
+ 			}
+ 			if (m == selmon)

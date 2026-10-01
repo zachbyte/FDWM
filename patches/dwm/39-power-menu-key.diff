@@ -1,0 +1,40 @@
+From FDWM commit cdaf2d6 feat(dwm): Alt+Shift+E opens the power menu
+
+diff --git a/config.h b/config.h
+index 65f9d7a..b498fa2 100644
+--- a/config.h
++++ b/config.h
+@@ -66,6 +66,8 @@ static char dmenumon[2] = "0";
+ static const char *dmenucmd[] = { "dmenu_run", NULL };
+ static const char *termcmd[] = { "st", NULL };
+ static const char *lockcmd[] = { "slock", NULL };
++/* lock, suspend, restart dwm, log out, reboot, power off (fdwm-menu) */
++static const char *menucmd[] = { "/bin/sh", "-c", "exec \"$HOME/.local/bin/fdwm-menu\"", NULL };
+ 
+ static const Key keys[] = {
+ 	/* modifier                     key        function        argument */
+@@ -102,6 +104,7 @@ static const Key keys[] = {
+ 	{ MODKEY|ShiftMask,             XK_w,      quit,           {1} }, 
+ 	{ MODKEY|ShiftMask,             XK_r,      resetmfact,     {0} },
+ 	{ MODKEY|ShiftMask,             XK_l,      spawn,          {.v = lockcmd } },
++	{ MODKEY|ShiftMask,             XK_e,      spawn,          {.v = menucmd } },
+ 	{ 0,                            XF86XK_MonBrightnessUp,    spawn,          SHCMD ("brightnessctl set +10%" BARREFRESH)},
+ 	{ 0,                            XF86XK_MonBrightnessDown,  spawn,          SHCMD ("brightnessctl set 10%-" BARREFRESH)},
+ 	{ 0,                            XF86XK_AudioLowerVolume,   spawn,          SHCMD ("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-" BARREFRESH)},
+diff --git a/dwm.1 b/dwm.1
+index 77dc6ee..5e6f911 100644
+--- a/dwm.1
++++ b/dwm.1
+@@ -151,6 +151,12 @@ Quit dwm.
+ .B Mod1\-Shift\-w
+ Restart dwm, for example to run a newly installed build.
+ .TP
++.B Mod1\-Shift\-e
++Open the power menu,
++.BR fdwm-menu ,
++in dmenu: lock, suspend, restart dwm, log out, reboot or power off. Log out,
++reboot and power off ask again first.
++.TP
+ .B XF86MonBrightnessUp, XF86MonBrightnessDown
+ Raise or lower the screen brightness by 10% with
+ .BR brightnessctl (1).

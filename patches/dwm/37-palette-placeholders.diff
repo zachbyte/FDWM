@@ -1,0 +1,21 @@
+From FDWM commit 72eb1dd fix(dwm, dmenu): take the last black placeholders from the palette
+
+diff --git a/config.h b/config.h
+index 12bdc2a..2292afa 100644
+--- a/config.h
++++ b/config.h
+@@ -13,10 +13,10 @@ static const char *colors[][4] = {
+     /*               fg         bg         border   */
+     [SchemeNorm] = { col_fg, col_bg, col_fg },
+     [SchemeSel]  = { col_fg, col_fg, col_fg },
+-	[SchemeStatus]  = { col_fg, col_bg,  "#000000"  }, // Statusbar right {text,background,not used but cannot be empty}
+-	[SchemeTagsNorm]  = { col_fg, col_bg,  "#000000"  }, // Tagbar left unselected {text,background,not used but cannot be empty}
+-	[SchemeInfoSel]  = { col_fg, col_bg,  "#000000"  }, // infobar middle  selected {text,background,not used but cannot be empty}
+-	[SchemeInfoNorm]  = { col_fg, col_bg,  "#000000"  }, // infobar middle  unselected {text,background,not used but cannot be empty}
++	[SchemeStatus]  = { col_fg, col_bg,  col_bg  }, // Statusbar right {text,background,not used but cannot be empty}
++	[SchemeTagsNorm]  = { col_fg, col_bg,  col_bg  }, // Tagbar left unselected {text,background,not used but cannot be empty}
++	[SchemeInfoSel]  = { col_fg, col_bg,  col_bg  }, // infobar middle  selected {text,background,not used but cannot be empty}
++	[SchemeInfoNorm]  = { col_fg, col_bg,  col_bg  }, // infobar middle  unselected {text,background,not used but cannot be empty}
+ };
+ 
+ /* tagging */

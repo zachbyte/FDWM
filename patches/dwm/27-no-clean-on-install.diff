@@ -1,0 +1,14 @@
+From FDWM commit 9a86454 build: compile as the user and only install as root (#11)
+
+diff --git a/Makefile b/Makefile
+index 9e351ae..b0dc3ba 100644
+--- a/Makefile
++++ b/Makefile
+@@ -33,7 +33,6 @@ install: all
+ 	mkdir -p ${DESTDIR}${MANPREFIX}/man1
+ 	sed "s/VERSION/${VERSION}/g" < dwm.1 > ${DESTDIR}${MANPREFIX}/man1/dwm.1
+ 	chmod 644 ${DESTDIR}${MANPREFIX}/man1/dwm.1
+-	${MAKE} clean
+ 
+ uninstall:
+ 	rm -f ${DESTDIR}${PREFIX}/bin/dwm\

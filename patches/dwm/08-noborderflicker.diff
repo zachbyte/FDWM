@@ -1,0 +1,45 @@
+Upstream patch dwm-noborderflicker-20211227-8657affa2a61.diff (https://dwm.suckless.org/patches/noborderflicker/),
+applied in this order to dwm 6.5.
+
+diff --git a/dwm.c b/dwm.c
+index 397914f..78bcf4d 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -237,6 +237,7 @@ static int xerrorstart(Display *dpy, XErrorEvent *ee);
+ static void zoom(const Arg *arg);
+ 
+ /* variables */
++static Client *lastfocused = NULL;
+ static const char broken[] = "broken";
+ static char stext[256];
+ static int screen;
+@@ -816,7 +817,11 @@ focus(Client *c)
+ 		detachstack(c);
+ 		attachstack(c);
+ 		grabbuttons(c, 1);
++		/* set new focused border first to avoid flickering */
+ 		XSetWindowBorder(dpy, c->win, scheme[SchemeSel][ColBorder].pixel);
++		/* lastfocused may be us if another window was unmanaged */
++		if (lastfocused && lastfocused != c)
++			XSetWindowBorder(dpy, lastfocused->win, scheme[SchemeNorm][ColBorder].pixel);
+ 		setfocus(c);
+ 	} else {
+ 		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
+@@ -1806,7 +1811,7 @@ unfocus(Client *c, int setfocus)
+ 	if (!c)
+ 		return;
+ 	grabbuttons(c, 0);
+-	XSetWindowBorder(dpy, c->win, scheme[SchemeNorm][ColBorder].pixel);
++	lastfocused = c;
+ 	if (setfocus) {
+ 		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
+ 		XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
+@@ -1833,6 +1838,8 @@ unmanage(Client *c, int destroyed)
+ 		XSetErrorHandler(xerror);
+ 		XUngrabServer(dpy);
+ 	}
++	if (lastfocused == c)
++		lastfocused = NULL;
+ 	free(c);
+ 	focus(NULL);
+ 	updateclientlist();

@@ -24,6 +24,10 @@ jobs:
       - name: Install packages.txt, ShellCheck and runuser
         run: dnf -y install $(sed 's/#.*//' packages.txt) ShellCheck util-linux
 
+      # downloads the upstream releases pinned in patches/upstream
+      - name: Rebuild dwm, st, dmenu and slock from upstream and patches/
+        run: tests/patches.sh
+
       - name: Build dwm, st, dmenu and slock with -Werror
         run: tests/build.sh
 

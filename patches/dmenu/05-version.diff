@@ -1,0 +1,15 @@
+From FDWM commit 61de7db refactor(dwm): take dmenu's newer drw.c, fix dmenu's version (#15)
+
+diff --git a/config.mk b/config.mk
+index 9b81882..ac5d892 100644
+--- a/config.mk
++++ b/config.mk
+@@ -1,5 +1,6 @@
+-# dmenu version
+-VERSION = 5.0
++# dmenu version: the 5.3 release plus upstream fixes from mid-2024
++# (utf8decode overhaul, invalid UTF-8 drawn as U+FFFD)
++VERSION = 5.3
+ 
+ # paths
+ PREFIX = /usr/local

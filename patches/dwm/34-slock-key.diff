@@ -1,0 +1,38 @@
+From FDWM commit c8d67fe feat(dwm): lock the screen with slock on Alt+Shift+L
+
+diff --git a/config.h b/config.h
+index 7033541..72db4ac 100644
+--- a/config.h
++++ b/config.h
+@@ -58,6 +58,7 @@ static const Layout layouts[] = {
+ static char dmenumon[2] = "0";
+ static const char *dmenucmd[] = { "dmenu_run", NULL };
+ static const char *termcmd[] = { "st", NULL };
++static const char *lockcmd[] = { "slock", NULL };
+ 
+ static const Key keys[] = {
+ 	/* modifier                     key        function        argument */
+@@ -93,6 +94,7 @@ static const Key keys[] = {
+ 	{ MODKEY|ShiftMask,             XK_q,      quit,           {0} },
+ 	{ MODKEY|ShiftMask,             XK_w,      quit,           {1} }, 
+ 	{ MODKEY|ShiftMask,             XK_r,      resetmfact,     {0} },
++	{ MODKEY|ShiftMask,             XK_l,      spawn,          {.v = lockcmd } },
+   { 0,                            XF86XK_MonBrightnessUp,    spawn,          SHCMD ("brightnessctl set +10%")},
+   { 0,                            XF86XK_MonBrightnessDown,  spawn,          SHCMD ("brightnessctl set 10%-")},
+   { 0,                            XF86XK_AudioLowerVolume,   spawn,          SHCMD ("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-")},
+diff --git a/dwm.1 b/dwm.1
+index fc9f8de..6e5f0e7 100644
+--- a/dwm.1
++++ b/dwm.1
+@@ -140,6 +140,11 @@ View all windows with any tag.
+ .B Mod1\-Control\-[1..n]
+ Add/remove all windows with nth tag to/from the view.
+ .TP
++.B Mod1\-Shift\-l
++Lock the screen with
++.BR slock (1);
++type your password and press Return to unlock.
++.TP
+ .B Mod1\-Shift\-q
+ Quit dwm.
+ .TP

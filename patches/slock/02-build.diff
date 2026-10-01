@@ -1,0 +1,71 @@
+From FDWM commit ffd51d6 (build slock from source): the Makefile builds from
+config.h and has no dist target. Drops README.
+
+diff --git a/Makefile b/Makefile
+index b20fd4e..0c39316 100644
+--- a/Makefile
++++ b/Makefile
+@@ -20,26 +20,13 @@ options:
+ 
+ ${OBJ}: config.h config.mk arg.h util.h
+ 
+-config.h:
+-	@echo creating $@ from config.def.h
+-	@cp config.def.h $@
+-
+ slock: ${OBJ}
+ 	@echo CC -o $@
+ 	@${CC} -o $@ ${OBJ} ${LDFLAGS}
+ 
+ clean:
+ 	@echo cleaning
+-	@rm -f slock ${OBJ} slock-${VERSION}.tar.gz
+-
+-dist: clean
+-	@echo creating dist tarball
+-	@mkdir -p slock-${VERSION}
+-	@cp -R LICENSE Makefile README slock.1 config.mk \
+-		${SRC} config.def.h arg.h util.h slock-${VERSION}
+-	@tar -cf slock-${VERSION}.tar slock-${VERSION}
+-	@gzip slock-${VERSION}.tar
+-	@rm -rf slock-${VERSION}
++	@rm -f slock ${OBJ}
+ 
+ install: all
+ 	@echo installing executable file to ${DESTDIR}${PREFIX}/bin
+@@ -58,4 +45,4 @@ uninstall:
+ 	@echo removing manual page from ${DESTDIR}${MANPREFIX}/man1
+ 	@rm -f ${DESTDIR}${MANPREFIX}/man1/slock.1
+ 
+-.PHONY: all options clean dist install uninstall
++.PHONY: all options clean install uninstall
+diff --git a/README b/README
+deleted file mode 100644
+index dcacd01..0000000
+--- a/README
++++ /dev/null
+@@ -1,24 +0,0 @@
+-slock - simple screen locker
+-============================
+-simple screen locker utility for X.
+-
+-
+-Requirements
+-------------
+-In order to build slock you need the Xlib header files.
+-
+-
+-Installation
+-------------
+-Edit config.mk to match your local setup (slock is installed into
+-the /usr/local namespace by default).
+-
+-Afterwards enter the following command to build and install slock
+-(if necessary as root):
+-
+-    make clean install
+-
+-
+-Running slock
+--------------
+-Simply invoke the 'slock' command. To get out of it, enter your password.
