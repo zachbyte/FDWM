@@ -7,6 +7,8 @@
 #   install.sh --colors  only what a change of colors needs (fdwm-theme runs
 #                        this): the colors, dwm/st/dmenu/slock, the GRUB theme
 #                        and the console's colors, each only where it changed
+#
+# Both write ~/.config/fdwm/keys, the list of dwm's keys fdwm-keys shows.
 set -Eeuo pipefail  # -E: the ERR trap below also fires inside functions
 trap 'echo "install.sh: failed on line $LINENO: $BASH_COMMAND" >&2' ERR
 
@@ -103,7 +105,24 @@ same_as_installed() {
     [[ $same ]]
 }
 
+# keys_list: dwm's keys and mouse buttons, each with its description from
+# config.h, as ~/.config/fdwm/keys for fdwm-keys (Alt+/). A line of config.h
+# keys.awk can't read stops install.sh here, before anything is built, with
+# that line's number.
+keys_list() {
+    local list=${XDG_CONFIG_HOME:-$HOME/.config}/fdwm/keys
+    echo "==> Listing dwm's keys"
+    mkdir -p "${list%/*}"
+    if ! awk -f keys.awk suckless/dwm/config.h >"$list.tmp"; then
+        rm -f "$list.tmp"
+        echo "install.sh: fix that line of suckless/dwm/config.h (each key ends with /* group: what it does */), then run this again" >&2
+        exit 1
+    fi
+    mv -f "$list.tmp" "$list"
+}
+
 if [[ $colors_only ]]; then
+    keys_list
     echo "==> Generating the colors"
     ./fdwm-theme generate
     # built as you, as below; installed (with sudo) only if it changed
@@ -166,6 +185,7 @@ fi
 # The colors of everything below, from the palette file: dwm, st, dmenu and
 # slock's colors.h, the GRUB theme and ~/.config/fdwm/colors.sh (for .bashrc
 # and .xinitrc).
+keys_list
 echo "==> Generating the colors"
 ./fdwm-theme generate
 
@@ -217,6 +237,8 @@ fi
 install_dotfile .local/bin/fdwm-menu
 # the theme menu dwm's Alt+Shift+T opens
 install_dotfile .local/bin/fdwm-theme-menu
+# the list of keys dwm's Alt+/ opens
+install_dotfile .local/bin/fdwm-keys
 
 echo "==> Setting up ~/.bashrc"
 install_dotfile .bashrc

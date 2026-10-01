@@ -123,9 +123,10 @@ expect "an option: usage, exit 2" 2 "$rc"
 # run uses only logs.
 real=$T/real
 theme_repo "$real"
-cp "$ROOT/install.sh" "$ROOT/packages.txt" "$real/"
+cp "$ROOT/install.sh" "$ROOT/packages.txt" "$ROOT/keys.awk" "$real/"
 cp -r "$ROOT/dotfiles" "$real/"
 mkdir -p "$real/suckless/"{dwm,st,dmenu,slock}
+cp "$ROOT/suckless/dwm/config.h" "$real/suckless/dwm/"
 export PREFIX_DIR=$T/prefix
 stub make '
 dir=$2 tool=${2##*/} dest=
@@ -159,6 +160,7 @@ expect "--colors: builds the four tools" "$tools" "$(sed -n 's/^MAKE build //p' 
 expect "--colors, first switch: installs each, with sudo" "$tools" "$(sed -n 's/^SUDO make -C suckless\/\([a-z]*\) install$/\1/p' "$LOG")"
 expect "--colors: nothing else (no packages, font, dotfiles, logind, GRUB settings)" "" "$(others)"
 expect "--colors: no dotfile installed" "" "$(cd "$T/home2" && find . -path ./.config/fdwm -prune -o -path ./.config/dunst -prune -o -path ./.local/state -prune -o -type f -print)"
+expect "--colors: the list of keys written" yes "$([[ -s $T/home2/.config/fdwm/keys ]] && echo yes)"
 expect "--colors: dunst's colors generated" yes "$([[ -s $T/home2/.config/dunst/dunstrc.d/50-fdwm-colors.conf ]] && echo yes)"
 expect "--colors: the tools installed are tokyonight's" "$(cksum <"$real/suckless/colors.h")" "$(cat "$PREFIX_DIR/bin/dwm")"
 
