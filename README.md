@@ -169,13 +169,14 @@ done
 
 ### 5. Set up the session
 
-`dotfiles/.xinitrc` starts the keyring, the polkit agent, dunst for notifications and the bar script `fdwm-bar` (see "The bar" and "Notifications" above) before dwm, and locks the screen with slock and turns it off after 5 minutes idle (or before the laptop suspends); after 10 minutes idle the laptop suspends (see the logind step below); PipeWire gives you sound and the media keys.
+`dotfiles/.xinitrc` starts the keyring, the polkit agent, dunst for notifications and the bar script `fdwm-bar` (see "The bar" and "Notifications" above) before dwm, and locks the screen with slock and turns it off after 5 minutes idle (or before the laptop suspends); after 10 minutes idle the laptop suspends (`fdwm-lock`, which xss-lock runs to lock, does that while the screen stays locked and untouched). Typing, the mouse or the touchpad keeps it unlocked, and so does a video player that holds off the screensaver while it plays; PipeWire gives you sound and the media keys.
 
 ```shell
 cp dotfiles/.xinitrc ~/.xinitrc
 install -Dm755 dotfiles/.local/bin/fdwm-shot ~/.local/bin/fdwm-shot
 install -Dm755 dotfiles/.local/bin/fdwm-bar ~/.local/bin/fdwm-bar
 install -Dm644 dotfiles/.config/dunst/dunstrc ~/.config/dunst/dunstrc
+install -Dm755 dotfiles/.local/bin/fdwm-lock ~/.local/bin/fdwm-lock
 install -Dm755 dotfiles/.local/bin/fdwm-menu ~/.local/bin/fdwm-menu
 install -Dm755 dotfiles/.local/bin/fdwm-theme-menu ~/.local/bin/fdwm-theme-menu
 install -Dm755 dotfiles/.local/bin/fdwm-keys ~/.local/bin/fdwm-keys
@@ -188,11 +189,12 @@ Add the autostart from `dotfiles/.bash_profile` to your own `~/.bash_profile`, s
 sed -n '/^# Start dwm/,$p' dotfiles/.bash_profile >> ~/.bash_profile
 ```
 
-To suspend after 10 minutes without use, have logind act once the session has been idle (xss-lock marks it idle when the screen locks at 5 minutes) for 5 more minutes, and to suspend when the lid closes (logind's default, spelled out here):
+To suspend when the lid closes (logind's default, spelled out here). Leave logind's `IdleAction` alone: logind judges a session started from a tty by the tty, which X never touches, so it would suspend every few minutes while you work; `fdwm-lock` suspends after 10 idle minutes instead. Earlier versions of this step wrote `/etc/systemd/logind.conf.d/fdwm-idle.conf`, which the `rm` removes.
 
 ```shell
 sudo mkdir -p /etc/systemd/logind.conf.d
-printf '[Login]\nIdleAction=suspend\nIdleActionSec=5min\nHandleLidSwitch=suspend\nHandleLidSwitchExternalPower=suspend\n' | sudo tee /etc/systemd/logind.conf.d/fdwm-idle.conf
+sudo rm -f /etc/systemd/logind.conf.d/fdwm-idle.conf
+printf '[Login]\nHandleLidSwitch=suspend\nHandleLidSwitchExternalPower=suspend\n' | sudo tee /etc/systemd/logind.conf.d/fdwm-lid.conf
 sudo systemctl kill -s HUP systemd-logind
 ```
 

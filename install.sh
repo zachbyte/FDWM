@@ -233,6 +233,8 @@ if [[ $(readlink "$theme_link" || true) != "$PWD/fdwm-theme" ]]; then
     ln -sfn "$PWD/fdwm-theme" "$theme_link"
     echo "Linked $theme_link to $PWD/fdwm-theme"
 fi
+# the locker xss-lock runs after 5 idle minutes; it suspends 5 minutes later
+install_dotfile .local/bin/fdwm-lock
 # the power menu dwm's Alt+Shift+E opens
 install_dotfile .local/bin/fdwm-menu
 # the theme menu dwm's Alt+Shift+T opens
@@ -276,20 +278,26 @@ if [[ -e $autologin ]]; then
     echo "tty1 asks for your password again from the next boot"
 fi
 
-# Suspend after 10 minutes without use, and when the lid closes. .xinitrc
-# locks the screen after 5 idle minutes, and xss-lock then marks the session
-# idle in logind; logind suspends once everything has been idle for
-# IdleActionSec more. Lid-close suspend is logind's default already; it is
-# spelled out so an edit elsewhere in logind's config can't turn it off.
-echo "==> Setting up suspend (10 minutes idle, lid closed)"
-idle_conf=/etc/systemd/logind.conf.d/fdwm-idle.conf
-idle_want=$'[Login]\nIdleAction=suspend\nIdleActionSec=5min\nHandleLidSwitch=suspend\nHandleLidSwitchExternalPower=suspend'
-if [[ $(cat "$idle_conf" 2>/dev/null || true) != "$idle_want" ]]; then
-    sudo mkdir -p "${idle_conf%/*}"
-    printf '%s\n' "$idle_want" | sudo tee "$idle_conf" >/dev/null
+# Suspend when the lid closes: logind's default already, spelled out so an
+# edit elsewhere in logind's config can't turn it off. Suspending after 10
+# idle minutes is fdwm-lock's job (see .xinitrc). Earlier versions had
+# logind do it with IdleAction, but logind judges a session started from a
+# tty by the tty, which X never touches, so it suspended (and xss-lock
+# locked) every 5 minutes however busy you were; that file is removed.
+echo "==> Setting up suspend (lid closed)"
+old_idle_conf=/etc/systemd/logind.conf.d/fdwm-idle.conf
+lid_conf=/etc/systemd/logind.conf.d/fdwm-lid.conf
+lid_want=$'[Login]\nHandleLidSwitch=suspend\nHandleLidSwitchExternalPower=suspend'
+if [[ -e $old_idle_conf || $(cat "$lid_conf" 2>/dev/null || true) != "$lid_want" ]]; then
+    sudo mkdir -p "${lid_conf%/*}"
+    if [[ -e $old_idle_conf ]]; then
+        sudo rm -f "$old_idle_conf"
+        echo "Removed $old_idle_conf (logind no longer suspends on its own idea of idle)"
+    fi
+    printf '%s\n' "$lid_want" | sudo tee "$lid_conf" >/dev/null
     # SIGHUP makes logind reload its settings; a restart would end your session
     sudo systemctl kill -s HUP systemd-logind
-    echo "Installed $idle_conf"
+    echo "Installed $lid_conf"
 else
     echo "Already set up"
 fi
