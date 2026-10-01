@@ -12,6 +12,9 @@ xsetroot gnome-keyring mate-polkit dejavu-sans-mono-fonts
 xset xss-lock
 # awk, which fdwm-bar and fdwm-theme use (not every Fedora install has it)
 gawk
+# pgrep and pkill (procps-ng), which fdwm-bar, fdwm-menu and fdwm-theme use
+# (Fedora's container image doesn't have them)
+procps-ng
 
 # notifications: dunst shows them, notify-send (libnotify) sends them
 dunst libnotify

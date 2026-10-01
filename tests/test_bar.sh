@@ -162,8 +162,12 @@ fi
 expect_match "the redraw shows the battery charging" "    󰂄  85%    " "$(last)"
 
 # leftovers: the bar, its watchers' loops (which run as the bar too) or the
-# stubbed pactl and udevadm, if any are still running
-leftovers() { { pgrep -f " $bar\$" || true; pgrep -f "$T/bin/(pactl|udevadm)" || true; } | wc -l | tr -d ' '; }
+# stubbed pactl and udevadm, if any are still running; "no pgrep" without
+# pgrep, so that the checks below fail rather than count nothing
+leftovers() {
+    command -v pgrep >/dev/null || { echo "no pgrep"; return; }
+    { pgrep -f " $bar\$" || true; pgrep -f "$T/bin/(pactl|udevadm)" || true; } | wc -l | tr -d ' '
+}
 # shellcheck disable=SC2329  # called through until_
 none_left() { [[ $(leftovers) == 0 ]]; }
 # shellcheck disable=SC2329  # called through until_
