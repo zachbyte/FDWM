@@ -10,9 +10,9 @@ static const char *prompt      = NULL;      /* -p  option; prompt to the left of
 #include "../colors.h" /* COL_*: the palette's colors, written by fdwm-theme */
 static const char *colors[SchemeLast][2] = {
 	/*     fg         bg       */
-	[SchemeNorm] = { COL_LAVENDER, COL_BASE },
-	[SchemeSel] = { COL_BASE, COL_LAVENDER },
-	[SchemeOut] = { COL_CRUST, COL_LAVENDER },
+	[SchemeNorm] = { COL_UI_TEXT, COL_BASE },
+	[SchemeSel] = { COL_BASE, COL_UI_ACCENT },
+	[SchemeOut] = { COL_CRUST, COL_UI_ACCENT },
 };
 /* -l option; if nonzero, dmenu uses vertical list with given number of lines */
 static unsigned int lines      = 0;

@@ -1,8 +1,8 @@
-# The frame says how urgent a notification is: lavender like dwm's borders,
-# red when critical.
+# The frame says how urgent a notification is: the accent, like the
+# focused window's border, or red when critical.
 [global]
     separator_color = frame
-    highlight = "@lavender@"
+    highlight = "@ui_accent@"
 
 [urgency_low]
     background = "@base@"
@@ -12,7 +12,7 @@
 [urgency_normal]
     background = "@base@"
     foreground = "@text@"
-    frame_color = "@lavender@"
+    frame_color = "@ui_accent@"
 
 [urgency_critical]
     background = "@base@"

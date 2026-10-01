@@ -734,8 +734,9 @@ drawbar(Monitor *m)
 		drw_setscheme(drw, scheme[SchemeTagsNorm]);  // Normal scheme for all tags
 		drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
 
-		// Only draw underline for the selected tag
+		// Only draw underline for the selected tag, in the accent
 		if (m->tagset[m->seltags] & 1 << i) {
+			drw_setscheme(drw, scheme[SchemeSel]);
 			drw_rect(drw, x + boxw, bh - 2, w - (2 * boxw + 1), 2, 1, urg & 1 << i);
 		}
 

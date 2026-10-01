@@ -8,11 +8,13 @@ static const int topbar             = 1;        /* 0 means bottom bar */
 static const char *fonts[]          = { "JetBrainsMono Nerd Font:size=10" };
 #include "../colors.h" /* COL_*: the palette's colors, written by fdwm-theme */
 static const char col_bg[] = COL_BASE;
-static const char col_fg[] = COL_LAVENDER;
+static const char col_fg[] = COL_UI_TEXT;
+static const char col_accent[] = COL_UI_ACCENT;
+static const char col_border[] = COL_UI_BORDER;
 static const char *colors[][4] = {
     /*               fg         bg         border   */
-    [SchemeNorm] = { col_fg, col_bg, col_fg },
-    [SchemeSel]  = { col_fg, col_fg, col_fg },
+    [SchemeNorm] = { col_fg, col_bg, col_border },
+    [SchemeSel]  = { col_accent, col_bg, col_accent }, // the focused window's border, the selected tag's underline
 	[SchemeStatus]  = { col_fg, col_bg,  col_bg  }, // Statusbar right {text,background,not used but cannot be empty}
 	[SchemeTagsNorm]  = { col_fg, col_bg,  col_bg  }, // Tagbar left unselected {text,background,not used but cannot be empty}
 	[SchemeInfoSel]  = { col_fg, col_bg,  col_bg  }, // infobar middle  selected {text,background,not used but cannot be empty}

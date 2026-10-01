@@ -34,6 +34,14 @@ base          1e1e2e    eff1f5
 mantle        181825    e6e9ef
 crust         11111b    dce0e8
 
+# What the desktop draws with, so each flavor can pick its own: ui_text is
+# the bar's and dmenu's text; ui_accent the selected tag's underline, the
+# focused window's border, dmenu's selection, dunst's frame and the
+# screenshot outline; ui_border the other windows' borders.
+ui_text       lavender  lavender
+ui_accent     lavender  lavender
+ui_border     lavender  lavender
+
 # The terminal's 16 colors (0-7 normal, 8-15 bright: black, red, green,
 # yellow, blue, magenta, cyan, white), text, background and cursor: st uses
 # all of them, and the ttys the 16, except that there 0 is the background
