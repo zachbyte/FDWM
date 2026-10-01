@@ -50,6 +50,7 @@ static const Rule rules[] = {
 	{ "feh",     NULL,     NULL,           0,         1,          -1 },
 	{ NULL,      "spterm", NULL,           SPTAG(0),  1,          -1 },
 	{ NULL,      "spnotes", NULL,          SPTAG(1),  1,          -1 },
+	{ NULL,      "fdwm-theme", NULL,       0,         1,          -1 }, /* fdwm-theme-menu's st */
  };
 
 /* layout(s) */
@@ -89,6 +90,8 @@ static const char *termcmd[] = { "st", NULL };
 static const char *lockcmd[] = { "slock", NULL };
 /* lock, suspend, restart dwm, log out, reboot, power off (fdwm-menu) */
 static const char *menucmd[] = { "/bin/sh", "-c", "exec \"$HOME/.local/bin/fdwm-menu\"", NULL };
+/* pick the flavor in dmenu, switched in a floating st (fdwm-theme-menu) */
+static const char *themecmd[] = { "/bin/sh", "-c", "exec \"$HOME/.local/bin/fdwm-theme-menu\"", NULL };
 
 static const Key keys[] = {
 	/* modifier                     key        function        argument */
@@ -126,6 +129,7 @@ static const Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_r,      resetmfact,     {0} },
 	{ MODKEY|ShiftMask,             XK_l,      spawn,          {.v = lockcmd } },
 	{ MODKEY|ShiftMask,             XK_e,      spawn,          {.v = menucmd } },
+	{ MODKEY|ShiftMask,             XK_t,      spawn,          {.v = themecmd } },
 	{ MODKEY,                       XK_grave,  togglescratch,  {.ui = 0 } },
 	{ MODKEY,                       XK_n,      togglescratch,  {.ui = 1 } },
 	{ 0,                            XF86XK_MonBrightnessUp,    spawn,          SHCMD ("brightnessctl set +10%" BARREFRESH)},

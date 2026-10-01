@@ -1,0 +1,25 @@
+#!/bin/sh
+# fdwm-theme-menu: pick FDWM's flavor in dmenu (Alt+Shift+T), the one in use
+# named in the prompt. Picking another switches to it with fdwm-theme in a
+# small floating st: it rebuilds with sudo, so it may ask for your password
+# there, and the window stays open to show how it went. Escape, or the
+# flavor already in use, changes nothing.
+
+theme=$HOME/.local/bin/fdwm-theme  # install.sh's link to the checkout's
+
+now=$("$theme" current) || exit 1
+choice=$("$theme" list | dmenu -i -p "theme ($now)") || exit 0
+case $choice in
+"" | "$now") exit 0 ;;
+esac
+if ! "$theme" list | grep -xF -- "$choice" >/dev/null; then
+    echo "fdwm-theme-menu: not a flavor: $choice" >&2
+    exit 1
+fi
+
+# st -n fdwm-theme: the instance name dwm's rules float, centered
+exec st -n fdwm-theme -t "fdwm-theme $choice" -e /bin/sh -c '
+"$1" "$2"
+echo
+printf "Press Return to close. "
+read -r _' sh "$theme" "$choice"

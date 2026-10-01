@@ -62,6 +62,7 @@ else
     echo "  skip  the ~/.local/bin/fdwm-theme link (no symlinks here)"
 fi
 expect "installs ~/.local/bin/fdwm-menu, executable" yes "$([[ -x $T/home/.local/bin/fdwm-menu ]] && echo yes)"
+expect "installs ~/.local/bin/fdwm-theme-menu, executable" yes "$([[ -x $T/home/.local/bin/fdwm-theme-menu ]] && echo yes)"
 expect_match "sets up suspend" "==> Setting up suspend" "$out"
 
 MISSING=nnn run

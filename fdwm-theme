@@ -3,6 +3,8 @@
 # the flavor saved in ~/.config/fdwm/flavor (Mocha until there is one).
 #
 #   fdwm-theme               say which flavor is in use, and which there are
+#   fdwm-theme list          the flavors, one per line
+#   fdwm-theme current       the flavor in use
 #   fdwm-theme FLAVOR        switch to FLAVOR (mocha, tokyonight, thinkpad):
 #                            save it, run install.sh (which generates the
 #                            colors and rebuilds dwm, st, dmenu and slock,
@@ -248,12 +250,14 @@ switch() {
 case ${1:-} in
 generate) saved; load; generate ;;
 kernel-args) saved; load; kernel_args ;;
+list) flavors ;;
+current) saved; echo "$flavor" ;;
 "")
     saved
     echo "$flavor (the palette has: $(flavors | paste -sd' '); switch with fdwm-theme <flavor>)"
     ;;
 -*)
-    echo "usage: fdwm-theme [flavor] | generate | kernel-args" >&2
+    echo "usage: fdwm-theme [flavor] | list | current | generate | kernel-args" >&2
     exit 2
     ;;
 *) switch "$1" ;;
