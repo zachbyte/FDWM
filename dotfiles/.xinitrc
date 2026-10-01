@@ -26,12 +26,14 @@ colors=${XDG_CONFIG_HOME:-$HOME/.config}/fdwm/colors.sh
 [ -r "$colors" ] && . "$colors"
 [ -n "${fdwm_base:-}" ] && xsetroot -solid "$fdwm_base"
 
-# After 5 minutes without input, lock with slock and turn the screen off.
-# xss-lock runs slock when X's screensaver timer fires, and also locks
-# before the laptop suspends (lid closed, suspend key).
+# After 5 minutes without input, lock with slock and turn the screen off;
+# 5 minutes later, still locked and untouched, suspend. xss-lock runs
+# fdwm-lock when X's screensaver timer fires, and also before the laptop
+# suspends (lid closed, suspend key). A video player that holds off the
+# screensaver while it plays keeps the timer from firing.
 xset s 300 300
 xset dpms 300 300 300
-xss-lock -- slock &
+xss-lock -- "$HOME/.local/bin/fdwm-lock" &
 
 exec dwm
 
