@@ -5,6 +5,7 @@ static const unsigned int borderpx  = 2;        /* border pixel of windows */
 static const unsigned int gappx     = 10;        /* gaps between windows */
 static const int showbar            = 1;        /* 0 means no bar */
 static const int topbar             = 1;        /* 0 means bottom bar */
+static const int swallowfloating    = 0;        /* 1 means a floating window swallows its terminal too */
 static const char *fonts[]          = { "JetBrainsMono Nerd Font:size=10" };
 #include "../colors.h" /* COL_*: the palette's colors, written by fdwm-theme */
 static const char col_bg[] = COL_BASE;
@@ -42,10 +43,15 @@ static const Rule rules[] = {
 	 *	WM_CLASS(STRING) = instance, class
 	 *	WM_NAME(STRING) = title
 	 */
-	/* class     instance  title           tags mask  isfloating  monitor */
-	{ NULL,      "spterm", NULL,           SPTAG(0),  1,          -1 },
-	{ NULL,      "spnotes", NULL,          SPTAG(1),  1,          -1 },
-	{ NULL,      "fdwm-theme", NULL,       0,         1,          -1 }, /* fdwm-theme-menu's st */
+	/* a window started from a terminal (isterminal) takes its place until
+	 * it closes, unless it floats or has noswallow. The later rules unset
+	 * isterminal for the scratchpads' and fdwm-theme-menu's st. */
+	/* class         instance      title           tags mask  isfloating  isterminal  noswallow  monitor */
+	{ "st-256color", NULL,         NULL,           0,         0,          1,          0,         -1 }, /* st */
+	{ NULL,          "spterm",     NULL,           SPTAG(0),  1,          0,          0,         -1 },
+	{ NULL,          "spnotes",    NULL,           SPTAG(1),  1,          0,          0,         -1 },
+	{ NULL,          "fdwm-theme", NULL,           0,         1,          0,          0,         -1 }, /* fdwm-theme-menu's st */
+	{ NULL,          NULL,         "Event Tester", 0,         0,          0,          1,         -1 }, /* xev */
  };
 
 /* layout(s) */
