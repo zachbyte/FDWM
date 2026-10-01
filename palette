@@ -1,69 +1,69 @@
-# FDWM's colors: Catppuccin (https://catppuccin.com/palette), written down
-# here and nowhere else. fdwm-theme generates the colors of dwm, st, dmenu,
-# slock, the ttys, GRUB, the prompt and the desktop from this file (see
-# "Colors" in the README).
+# FDWM's colors, written down here and nowhere else. fdwm-theme generates
+# the colors of dwm, st, dmenu, slock, the ttys, GRUB, dunst, Neovim, the
+# prompt and the desktop from this file (see "Colors" in the README).
 #
-# One column per flavor, each color as rrggbb. A palette name in place of a
-# color means that color, from the same column.
+# One column per flavor, each color as rrggbb; a palette name in place of a
+# color means that color, from the same column. The names are Catppuccin's
+# (https://catppuccin.com/palette), and so is the mocha column. The others
+# fill the same names from their own colors:
+#   tokyonight  Tokyo Night's night style (github.com/folke/tokyonight.nvim)
 
-name          mocha     latte
-rosewater     f5e0dc    dc8a78
-flamingo      f2cdcd    dd7878
-pink          f5c2e7    ea76cb
-mauve         cba6f7    8839ef
-red           f38ba8    d20f39
-maroon        eba0ac    e64553
-peach         fab387    fe640b
-yellow        f9e2af    df8e1d
-green         a6e3a1    40a02b
-teal          94e2d5    179299
-sky           89dceb    04a5e5
-sapphire      74c7ec    209fb5
-blue          89b4fa    1e66f5
-lavender      b4befe    7287fd
-text          cdd6f4    4c4f69
-subtext1      bac2de    5c5f77
-subtext0      a6adc8    6c6f85
-overlay2      9399b2    7c7f93
-overlay1      7f849c    8c8fa1
-overlay0      6c7086    9ca0b0
-surface2      585b70    acb0be
-surface1      45475a    bcc0cc
-surface0      313244    ccd0da
-base          1e1e2e    eff1f5
-mantle        181825    e6e9ef
-crust         11111b    dce0e8
+name          mocha     tokyonight
+rosewater     f5e0dc    text
+flamingo      f2cdcd    red
+pink          f5c2e7    bb9af7
+mauve         cba6f7    9d7cd8
+red           f38ba8    f7768e
+maroon        eba0ac    yellow
+peach         fab387    ff9e64
+yellow        f9e2af    e0af68
+green         a6e3a1    9ece6a
+teal          94e2d5    73daca
+sky           89dceb    89ddff
+sapphire      74c7ec    2ac3de
+blue          89b4fa    7aa2f7
+lavender      b4befe    7dcfff
+text          cdd6f4    c0caf5
+subtext1      bac2de    a9b1d6
+subtext0      a6adc8    9aa5ce
+overlay2      9399b2    737aa2
+overlay1      7f849c    565f89
+overlay0      6c7086    545c7e
+surface2      585b70    414868
+surface1      45475a    3b4261
+surface0      313244    292e42
+base          1e1e2e    1a1b26
+mantle        181825    16161e
+crust         11111b    0c0e14
 
 # What the desktop draws with, so each flavor can pick its own: ui_text is
 # the bar's and dmenu's text; ui_accent the selected tag's underline, the
 # focused window's border, dmenu's selection, dunst's frame and the
 # screenshot outline; ui_border the other windows' borders.
-ui_text       lavender  lavender
-ui_accent     lavender  lavender
-ui_border     lavender  lavender
+ui_text       lavender  subtext1
+ui_accent     lavender  blue
+ui_border     lavender  surface2
 
 # The terminal's 16 colors (0-7 normal, 8-15 bright: black, red, green,
 # yellow, blue, magenta, cyan, white), text, background and cursor: st uses
 # all of them, and the ttys the 16, except that there 0 is the background
-# and 7 the text. On Latte's light background black and white swap ends,
-# as in Catppuccin's own Latte terminal colors: black is a dark gray, white
-# a light one.
-term0         surface1  subtext1
-term1         mauve     mauve
+# and 7 the text. Tokyo Night's are its own terminal colors.
+term0         surface1  15161e
+term1         mauve     red
 term2         green     green
 term3         yellow    yellow
 term4         blue      blue
-term5         red       red
-term6         teal      teal
-term7         subtext1  surface2
-term8         surface2  subtext0
-term9         mauve     mauve
+term5         red       pink
+term6         teal      lavender
+term7         subtext1  subtext1
+term8         surface2  surface2
+term9         mauve     red
 term10        green     green
 term11        yellow    yellow
 term12        blue      blue
-term13        red       red
-term14        teal      teal
-term15        subtext0  surface1
+term13        red       pink
+term14        teal      lavender
+term15        subtext0  text
 term_fg       text      text
 term_bg       base      base
-term_cursor   rosewater rosewater
+term_cursor   rosewater text

@@ -3,7 +3,7 @@
 # the flavor saved in ~/.config/fdwm/flavor (Mocha until there is one).
 #
 #   fdwm-theme               say which flavor is in use, and which there are
-#   fdwm-theme FLAVOR        switch to FLAVOR (mocha, latte): save it, run
+#   fdwm-theme FLAVOR        switch to FLAVOR (mocha, tokyonight): save it, run
 #                            install.sh (which generates the colors and
 #                            rebuilds dwm, st, dmenu and slock, the GRUB
 #                            theme and the ttys' colors), then recolor the
@@ -206,6 +206,16 @@ recolor_st() {
     echo "Recolored $n open st window(s)"
 }
 
+# saved: a saved flavor the palette no longer has (one taken out of it) is
+# Mocha from now on, saved, rather than failing every install.sh
+saved() {
+    # (grep reads it all rather than -q: see switch)
+    if [[ $flavor == mocha ]] || flavors | grep -xF -- "$flavor" >/dev/null; then return; fi
+    echo "fdwm-theme: the palette has no $flavor flavor any more; back to mocha" >&2
+    flavor=mocha
+    printf '%s\n' "$flavor" >"$conf/flavor"
+}
+
 # switch FLAVOR
 switch() {
     # (grep reads it all rather than -q, which could SIGPIPE flavors and
@@ -236,9 +246,10 @@ switch() {
 }
 
 case ${1:-} in
-generate) load; generate ;;
-kernel-args) load; kernel_args ;;
+generate) saved; load; generate ;;
+kernel-args) saved; load; kernel_args ;;
 "")
+    saved
     echo "$flavor (the palette has: $(flavors | paste -sd' '); switch with fdwm-theme <flavor>)"
     ;;
 -*)
