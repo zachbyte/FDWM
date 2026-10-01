@@ -289,9 +289,13 @@ How dwm behaves with these:
 
 ## Roadmap
 
+Done:
+
+- movestack: `Alt + Shift + J` / `K` move the focused window down or up the stack (patch 47).
+- pertag: each tag remembers its own layout, master area and bar, the scratchpads' tags left out (patch 48).
+
 Not started yet, roughly in this order:
 
-- movestack, then pertag: `Alt + Shift + J` / `K` to move the focused window down or up the stack; then each tag remembering its own layout and master area, leaving the scratchpads' tags out.
 - Window swallowing for st: a graphical program started from st (a video, an image) takes the terminal's place until it closes.
 - EWMH desktop atoms (`_NET_CURRENT_DESKTOP` and the rest), which let other programs see the tags. Only an external bar needs them, so only if Quickshell comes back.
 
