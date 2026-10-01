@@ -6,11 +6,13 @@
 #   fdwm-theme list          the flavors, one per line
 #   fdwm-theme current       the flavor in use
 #   fdwm-theme FLAVOR        switch to FLAVOR (mocha, tokyonight, thinkpad):
-#                            save it, run install.sh (which generates the
-#                            colors and rebuilds dwm, st, dmenu and slock,
-#                            the GRUB theme and the ttys' colors), then
-#                            recolor the desktop and the open st windows,
-#                            reload dunst and restart dwm
+#                            save it, run install.sh --colors (which
+#                            generates the colors, rebuilds dwm, st, dmenu
+#                            and slock, and installs them, the GRUB theme
+#                            and the ttys' colors where they changed, with
+#                            sudo only for those), then recolor the desktop
+#                            and the open st windows, reload dunst and
+#                            restart dwm
 #   fdwm-theme generate      write the files below from the palette
 #   fdwm-theme kernel-args   print the vt.default_* boot options that give
 #                            the ttys the palette from boot (install.sh
@@ -228,8 +230,8 @@ switch() {
     printf '%s\n' "$1" >"$conf/flavor"
     flavor=$1
     echo "==> Switching to $flavor"
-    "$root/install.sh" ||
-        die "install.sh failed; $flavor is saved, so run fdwm-theme $flavor again once that's fixed"
+    "$root/install.sh" --colors ||
+        die "install.sh --colors failed; $flavor is saved, so run fdwm-theme $flavor again once that's fixed"
     load
     if [[ -z ${DISPLAY:-} ]]; then
         echo "==> $flavor from the next time X starts"
@@ -238,9 +240,12 @@ switch() {
     echo "==> Recoloring what's open"
     xsetroot -solid "#${color[base]}"
     recolor_st
-    # dunst rereads its config, colors drop-in and all
-    if pgrep -u "$(id -u)" -x dunst >/dev/null; then
-        dunstctl reload || echo "fdwm-theme: dunstctl reload failed; dunst keeps its old colors" >&2
+    # dunst rereads its config, colors drop-in and all; failing that, a new
+    # dunst replaces it
+    if pgrep -u "$(id -u)" -x dunst >/dev/null && ! dunstctl reload; then
+        echo "fdwm-theme: dunstctl reload failed; restarting dunst" >&2
+        pkill -u "$(id -u)" -x dunst || true
+        setsid -f dunst >/dev/null 2>&1 || echo "fdwm-theme: dunst didn't start again" >&2
     fi
     # dwm restarts on its new build (restartsig), windows and tags kept
     pkill -HUP -u "$(id -u)" -x dwm || true

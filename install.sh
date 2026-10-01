@@ -2,6 +2,11 @@
 # Installs FDWM on Fedora: packages, the Nerd Font, dwm/st/dmenu/slock, dotfiles and
 # the GRUB theme. update.sh runs it after pulling, so it must stay safe to run again:
 # existing dotfiles that differ are backed up first, never silently replaced.
+#
+#   install.sh           everything
+#   install.sh --colors  only what a change of colors needs (fdwm-theme runs
+#                        this): the colors, dwm/st/dmenu/slock, the GRUB theme
+#                        and the console's colors, each only where it changed
 set -Eeuo pipefail  # -E: the ERR trap below also fires inside functions
 trap 'echo "install.sh: failed on line $LINENO: $BASH_COMMAND" >&2' ERR
 
@@ -11,6 +16,112 @@ if [[ $EUID -eq 0 ]]; then
 fi
 
 cd "$(dirname "$(readlink -f "$0")")"
+
+colors_only=
+case ${1:-} in
+--colors) colors_only=1 ;;
+"") ;;
+*)
+    echo "usage: install.sh [--colors]" >&2
+    exit 2
+    ;;
+esac
+
+# What install.sh last put in /boot (the GRUB theme's files) and on the
+# kernel's command line (the console's colors), written down here so that
+# --colors can tell without sudo whether they need doing again. (Only root
+# can read /boot/grub2 and the boot entries.)
+state=${XDG_STATE_HOME:-$HOME/.local/state}/fdwm
+grub_theme=/boot/grub2/themes/fdwm
+
+# theme_sum: grub/theme's files, each with its checksum
+theme_sum() { (cd grub && find theme -type f -exec cksum {} + | sort); }
+
+# copy_grub_theme: an exact copy of grub/theme as $grub_theme, so a file the
+# repo drops goes from /boot too. It is made beside the old one first, so a
+# failed copy leaves that.
+copy_grub_theme() {
+    sudo rm -rf "$grub_theme.new"
+    sudo cp -r grub/theme "$grub_theme.new"
+    sudo rm -rf "$grub_theme"
+    sudo mv "$grub_theme.new" "$grub_theme"
+    mkdir -p "$state"
+    theme_sum >"$state/grub-theme"
+}
+
+# console_colors: the palette on the ttys from the moment the kernel starts,
+# login prompt included: the kernel's console palette, the same 16 colors
+# .bashrc loads after login (0 = the background, 7 = the text), from
+# fdwm-theme as vt.default_red=..., _grn and _blu. grubby adds them to every
+# kernel entry and keeps them for future kernels.
+console_colors() {
+    local vt_args vt_red vt_grn vt_blu
+    vt_args=$(./fdwm-theme kernel-args)
+    read -r vt_red vt_grn vt_blu <<<"$vt_args"
+    # (grep reads everything rather than -q, which could SIGPIPE the pipeline
+    # and make pipefail report a failure even when a kernel needs the colors)
+    if sudo grubby --info=ALL | grep '^args=' | grep -vF "$vt_blu" >/dev/null; then
+        sudo grubby --update-kernel=ALL --args="$vt_red $vt_grn $vt_blu"
+        echo "Console colors set for every kernel; they apply from the next boot"
+    fi
+    mkdir -p "$state"
+    printf '%s\n' "$vt_args" >"$state/kernel-args"
+}
+
+# grub_colors: for --colors, the GRUB theme and the console's colors, each
+# only if it differs from what install.sh last installed (so no sudo when
+# neither does). grub.cfg needn't change: it names the theme's folder, and
+# the theme's font stays the same.
+grub_colors() {
+    echo "==> The GRUB theme"
+    if [[ $(theme_sum) == "$(cat "$state/grub-theme" 2>/dev/null)" ]]; then
+        echo "Unchanged"
+    else
+        copy_grub_theme
+        echo "Installed $grub_theme; it shows from the next boot"
+    fi
+    echo "==> The console's colors"
+    if [[ $(./fdwm-theme kernel-args) == "$(cat "$state/kernel-args" 2>/dev/null)" ]]; then
+        echo "Unchanged"
+    else
+        console_colors
+    fi
+}
+
+# same_as_installed TOOL: true if every file "make install" would install
+# for TOOL is already installed, byte for byte. It installs into a throwaway
+# folder as you (st's terminfo, which tic writes, too) and compares.
+same_as_installed() {
+    local stage f same=yes
+    stage=$(mktemp -d)
+    TERMINFO=$stage/terminfo make -C "suckless/$1" install DESTDIR="$stage" >/dev/null
+    rm -rf "$stage/terminfo"
+    while IFS= read -r -d '' f; do
+        cmp -s "$f" "${f#"$stage"}" || { same=; break; }
+    done < <(find "$stage" -type f -print0)
+    rm -rf "$stage"
+    [[ $same ]]
+}
+
+if [[ $colors_only ]]; then
+    echo "==> Generating the colors"
+    ./fdwm-theme generate
+    # built as you, as below; installed (with sudo) only if it changed
+    for tool in dwm st dmenu slock; do
+        echo "==> Building $tool"
+        make -C "suckless/$tool" clean all
+        if same_as_installed "$tool"; then
+            echo "The same as the installed $tool; left as it is"
+        else
+            sudo make -C "suckless/$tool" install
+        fi
+    done
+    if [[ -f /etc/default/grub ]] && command -v grub2-mkconfig >/dev/null; then
+        grub_colors
+    fi
+    echo "==> Done: the colors are built and installed."
+    exit 0
+fi
 
 mapfile -t packages < <(sed 's/#.*//' packages.txt | xargs -n1)
 
@@ -163,7 +274,7 @@ fi
 
 echo "==> Installing the GRUB theme"
 if [[ -f /etc/default/grub ]] && command -v grub2-mkconfig >/dev/null; then
-    theme=/boot/grub2/themes/fdwm
+    theme=$grub_theme
     # grub2-mkconfig is slow, so it only runs at the end if this changes the
     # GRUB settings or theme, or grub.cfg is missing the theme or is older than
     # /etc/default/grub (an edit of yours it hasn't picked up yet).
@@ -176,12 +287,7 @@ if [[ -f /etc/default/grub ]] && command -v grub2-mkconfig >/dev/null; then
     grub_stale=$(sudo sh -c 'grep -q themes/fdwm/theme.txt /boot/grub2/grub.cfg 2>/dev/null &&
         [ ! /etc/default/grub -nt /boot/grub2/grub.cfg ] || echo yes')
 
-    # An exact copy of grub/theme, so a file the repo drops goes from /boot
-    # too. It is made beside the old one first, so a failed copy leaves that.
-    sudo rm -rf "$theme.new"
-    sudo cp -r grub/theme "$theme.new"
-    sudo rm -rf "$theme"
-    sudo mv "$theme.new" "$theme"
+    copy_grub_theme
     [[ -e /etc/default/grub.fdwm.bak ]] || sudo cp /etc/default/grub /etc/default/grub.fdwm.bak
     # Rewrite the two settings only when they differ, so the file's timestamp
     # (checked above) only moves when something really changed.
@@ -206,19 +312,8 @@ if [[ -f /etc/default/grub ]] && command -v grub2-mkconfig >/dev/null; then
         /etc/kernel/install.d/60-fdwm-title.install add "$(sed -n "s/^version[[:space:]]*//p" "$entry")"
     done'
 
-    # Catppuccin on the ttys from the moment the kernel starts, login prompt
-    # included: the kernel's console palette, the same 16 colors .bashrc loads
-    # after login (0 = the background, 7 = the text), from fdwm-theme as
-    # vt.default_red=..., _grn and _blu. grubby adds them to every kernel
-    # entry and keeps them for future kernels.
-    vt_args=$(./fdwm-theme kernel-args)
-    read -r vt_red vt_grn vt_blu <<<"$vt_args"
-    # (grep reads everything rather than -q, which could SIGPIPE the pipeline
-    # and make pipefail report a failure even when a kernel needs the colors)
-    if sudo grubby --info=ALL | grep '^args=' | grep -vF "$vt_blu" >/dev/null; then
-        sudo grubby --update-kernel=ALL --args="$vt_red $vt_grn $vt_blu"
-        echo "Console colors set for every kernel; they apply from the next boot"
-    fi
+    # the palette on the ttys from boot
+    console_colors
 
     if [[ $grub_stale || $(grub_state) != "$grub_before" ]]; then
         sudo grub2-mkconfig -o /boot/grub2/grub.cfg

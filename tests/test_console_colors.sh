@@ -54,8 +54,10 @@ case "$1" in
 --update-kernel=ALL) echo UPDATE >>"$LOG"; sed -i "s|\"\$| ${2#--args=}\"|" "$ARGS" ;;
 esac'
 PATH="$T/bin:$PATH"
-block=$(sed -n '/Catppuccin on the ttys from the moment/,/^    fi$/p' "$ROOT/install.sh")
-run() { : >"$LOG"; (cd "$ROOT" && export HOME=$T/home && set -Eeuo pipefail && eval "$block") >/dev/null; }
+# (console_colors() also writes down the args it set, in $state)
+block=$(sed -n '/^console_colors() {/,/^}/p' "$ROOT/install.sh")
+expect "found install.sh's console_colors()" yes "$([[ $block == *"grubby --update-kernel"* ]] && echo yes)"
+run() { : >"$LOG"; (cd "$ROOT" && export HOME=$T/home state=$T/state && set -Eeuo pipefail && eval "$block" && console_colors) >/dev/null; }
 
 run
 expect "two kernels without colors: one grubby update" 1 "$(wc -l <"$LOG" | tr -d ' ')"
