@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2016  # stub bodies expand later, not here
-# fdwm-bar against a fake /sys and stubbed wpctl, xsetroot, systemctl and
-# notify-send: what it shows, that "refresh" redraws at once, and the 10%
-# warning and 3% suspend, each once per discharge.
+# fdwm-bar against a fake /sys and stubbed wpctl, xsetroot, systemctl,
+# notify-send, pactl and udevadm: what it shows, that "refresh" redraws at
+# once, as do pactl's volume events and udevadm's power supply events, and
+# nothing else of theirs; the 10% warning and 3% suspend, each once per
+# discharge; and that the watchers go with the bar, however it ends.
 # shellcheck source=tests/lib.sh
 source "$(dirname "$0")/lib.sh"
 sandbox
@@ -30,6 +32,24 @@ echo "notify-send $*" >>"$ACTIONS"
 [ "$1" = -p ] && echo 42
 exit 0'
 export NO_DUNST=$T/no-dunst
+# pactl subscribe and udevadm monitor: each prints the lines appended to its
+# events file from when it starts. They ignore SIGPIPE and write errors, as
+# pactl may, so a watcher whose bar is gone only stops if the bar's side
+# stops it.
+export PACTL_EVENTS=$T/pactl-events UDEV_EVENTS=$T/udev-events
+: >"$PACTL_EVENTS" && : >"$UDEV_EVENTS"
+for watcher in "pactl subscribe PACTL_EVENTS" "udevadm monitor UDEV_EVENTS"; do
+    read -r name arg file <<<"$watcher"
+    stub "$name" '[ "$1" = '"$arg"' ] || exit 1
+trap "" PIPE
+n=$(wc -l <"$'"$file"'")
+while :; do
+    now=$(wc -l <"$'"$file"'")
+    [ "$now" -gt "$n" ] && tail -n +$((n + 1)) "$'"$file"'" 2>/dev/null
+    n=$now
+    sleep 0.1
+done'
+done
 PATH="$T/bin:$PATH"
 
 # print: the line itself
@@ -108,8 +128,73 @@ set_battery 20 Charging
 refresh_and_wait
 expect "no dunst: nothing retried or replaced" "" "$(cat "$ACTIONS")"
 
+# pactl's and udevadm's events. Away from the minute's turn, when the bar
+# redraws anyway, so a redraw within these few seconds is the event's.
+away_from_minute() { while ((10#$(date +%S) >= 50)); do sleep 1; done; }
+# event FILE LINE: append LINE to the events FILE and wait up to 3 s for a
+# redraw
+event_and_wait() { local n; n=$(draws); echo "$2" >>"$1"; until_ 30 drawn_more_than "$n"; }
+away_from_minute
+echo "Volume: 0.30" >"$VOL"
+if event_and_wait "$PACTL_EVENTS" "Event 'change' on sink #56"; then
+    pass "pactl: a sink's volume changed elsewhere: redraws within 3 s"
+else
+    fail "pactl: a sink's volume changed elsewhere: no redraw within 3 s"
+fi
+expect_match "the redraw shows the new volume" "^󰖀  30%    " "$(last)"
+echo "Volume: 0.35" >"$VOL"
+if event_and_wait "$PACTL_EVENTS" "Event 'change' on server #-1"; then
+    pass "pactl: the default sink changed: redraws within 3 s"
+else
+    fail "pactl: the default sink changed: no redraw within 3 s"
+fi
+n=$(draws)
+printf '%s\n' "Event 'new' on sink-input #12" "Event 'change' on client #7" "Event 'remove' on source-output #3" >>"$PACTL_EVENTS"
+printf '%s\n' "monitor will print the received events for:" "UDEV - the event which udev sends out after rule processing" >>"$UDEV_EVENTS"
+sleep 1.5
+expect "other pactl events, and udevadm's header, don't redraw" "$n" "$(draws)"
+set_battery 85 Charging
+if event_and_wait "$UDEV_EVENTS" "UDEV  [5123.456789] change   /devices/LNXSYSTM:00/LNXSYBUS:00/ACPI0003:00/power_supply/AC (power_supply)"; then
+    pass "udevadm: a charger plugged in: redraws within 3 s"
+else
+    fail "udevadm: a charger plugged in: no redraw within 3 s"
+fi
+expect_match "the redraw shows the battery charging" "    󰂄  85%    " "$(last)"
+
+# leftovers: the bar, its watchers' loops (which run as the bar too) or the
+# stubbed pactl and udevadm, if any are still running
+leftovers() { { pgrep -f " $bar\$" || true; pgrep -f "$T/bin/(pactl|udevadm)" || true; } | wc -l | tr -d ' '; }
+# shellcheck disable=SC2329  # called through until_
+none_left() { [[ $(leftovers) == 0 ]]; }
+# shellcheck disable=SC2329  # called through until_
+all_running() { [[ $(leftovers) == 5 ]]; }
+expect "running: the bar, two watchers and their loops" 5 "$(leftovers)"
+
 kill "$barpid"
 wait "$barpid" 2>/dev/null
 expect "on exit: removes its pid file" no "$([[ -e $T/run/fdwm-bar-$(id -u).pid ]] && echo yes || echo no)"
+until_ 20 none_left
+expect "killed (TERM, as pkill does): no watcher left" 0 "$(leftovers)"
+
+# logging out: xinit hangs up on the session (HUP)
+"$bar" &
+barpid=$!
+until_ 30 all_running
+kill -HUP "$barpid"
+wait "$barpid" 2>/dev/null
+until_ 20 none_left
+expect "hung up (HUP, as at logout): no watcher left" 0 "$(leftovers)"
+
+# killed outright, so its exit can't run: each loop stops its command at the
+# next event
+"$bar" &
+barpid=$!
+until_ 30 all_running
+kill -KILL "$barpid"
+wait "$barpid" 2>/dev/null
+echo "Event 'change' on sink #56" >>"$PACTL_EVENTS"
+echo "UDEV  [5124.0] change   /devices/LNXSYSTM:00/LNXSYBUS:00/ACPI0003:00/power_supply/AC (power_supply)" >>"$UDEV_EVENTS"
+until_ 30 none_left
+expect "killed outright (kill -9): the watchers go at their next event" 0 "$(leftovers)"
 
 finish

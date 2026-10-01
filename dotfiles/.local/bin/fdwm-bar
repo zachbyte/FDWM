@@ -1,8 +1,10 @@
 #!/bin/sh
 # fdwm-bar: dwm's status text. Volume, brightness, battery and the clock,
-# redrawn every minute, and at once when dwm's volume, mute and brightness
-# keys run "fdwm-bar refresh". At 10% battery it warns, in the bar and
-# through dunst; at 3% it suspends the laptop.
+# redrawn every minute, at once when dwm's volume, mute and brightness keys
+# run "fdwm-bar refresh", and at once when the volume changes anywhere else
+# or a charger is plugged in or out (pactl and udevadm, see watch). At 10%
+# battery it warns, in the bar and through dunst; at 3% it suspends the
+# laptop.
 #
 #   fdwm-bar          run the bar (.xinitrc starts it)
 #   fdwm-bar refresh  make the running bar redraw now
@@ -86,6 +88,39 @@ battery() {
     done
 }
 
+# The events that change what the bar shows without dwm's keys, as pactl
+# and udevadm report them (watch passes each line):
+# sound: a sink's volume or mute changed, a sink came or went, or the default
+# sink changed ("Event 'change' on sink #56", "Event 'change' on server #-1")
+sound() { case $1 in *" on sink #"* | *" on server"*) ;; *) return 1 ;; esac; }
+# power: a power supply changed: a charger plugged in or out, the battery's
+# level or status ("UDEV  [1234.5678] change   /devices/.../AC (power_supply)",
+# not the lines about what it monitors that it starts with, one of which
+# also starts with UDEV)
+power() { case $1 in UDEV*"(power_supply)") ;; *) return 1 ;; esac; }
+
+# watch FILTER COMMAND...: run COMMAND in the background and redraw the bar
+# at once (USR1, as "fdwm-bar refresh" does) at each line it prints that
+# FILTER accepts. Skipped if COMMAND isn't installed. COMMAND and the loop
+# reading it are children of the bar, which kills them when it exits. If the
+# bar is killed outright (kill -9), the loop stops COMMAND at its next event:
+# COMMAND's first line is its pid (sh -c prints it, then execs COMMAND).
+watch() {
+    filter=$1
+    shift
+    command -v "$1" >/dev/null 2>&1 || return 0
+    # shellcheck disable=SC2016  # $$ and $@ are the inner shell's
+    sh -c 'echo $$; exec "$@"' sh "$@" 2>/dev/null | {
+        read -r pid
+        while read -r event; do
+            "$filter" "$event" || continue
+            kill -USR1 $$ 2>/dev/null && continue
+            kill "$pid" 2>/dev/null  # the bar is gone
+            exit 0
+        done
+    } &
+}
+
 # Sets $line: the parts that exist, four spaces apart
 draw() {
     battery
@@ -115,9 +150,14 @@ esac
 
 warned='' suspended='' again='' sleeper=''
 echo $$ >"$pidfile"
-trap 'rm -f "$pidfile"; [ "$sleeper" ] && kill "$sleeper" 2>/dev/null' EXIT
+# on exit (logging out, or killed with TERM, HUP or INT), take the children
+# along: the watchers, and the sleep below
+trap 'rm -f "$pidfile"; pkill -P $$ 2>/dev/null' EXIT
 trap 'exit 0' HUP INT TERM
 trap 'again=1' USR1
+# (after the USR1 trap, so that a watcher's first redraw can't kill the bar)
+watch sound pactl subscribe
+watch power udevadm monitor --udev --subsystem-match=power_supply
 while :; do
     again=
     draw
