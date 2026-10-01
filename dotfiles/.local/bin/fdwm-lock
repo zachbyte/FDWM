@@ -1,0 +1,44 @@
+#!/bin/sh
+# fdwm-lock: the locker xss-lock runs (see .xinitrc) after 5 minutes without
+# input and before the laptop sleeps. It runs slock, and while the screen
+# stays locked it suspends once there has been no input for 10 minutes, and
+# again after every 5 more minutes without input (the lid opened, say, and
+# the laptop left alone).
+#
+# This is here and not logind's IdleAction because dwm starts from a tty
+# (startx), and logind judges a tty session's use by the tty itself, which X
+# never touches: to logind the laptop was always idle, so it suspended (and
+# xss-lock locked) every 5 minutes however busy you were.
+#
+# "No input" is read from the screen: .xinitrc has X turn it off after 5
+# minutes without input, and any key, the mouse or the touchpad turns it
+# back on. So 20 checks 15 seconds apart that all find it off are 5 minutes
+# untouched. No checks run while the laptop sleeps, so after it wakes it
+# takes 5 more untouched minutes to suspend again.
+
+# off: true while X has the screen turned off (DPMS standby, suspend or off)
+off() {
+    xset q 2>/dev/null | grep -qE 'Monitor is (Standby|Suspend|Off)'
+}
+
+# watch PID: suspend while PID (slock) runs and the screen stays off
+watch() {
+    checks=0
+    while kill -0 "$1" 2>/dev/null; do
+        sleep 15
+        if off; then checks=$((checks + 1)); else checks=0; fi
+        if [ "$checks" -ge 20 ] && kill -0 "$1" 2>/dev/null; then
+            systemctl suspend
+            checks=0
+        fi
+    done
+}
+
+slock &
+pid=$!
+watch "$pid" &
+watcher=$!
+wait "$pid"
+rc=$?
+kill "$watcher" 2>/dev/null
+exit "$rc"

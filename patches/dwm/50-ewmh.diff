@@ -9,10 +9,12 @@ one shows), and a view holding nothing but a scratchpad keeps the one
 before. Beyond it: each window's _NET_WM_DESKTOP (its lowest tag,
 0xFFFFFFFF on all nine, none on a scratchpad), set wherever
 preserveonrestart's _NET_CLIENT_INFO is, and requests to change either,
-which a pager or `xdotool set_desktop` sends. The man page says so.
+which a pager or `xdotool set_desktop` sends. unswallow sets them again
+for the terminal, which takes back the tags its program had. The man page
+says so.
 
 diff --git a/dwm.1 b/dwm.1
-index 92cda1b..af27d9f 100644
+index 31e42fc..cecbfb1 100644
 --- a/dwm.1
 +++ b/dwm.1
 @@ -26,6 +26,11 @@ Each tag also keeps its own layout, master area size, number of master
@@ -25,13 +27,13 @@ index 92cda1b..af27d9f 100644
 +has every tag. They can switch tags and move windows that way too; the
 +scratchpads are on no desktop.
  .P
- Each screen contains a small status bar which displays all available tags, the
- layout, the title of the focused window (centered), and the text read from the
+ A window started from a terminal (st, or another with isterminal in its rule
+ in config.h) takes the terminal's place until it closes, and the terminal then
 diff --git a/dwm.c b/dwm.c
-index 2daf287..6ca8ee9 100644
+index dd9df2e..81e51bd 100644
 --- a/dwm.c
 +++ b/dwm.c
-@@ -65,7 +65,9 @@ enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
+@@ -67,7 +67,9 @@ enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
  enum { SchemeNorm, SchemeSel }; /* color schemes */
  enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
         NetWMFullscreen, NetActiveWindow, NetWMWindowType,
@@ -42,7 +44,7 @@ index 2daf287..6ca8ee9 100644
  enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms */
  enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
         ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
-@@ -209,6 +211,8 @@ static int sendevent(Client *c, Atom proto);
+@@ -219,6 +221,8 @@ static int sendevent(Client *c, Atom proto);
  static void sendmon(Client *c, Monitor *m);
  static void setclientstate(Client *c, long state);
  static void setclienttagprop(Client *c);
@@ -51,7 +53,7 @@ index 2daf287..6ca8ee9 100644
  static void setfocus(Client *c);
  static void setfullscreen(Client *c, int fullscreen);
  static void setlayout(const Arg *arg);
-@@ -560,7 +564,14 @@ clientmessage(XEvent *e)
+@@ -578,7 +582,14 @@ clientmessage(XEvent *e)
  {
  	XClientMessageEvent *cme = &e->xclient;
  	Client *c = wintoclient(cme->window);
@@ -66,7 +68,7 @@ index 2daf287..6ca8ee9 100644
  	if (!c)
  		return;
  	if (cme->message_type == netatom[NetWMState]) {
-@@ -571,6 +582,20 @@ clientmessage(XEvent *e)
+@@ -589,6 +600,20 @@ clientmessage(XEvent *e)
  	} else if (cme->message_type == netatom[NetActiveWindow]) {
  		if (c != selmon->sel && !c->isurgent)
  			seturgent(c, 1);
@@ -87,7 +89,7 @@ index 2daf287..6ca8ee9 100644
  	}
  }
  
-@@ -1791,6 +1816,11 @@ setup(void)
+@@ -1901,6 +1926,11 @@ setup(void)
  	netatom[NetWMWindowTypeDialog] = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DIALOG", False);
  	netatom[NetClientList] = XInternAtom(dpy, "_NET_CLIENT_LIST", False);
  	netatom[NetClientInfo] = XInternAtom(dpy, "_NET_CLIENT_INFO", False);
@@ -99,7 +101,7 @@ index 2daf287..6ca8ee9 100644
  	/* init cursors */
  	cursor[CurNormal] = drw_cur_create(drw, XC_left_ptr);
  	cursor[CurResize] = drw_cur_create(drw, XC_sizing);
-@@ -1815,6 +1845,8 @@ setup(void)
+@@ -1925,6 +1955,8 @@ setup(void)
  		PropModeReplace, (unsigned char *) netatom, NetLast);
  	XDeleteProperty(dpy, root, netatom[NetClientList]);
  	XDeleteProperty(dpy, root, netatom[NetClientInfo]);
@@ -108,7 +110,7 @@ index 2daf287..6ca8ee9 100644
  	/* select events */
  	wa.cursor = cursor[CurNormal]->cursor;
  	wa.event_mask = SubstructureRedirectMask|SubstructureNotifyMask
-@@ -1902,8 +1934,66 @@ void
+@@ -2012,8 +2044,66 @@ void
  setclienttagprop(Client *c)
  {
  	long data[] = { (long) c->tags, (long) c->mon->num };
@@ -175,7 +177,7 @@ index 2daf287..6ca8ee9 100644
  }
  
  /* tiledmove: swap two clients' places in the client list, so each window
-@@ -2062,6 +2152,7 @@ toggleview(const Arg *arg)
+@@ -2223,6 +2313,7 @@ toggleview(const Arg *arg)
  			selmon->pertag->curtag = slot;
  			restorepertag();
  		}
@@ -183,7 +185,15 @@ index 2daf287..6ca8ee9 100644
  		focus(NULL);
  		arrange(selmon);
  	}
-@@ -2375,6 +2466,7 @@ view(const Arg *arg)
+@@ -2316,6 +2407,7 @@ void
+ unswallow(Client *c)
+ {
+ 	replaceclient(c, c->swallowing);
++	setclienttagprop(c->swallowing); /* the tags c had, which it now has */
+ 	c->swallowing = NULL;
+ }
+ 
+@@ -2550,6 +2642,7 @@ view(const Arg *arg)
  		selmon->pertag->curtag = t;
  	}
  	restorepertag();

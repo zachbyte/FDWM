@@ -41,6 +41,8 @@
 #endif /* XINERAMA */
 #include <X11/Xft/Xft.h>
 #include <X11/XF86keysym.h>
+#include <X11/Xlib-xcb.h>
+#include <xcb/res.h>
 
 #include "drw.h"
 #include "util.h"
@@ -99,8 +101,11 @@ struct Client {
 	int bw, oldbw;
 	unsigned int tags;
 	int isfixed, isfloating, isurgent, neverfocus, oldstate, isfullscreen;
+	int isterminal, noswallow, ignorecfgreqpos;
+	pid_t pid;
 	Client *next;
 	Client *snext;
+	Client *swallowing; /* the terminal this window took the place of */
 	Monitor *mon;
 	Window win;
 };
@@ -145,6 +150,8 @@ typedef struct {
 	const char *title;
 	unsigned int tags;
 	int isfloating;
+	int isterminal;
+	int noswallow;
 	int monitor;
 } Rule;
 
@@ -177,12 +184,14 @@ static void focus(Client *c);
 static void focusin(XEvent *e);
 static void focusstack(const Arg *arg);
 static Atom getatomprop(Client *c, Atom prop);
+static pid_t getparentprocess(pid_t p);
 static int getrootptr(int *x, int *y);
 static long getstate(Window w);
 static int gettextprop(Window w, Atom atom, char *text, unsigned int size);
 static void grabbuttons(Client *c, int focused);
 static void grabkeys(void);
 static void incnmaster(const Arg *arg);
+static int isterminalwin(Window w);
 static void keypress(XEvent *e);
 static void killclient(const Arg *arg);
 static void manage(Window w, XWindowAttributes *wa);
@@ -198,6 +207,7 @@ static void pop(Client *c);
 static void propertynotify(XEvent *e);
 static void quit(const Arg *arg);
 static Monitor *recttomon(int x, int y, int w, int h);
+static void replaceclient(Client *old, Client *new);
 static void resize(Client *c, int x, int y, int w, int h, int interact);
 static void restorepertag(void);
 static void resizeclient(Client *c, int x, int y, int w, int h);
@@ -220,11 +230,14 @@ static void setmfact(const Arg *arg);
 static void setup(void);
 static void showhide(Client *c);
 static void spawn(const Arg *arg);
+static int swallow(Client *t, Client *c);
+static Client *swallowingclient(Window w);
 static void seturgent(Client *c, int urg);
 static void sighup(int unused);
 static void sigterm(int unused);
 static void swapclients(Client *a, Client *b);
 static void tag(const Arg *arg);
+static Client *termforwin(const Client *c);
 static void tile(Monitor *m);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
@@ -234,6 +247,7 @@ static void toggletag(const Arg *arg);
 static void toggleview(const Arg *arg);
 static void unfocus(Client *c, int setfocus);
 static void unmanage(Client *c, int destroyed);
+static void unswallow(Client *c);
 static void unmapnotify(XEvent *e);
 static void updatebarpos(Monitor *m);
 static void updatebars(void);
@@ -247,6 +261,7 @@ static void updatewindowtype(Client *c);
 static void updatewmhints(Client *c);
 static void view(const Arg *arg);
 static Client *wintoclient(Window w);
+static pid_t winpid(Window w);
 static Monitor *wintomon(Window w);
 static int xerror(Display *dpy, XErrorEvent *ee);
 static int xerrordummy(Display *dpy, XErrorEvent *ee);
@@ -288,6 +303,7 @@ static Display *dpy;
 static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
+static xcb_connection_t *xcon;
 
 /* configuration, allows nested code to access above variables */
 #include "config.h"
@@ -334,6 +350,8 @@ applyrules(Client *c)
 		&& (!r->class || strstr(class, r->class))
 		&& (!r->instance || strstr(instance, r->instance)))
 		{
+			c->isterminal = r->isterminal;
+			c->noswallow = r->noswallow;
 			c->isfloating = r->isfloating;
 			c->tags |= r->tags;
 			for (m = mons; m && m->num != r->monitor; m = m->next);
@@ -659,11 +677,12 @@ configurerequest(XEvent *e)
 			c->bw = ev->border_width;
 		else if (c->isfloating || !selmon->lt[selmon->sellt]->arrange) {
 			m = c->mon;
-			if (ev->value_mask & CWX) {
+			/* a window in a floating terminal's place stays where it is */
+			if ((ev->value_mask & CWX) && !c->ignorecfgreqpos) {
 				c->oldx = c->x;
 				c->x = m->mx + ev->x;
 			}
-			if (ev->value_mask & CWY) {
+			if ((ev->value_mask & CWY) && !c->ignorecfgreqpos) {
 				c->oldy = c->y;
 				c->y = m->my + ev->y;
 			}
@@ -728,6 +747,8 @@ destroynotify(XEvent *e)
 
 	if ((c = wintoclient(ev->window)))
 		unmanage(c, 1);
+	else if ((c = swallowingclient(ev->window)))
+		unmanage(c->swallowing, 1); /* a terminal gone while swallowed */
 }
 
 void
@@ -942,6 +963,24 @@ getatomprop(Client *c, Atom prop)
 	return atom;
 }
 
+/* the parent of process p, from /proc; 0 if it can't be read */
+pid_t
+getparentprocess(pid_t p)
+{
+	char buf[256], *s;
+	FILE *f;
+	int ppid = 0;
+
+	snprintf(buf, sizeof buf, "/proc/%d/stat", (int)p);
+	if (!(f = fopen(buf, "r")))
+		return 0;
+	/* pid (comm) state ppid ...: comm can hold spaces and parentheses */
+	if (fgets(buf, sizeof buf, f) && (s = strrchr(buf, ')')))
+		sscanf(s + 1, " %*c %d", &ppid);
+	fclose(f);
+	return ppid;
+}
+
 int
 getrootptr(int *x, int *y)
 {
@@ -1050,6 +1089,17 @@ incnmaster(const Arg *arg)
 	arrange(selmon);
 }
 
+/* whether the rules make window w a terminal */
+int
+isterminalwin(Window w)
+{
+	Client c = { .win = w, .mon = selmon };
+
+	updatetitle(&c);
+	applyrules(&c);
+	return c.isterminal;
+}
+
 #ifdef XINERAMA
 static int
 isuniquegeom(XineramaScreenInfo *unique, size_t n, XineramaScreenInfo *info)
@@ -1097,12 +1147,14 @@ killclient(const Arg *arg)
 void
 manage(Window w, XWindowAttributes *wa)
 {
-	Client *c, *t = NULL;
+	Client *c, *t = NULL, *term = NULL;
 	Window trans = None;
 	XWindowChanges wc;
+	int focusclient = 1;
 
 	c = ecalloc(1, sizeof(Client));
 	c->win = w;
+	c->pid = winpid(w);
 	/* geometry */
 	c->x = c->oldx = wa->x;
 	c->y = c->oldy = wa->y;
@@ -1117,6 +1169,7 @@ manage(Window w, XWindowAttributes *wa)
 	} else {
 		c->mon = selmon;
 		applyrules(c);
+		term = termforwin(c);
 	}
 
 	/* preserveonrestart: a window left open across a restart keeps its tags;
@@ -1162,19 +1215,26 @@ manage(Window w, XWindowAttributes *wa)
 		c->isfloating = c->oldstate = trans != None || c->isfixed;
 	if (c->isfloating)
 		XRaiseWindow(dpy, c->win);
-	attachbottom(c);
-	attachstack(c);
+	if (term && swallow(term, c)) {
+		/* it has the focus only if its terminal had */
+		focusclient = term == selmon->sel;
+	} else {
+		attachbottom(c);
+		attachstack(c);
+	}
 	XChangeProperty(dpy, root, netatom[NetClientList], XA_WINDOW, 32, PropModeAppend,
 		(unsigned char *) &(c->win), 1);
 	setclientstate(c, NormalState);
-	if (c->mon == selmon)
-		unfocus(selmon->sel, 0);
-	c->mon->sel = c;
+	if (focusclient) {
+		if (c->mon == selmon)
+			unfocus(selmon->sel, 0);
+		c->mon->sel = c;
+	}
 	arrange(c->mon);
 
 	if (c->isfloating && (c->tags & SPTAGMASK)) /* a scratchpad */
 		scratchgeom(c);
-	else if (c->isfloating) { /* alwayscenter: keep the requested size */
+	else if (c->isfloating && !c->swallowing) { /* alwayscenter: keep the requested size */
 		c->x = MAX(c->mon->wx, c->mon->mx + (c->mon->mw - c->w - 2 * c->bw) / 2);
 		c->y = MAX(c->mon->wy, c->mon->my + (c->mon->mh - c->h - 2 * c->bw) / 2);
 	}
@@ -1182,7 +1242,8 @@ manage(Window w, XWindowAttributes *wa)
 	XMoveResizeWindow(dpy, c->win, c->x, c->y, c->w, c->h);
 	XMapWindow(dpy, c->win);
 
-	focus(NULL);
+	if (focusclient)
+		focus(NULL);
 
 	setclienttagprop(c);
 }
@@ -1435,6 +1496,50 @@ recttomon(int x, int y, int w, int h)
 	return r;
 }
 
+/* swallow: new takes old's place in the lists, its tags and its geometry,
+ * and old's window goes off screen. new has old's fullscreen too, unless
+ * new is the terminal coming back. */
+void
+replaceclient(Client *old, Client *new)
+{
+	Client **tc;
+	Monitor *m = old->mon;
+	int x, y, w, h, f, bw;
+
+	new->mon = m;
+	new->tags = old->tags;
+	new->next = old->next;
+	new->snext = old->snext;
+	for (tc = &m->clients; *tc && *tc != old; tc = &(*tc)->next);
+	*tc = new;
+	for (tc = &m->stack; *tc && *tc != old; tc = &(*tc)->snext);
+	*tc = new;
+	old->next = old->snext = NULL;
+
+	/* old's own state, the one under its fullscreen */
+	if (old->isfullscreen) {
+		x = old->oldx, y = old->oldy, w = old->oldw, h = old->oldh;
+		f = old->oldstate, bw = old->oldbw;
+	} else {
+		x = old->x, y = old->y, w = old->w, h = old->h;
+		f = old->isfloating, bw = old->bw;
+	}
+	if (old->isfullscreen && !new->isfullscreen && !new->isterminal)
+		setfullscreen(new, 1);
+	else if (new->isfullscreen && !old->isfullscreen && !old->isterminal)
+		setfullscreen(new, 0);
+	if (new->isfullscreen) {
+		new->oldx = x, new->oldy = y, new->oldw = w, new->oldh = h;
+		new->oldstate = f, new->oldbw = bw;
+	} else {
+		new->isfloating = f;
+		new->bw = bw;
+		if (f && ISVISIBLE(new))
+			resize(new, x, y, w, h, 0);
+	}
+	XMoveWindow(dpy, old->win, WIDTH(old) * -2, old->y);
+}
+
 void
 resize(Client *c, int x, int y, int w, int h, int interact)
 {
@@ -1624,17 +1729,22 @@ void
 scan(void)
 {
 	unsigned int i, num;
+	int terms;
 	Window d1, d2, *wins = NULL;
 	XWindowAttributes wa;
 
 	if (XQueryTree(dpy, root, &d1, &d2, &wins, &num)) {
-		for (i = 0; i < num; i++) {
-			if (!XGetWindowAttributes(dpy, wins[i], &wa)
-			|| wa.override_redirect || XGetTransientForHint(dpy, wins[i], &d1))
-				continue;
-			if (wa.map_state == IsViewable || getstate(wins[i]) == IconicState)
-				manage(wins[i], &wa);
-		}
+		/* the terminals first, so that after a restart a window that had
+		 * swallowed its terminal finds it and swallows it again */
+		for (terms = 1; terms >= 0; terms--)
+			for (i = 0; i < num; i++) {
+				if (!XGetWindowAttributes(dpy, wins[i], &wa)
+				|| wa.override_redirect || XGetTransientForHint(dpy, wins[i], &d1))
+					continue;
+				if ((wa.map_state == IsViewable || getstate(wins[i]) == IconicState)
+				&& isterminalwin(wins[i]) == terms)
+					manage(wins[i], &wa);
+			}
 		for (i = 0; i < num; i++) { /* now the transients */
 			if (!XGetWindowAttributes(dpy, wins[i], &wa))
 				continue;
@@ -2014,6 +2124,35 @@ swapclients(Client *a, Client *b)
 	b->next = t;
 }
 
+/* swallow: c takes its terminal t's place, unless c floats or a rule says
+ * it doesn't swallow */
+int
+swallow(Client *t, Client *c)
+{
+	if (c->noswallow || c->isterminal)
+		return 0;
+	if (!swallowfloating && (c->isfullscreen ? c->oldstate : c->isfloating))
+		return 0;
+	replaceclient(t, c);
+	c->ignorecfgreqpos = 1;
+	c->swallowing = t;
+	return 1;
+}
+
+/* the window that has swallowed the terminal whose window is w */
+Client *
+swallowingclient(Window w)
+{
+	Client *c;
+	Monitor *m;
+
+	for (m = mons; m; m = m->next)
+		for (c = m->clients; c; c = c->next)
+			if (c->swallowing && c->swallowing->win == w)
+				return c;
+	return NULL;
+}
+
 void
 tag(const Arg *arg)
 {
@@ -2025,6 +2164,28 @@ tag(const Arg *arg)
 		focus(NULL);
 		arrange(selmon);
 	}
+}
+
+/* the terminal c was started from: one whose process c's process descends
+ * from. c itself mustn't be a terminal. */
+Client *
+termforwin(const Client *c)
+{
+	Client *t;
+	Monitor *m;
+	pid_t p;
+
+	if (!c->pid || c->isterminal)
+		return NULL;
+	for (m = mons; m; m = m->next)
+		for (t = m->clients; t; t = t->next) {
+			if (!t->isterminal || !t->pid)
+				continue;
+			for (p = c->pid; p > 1 && p != t->pid; p = getparentprocess(p));
+			if (p == t->pid)
+				return t;
+		}
+	return NULL;
 }
 
 void
@@ -2174,8 +2335,14 @@ unfocus(Client *c, int setfocus)
 void
 unmanage(Client *c, int destroyed)
 {
+	Client *s;
 	Monitor *m = c->mon;
 	XWindowChanges wc;
+
+	if (c->swallowing)
+		unswallow(c);
+	if ((s = swallowingclient(c->win)))
+		s->swallowing = NULL;
 
 	detach(c);
 	detachstack(c);
@@ -2233,6 +2400,15 @@ updatebars(void)
 		XMapRaised(dpy, m->barwin);
 		XSetClassHint(dpy, m->barwin, &ch);
 	}
+}
+
+/* the terminal c swallowed comes back in its place */
+void
+unswallow(Client *c)
+{
+	replaceclient(c, c->swallowing);
+	setclienttagprop(c->swallowing); /* the tags c had, which it now has */
+	c->swallowing = NULL;
 }
 
 void
@@ -2504,6 +2680,27 @@ wintomon(Window w)
 /* There's no way to check accesses to destroyed windows, thus those cases are
  * ignored (especially on UnmapNotify's). Other types of errors call Xlibs
  * default error handler, which may call exit. */
+/* the process that made window w, which the X server knows (the X-Resource
+ * extension) when it's on this machine; 0 if not */
+pid_t
+winpid(Window w)
+{
+	pid_t pid = 0;
+	xcb_res_client_id_spec_t spec = { .client = w, .mask = XCB_RES_CLIENT_ID_MASK_LOCAL_CLIENT_PID };
+	xcb_res_query_client_ids_reply_t *r;
+	xcb_res_client_id_value_iterator_t i;
+
+	if (!(r = xcb_res_query_client_ids_reply(xcon, xcb_res_query_client_ids(xcon, 1, &spec), NULL)))
+		return 0;
+	for (i = xcb_res_query_client_ids_ids_iterator(r); i.rem; xcb_res_client_id_value_next(&i))
+		if (i.data->spec.mask & XCB_RES_CLIENT_ID_MASK_LOCAL_CLIENT_PID) {
+			pid = *xcb_res_client_id_value_value(i.data);
+			break;
+		}
+	free(r);
+	return pid == -1 ? 0 : pid;
+}
+
 int
 xerror(Display *dpy, XErrorEvent *ee)
 {
@@ -2568,6 +2765,8 @@ main(int argc, char *argv[])
 		fputs("warning: no locale support\n", stderr);
 	if (!(dpy = XOpenDisplay(NULL)))
 		die("dwm: cannot open display");
+	if (!(xcon = XGetXCBConnection(dpy)))
+		die("dwm: cannot get xcb connection");
 	checkotherwm();
 	setup();
 #ifdef __OpenBSD__

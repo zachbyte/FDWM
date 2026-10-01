@@ -42,6 +42,19 @@ Two floating windows that one key shows and hides again, over whatever tag you'r
 
 The first press starts it, centered and at 60% of the screen across and down, and gives it the focus. The next press hides it and the one after brings the same window back, still centered, with whatever you left in it. Closing the window (quitting the shell, or `:q`) means the next press starts a fresh one. `Alt + 0`, which shows every tag, leaves the scratchpads out. They come from the scratchpads patch (see "Patches"): each is a tag of its own that a rule in `config.h` gives the st started with its instance name (`st -n spterm`, `st -n spnotes`), so another command or size is a change to `scratchpads[]`, `spfact` and `rules` there.
 
+## Window swallowing
+
+A graphical program you start from st, like an image viewer or a video, takes the terminal's place: the same spot in the layout, on the same tags, and the focus if the terminal had it. The terminal comes back where it was when the program closes. Only one program at a time takes a terminal's place: a second one started from the same st (in the background, say) opens on its own.
+
+It is dwm that decides: it asks the X server which process made the new window and follows that process's parents in `/proc` up to an st window. Some things open on their own instead:
+
+- a window that floats (a dialog, a fixed size, a match in `rules` that floats it); set `swallowfloating` to 1 in `config.h` to swallow those too
+- anything started from a scratchpad or the theme menu, whose st isn't a terminal for this
+- a window whose rule sets `noswallow`, like `xev`'s "Event Tester", which is no use without the terminal it prints to
+- a program that detaches itself (a double fork, `setsid -f`), whose parent is then no longer the shell in st
+
+A restart (`Alt + Shift + W`) keeps a program in its terminal's place. Which windows are terminals is the `isterminal` column of `rules` in `config.h`, so another terminal is one more rule (`xprop WM_CLASS` gives its class).
+
 ## The power menu
 
 `Alt + Shift + E` opens `fdwm-menu` (in `dotfiles/.local/bin`, installed to `~/.local/bin`), a dmenu list of lock, suspend, restart dwm, log out, reboot and power off; type a few letters or use the arrow keys, then Return. Log out, reboot and power off ask `no` / `yes` first, and `Escape` leaves either list without doing anything. Lock runs slock, suspend locks too (xss-lock), restart dwm is `Alt + Shift + W` and log out is `Alt + Shift + Q`.
@@ -101,7 +114,7 @@ Or press `Alt + Shift + T`: `fdwm-theme-menu` (in `dotfiles/.local/bin`, install
 
 Every push runs CI on a Fedora 44 container (`.github/workflows/ci.yml`), so a change is compiled and tested before it reaches your laptop. It installs `packages.txt`, builds dwm, st, dmenu and slock with every warning an error, runs ShellCheck on every script, runs the tests in `tests/`, and loads the Neovim config headless with every plugin.
 
-The tests run `install.sh`, `update.sh`, the GRUB step and the dotfiles against stubbed commands and throwaway directories, so they never touch your system. `tests/test_palette_refactor.sh` shows that moving the colors into `palette` changed none of them, and `tests/test_hardcoded_colors.sh` fails if any other file spells out a color (as hex, decimal or a terminal escape). `tests/test_scratchpad.sh` runs the built dwm on a virtual X screen (Xvfb) and presses the scratchpad keys. `tests/test_tag_marker.sh` builds dwm in the ThinkPad flavor, where the bar's text and the accent differ, and reads the bar's pixels on a virtual screen to check each tag's square and the underline. Run them yourself with:
+The tests run `install.sh`, `update.sh`, the GRUB step and the dotfiles against stubbed commands and throwaway directories, so they never touch your system. `tests/test_palette_refactor.sh` shows that moving the colors into `palette` changed none of them, and `tests/test_hardcoded_colors.sh` fails if any other file spells out a color (as hex, decimal or a terminal escape). `tests/test_scratchpad.sh` runs the built dwm on a virtual X screen (Xvfb) and presses the scratchpad keys, and `tests/test_swallow.sh` starts a small X program (`tests/xwin.c`) from st there and checks it takes the terminal's place and gives it back. `tests/test_tag_marker.sh` builds dwm in the ThinkPad flavor, where the bar's text and the accent differ, and reads the bar's pixels on a virtual screen to check each tag's square and the underline. Run them yourself with:
 
 ```shell
 tests/run.sh
@@ -156,13 +169,14 @@ done
 
 ### 5. Set up the session
 
-`dotfiles/.xinitrc` starts the keyring, the polkit agent, dunst for notifications and the bar script `fdwm-bar` (see "The bar" and "Notifications" above) before dwm, and locks the screen with slock and turns it off after 5 minutes idle (or before the laptop suspends); after 10 minutes idle the laptop suspends (see the logind step below); PipeWire gives you sound and the media keys.
+`dotfiles/.xinitrc` starts the keyring, the polkit agent, dunst for notifications and the bar script `fdwm-bar` (see "The bar" and "Notifications" above) before dwm, and locks the screen with slock and turns it off after 5 minutes idle (or before the laptop suspends); after 10 minutes idle the laptop suspends (`fdwm-lock`, which xss-lock runs to lock, does that while the screen stays locked and untouched). Typing, the mouse or the touchpad keeps it unlocked, and so does a video player that holds off the screensaver while it plays; PipeWire gives you sound and the media keys.
 
 ```shell
 cp dotfiles/.xinitrc ~/.xinitrc
 install -Dm755 dotfiles/.local/bin/fdwm-shot ~/.local/bin/fdwm-shot
 install -Dm755 dotfiles/.local/bin/fdwm-bar ~/.local/bin/fdwm-bar
 install -Dm644 dotfiles/.config/dunst/dunstrc ~/.config/dunst/dunstrc
+install -Dm755 dotfiles/.local/bin/fdwm-lock ~/.local/bin/fdwm-lock
 install -Dm755 dotfiles/.local/bin/fdwm-menu ~/.local/bin/fdwm-menu
 install -Dm755 dotfiles/.local/bin/fdwm-theme-menu ~/.local/bin/fdwm-theme-menu
 install -Dm755 dotfiles/.local/bin/fdwm-keys ~/.local/bin/fdwm-keys
@@ -175,11 +189,12 @@ Add the autostart from `dotfiles/.bash_profile` to your own `~/.bash_profile`, s
 sed -n '/^# Start dwm/,$p' dotfiles/.bash_profile >> ~/.bash_profile
 ```
 
-To suspend after 10 minutes without use, have logind act once the session has been idle (xss-lock marks it idle when the screen locks at 5 minutes) for 5 more minutes, and to suspend when the lid closes (logind's default, spelled out here):
+To suspend when the lid closes (logind's default, spelled out here). Leave logind's `IdleAction` alone: logind judges a session started from a tty by the tty, which X never touches, so it would suspend every few minutes while you work; `fdwm-lock` suspends after 10 idle minutes instead. Earlier versions of this step wrote `/etc/systemd/logind.conf.d/fdwm-idle.conf`, which the `rm` removes.
 
 ```shell
 sudo mkdir -p /etc/systemd/logind.conf.d
-printf '[Login]\nIdleAction=suspend\nIdleActionSec=5min\nHandleLidSwitch=suspend\nHandleLidSwitchExternalPower=suspend\n' | sudo tee /etc/systemd/logind.conf.d/fdwm-idle.conf
+sudo rm -f /etc/systemd/logind.conf.d/fdwm-idle.conf
+printf '[Login]\nHandleLidSwitch=suspend\nHandleLidSwitchExternalPower=suspend\n' | sudo tee /etc/systemd/logind.conf.d/fdwm-lid.conf
 sudo systemctl kill -s HUP systemd-logind
 ```
 
@@ -243,7 +258,7 @@ The source in `suckless/` already includes every patch, so there is nothing to a
 
 The order:
 
-- dwm (49)
+- dwm (50)
   - 01–14: the upstream patches activetagindicatorbar, actualfullscreen, alwayscenter, attachbottom, centretitle, colorbar, dragmfact, noborderflicker, preserveonrestart, resizehere, restartsig, tiledmove, togglefloatingcenter and uselessgap, as they apply to 6.5. The three that needed fixing by hand (attachbottom, colorbar, resizehere) say how.
   - 15: FDWM's `config.h`.
   - 16: `import-edits`, the hand edits made when the patched dwm was first imported, before the repo had history.
@@ -257,7 +272,8 @@ The order:
   - 46: each key and mouse button described in a comment, `/* group: what it does */`, for the list `fdwm-keys` shows, and `Alt + /`, which opens it; the man page says so.
   - 47: movestack, after the upstream patch of that name (https://dwm.suckless.org/patches/movestack/) but written on swapclients(): `Alt + Shift + J` / `K` swap the focused window with the next / previous tiled one, wrapping at the ends; a floating window stays put.
   - 48: pertag, after the upstream patch of that name (https://dwm.suckless.org/patches/pertag/): each tag's own layout, master area and bar, saved whenever one changes (`setlayout`, `setmfact`, `resetmfact`, `incnmaster`, `togglebar` and dragmfact's drag in `resizemouse`) and restored by `view` and `toggleview`; the scratchpads' tags never pick the slot.
-  - 49: the tags as EWMH desktops, after the upstream ewmhtags patch (https://dwm.suckless.org/patches/ewmhtags/): nine desktops named after the tags, the current one (the lowest tag in view), each window's (`_NET_WM_DESKTOP`), and requests to switch or move from a pager or `xdotool`; the scratchpads' tags aren't desktops.
+  - 49: window swallowing, after bakkeby's version of the upstream swallow patch (https://dwm.suckless.org/patches/swallow/), which puts the program in the terminal's place in the lists rather than swapping their windows: `isterminal` and `noswallow` in `rules`, the process found through the X-Resource extension (xcb-res, so `libxcb-devel` in `packages.txt`) and its parents through `/proc`, Linux only. FDWM's own: st's rule comes first so the scratchpads' and the theme menu's rules turn it off again, a swallowed program isn't recentered by alwayscenter, and `scan()` manages the terminals before the other windows so a restart swallows again.
+  - 50: the tags as EWMH desktops, after the upstream ewmhtags patch (https://dwm.suckless.org/patches/ewmhtags/): nine desktops named after the tags, the current one (the lowest tag in view), each window's (`_NET_WM_DESKTOP`), and requests to switch or move from a pager or `xdotool`; the scratchpads' tags aren't desktops.
 - st (10): the upstream patches anysize, scrollback and scrollback-mouse; `config.h`; `upstream-csi-colon`, a fix from st's development version after 0.9.2; `import-edits`; then FDWM's changes: scrollback-mouse-altscreen (the wheel scrolls pagers on the alternate screen, #7), the Makefile changes and the palette.
 - dmenu (11): `config.h`; `upstream-drw-utf8`, drw.c from dmenu's development version after 5.3; `import-edits`; then FDWM's changes: one monitor, the version fixed to 5.3, the Makefile changes, the palette, and its text and selection from the same palette entries as dwm's.
 - slock (4): `config.h` (Catppuccin colors, dropping privileges to Fedora's `nobody` group) and the Makefile, as slock was built from source; the softer colors (base while locked, surface1 while you type, red only after a wrong password); and the palette.
@@ -294,10 +310,10 @@ Done:
 
 - movestack: `Alt + Shift + J` / `K` move the focused window down or up the stack (patch 47).
 - pertag: each tag remembers its own layout, master area and bar, the scratchpads' tags left out (patch 48).
-- EWMH desktops: other programs (a pager, an external bar, `xdotool set_desktop`) see the tags as desktops, which window is on which, and can switch tags and move windows (patch 49).
+- Window swallowing for st: a graphical program started from st (a video, an image) takes the terminal's place until it closes (patch 49, see "Window swallowing").
 
-Not started yet, roughly in this order:
+Not started yet:
 
-- Window swallowing for st: a graphical program started from st (a video, an image) takes the terminal's place until it closes.
+- EWMH desktop atoms (`_NET_CURRENT_DESKTOP` and the rest), which let other programs see the tags. Only an external bar needs them, so only if Quickshell comes back.
 
-Quickshell, a Qt/QML toolkit for bars and widgets, is deferred: dwm's bar, `fdwm-bar` and dmenu already cover what FDWM needs, and Quickshell would add a resident Qt process, QML to maintain, and a dwm patch (dock windows, on top of the EWMH desktops above) just to work with dwm on X11. Wanting a system tray or clickable widgets (sliders, a calendar, notification history) would change that.
+Quickshell, a Qt/QML toolkit for bars and widgets, is deferred: dwm's bar, `fdwm-bar` and dmenu already cover what FDWM needs, and Quickshell would add a resident Qt process, QML to maintain, and dwm patches (EWMH tags, dock windows) just to work with dwm on X11. Wanting a system tray or clickable widgets (sliders, a calendar, notification history) would change that.

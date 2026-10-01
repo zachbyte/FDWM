@@ -32,6 +32,11 @@ tag in view, and a window's desktop is its lowest tag, or all of them when it
 has every tag. They can switch tags and move windows that way too; the
 scratchpads are on no desktop.
 .P
+A window started from a terminal (st, or another with isterminal in its rule
+in config.h) takes the terminal's place until it closes, and the terminal then
+comes back; a floating window, or one whose rule sets noswallow, opens on its
+own.
+.P
 Each screen contains a small status bar which displays all available tags, the
 layout, the title of the focused window (centered), and the text read from the
 root window name property, if the screen is focused. A floating window is

@@ -63,11 +63,13 @@ if ln -s probe "$T/probe" 2>/dev/null && [[ -L $T/probe ]]; then
 else
     echo "  skip  the ~/.local/bin/fdwm-theme link (no symlinks here)"
 fi
+expect "installs ~/.local/bin/fdwm-lock, executable" yes "$([[ -x $T/home/.local/bin/fdwm-lock ]] && echo yes)"
 expect "installs ~/.local/bin/fdwm-menu, executable" yes "$([[ -x $T/home/.local/bin/fdwm-menu ]] && echo yes)"
 expect "installs ~/.local/bin/fdwm-theme-menu, executable" yes "$([[ -x $T/home/.local/bin/fdwm-theme-menu ]] && echo yes)"
 expect "installs ~/.local/bin/fdwm-keys, executable" yes "$([[ -x $T/home/.local/bin/fdwm-keys ]] && echo yes)"
 expect "lists dwm's keys in ~/.config/fdwm/keys, from config.h" "$(awk -f "$ROOT/keys.awk" "$ROOT/suckless/dwm/config.h")" "$(cat "$T/home/.config/fdwm/keys" 2>/dev/null)"
 expect_match "sets up suspend" "==> Setting up suspend" "$out"
+expect_match "suspends on lid close, not on logind's idle" "SUDO tee /etc/systemd/logind.conf.d/fdwm-lid.conf" "$(cat "$LOG")"
 
 MISSING=nnn run
 expect_match "one package missing: names it" "Installing: nnn$" "$out"
