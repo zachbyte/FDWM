@@ -231,7 +231,7 @@ The source in `suckless/` already includes every patch, so there is nothing to a
 
 The order:
 
-- dwm (43)
+- dwm (44)
   - 01–14: the upstream patches activetagindicatorbar, actualfullscreen, alwayscenter, attachbottom, centretitle, colorbar, dragmfact, noborderflicker, preserveonrestart, resizehere, restartsig, tiledmove, togglefloatingcenter and uselessgap, as they apply to 6.5. The three that needed fixing by hand (attachbottom, colorbar, resizehere) say how.
   - 15: FDWM's `config.h`.
   - 16: `import-edits`, the hand edits made when the patched dwm was first imported, before the repo had history.
@@ -240,6 +240,7 @@ The order:
   - 41: FDWM's scratchpad size and centering (60% of the screen, on the window's real size).
   - 42: the bar's text, the accent (the selected tag's underline and the focused window's border) and the other windows' borders, each from its own palette entry.
   - 43: the theme menu's key, `Alt + Shift + T`, and the rule that floats its st.
+  - 44: cleanup: colorbar's extra color schemes, which all drew in the same colors as the normal one (the bar looks the same without them), `dmenumon`, unused since dmenu stopped being given a monitor, and the rule for feh, which FDWM doesn't install.
 - st (10): the upstream patches anysize, scrollback and scrollback-mouse; `config.h`; `upstream-csi-colon`, a fix from st's development version after 0.9.2; `import-edits`; then FDWM's changes: scrollback-mouse-altscreen (the wheel scrolls pagers on the alternate screen, #7), the Makefile changes and the palette.
 - dmenu (11): `config.h`; `upstream-drw-utf8`, drw.c from dmenu's development version after 5.3; `import-edits`; then FDWM's changes: one monitor, the version fixed to 5.3, the Makefile changes, the palette, and its text and selection from the same palette entries as dwm's.
 - slock (4): `config.h` (Catppuccin colors, dropping privileges to Fedora's `nobody` group) and the Makefile, as slock was built from source; the softer colors (base while locked, surface1 while you type, red only after a wrong password); and the palette.

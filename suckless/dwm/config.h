@@ -11,14 +11,10 @@ static const char col_bg[] = COL_BASE;
 static const char col_fg[] = COL_UI_TEXT;
 static const char col_accent[] = COL_UI_ACCENT;
 static const char col_border[] = COL_UI_BORDER;
-static const char *colors[][4] = {
-    /*               fg         bg         border   */
-    [SchemeNorm] = { col_fg, col_bg, col_border },
-    [SchemeSel]  = { col_accent, col_bg, col_accent }, // the focused window's border, the selected tag's underline
-	[SchemeStatus]  = { col_fg, col_bg,  col_bg  }, // Statusbar right {text,background,not used but cannot be empty}
-	[SchemeTagsNorm]  = { col_fg, col_bg,  col_bg  }, // Tagbar left unselected {text,background,not used but cannot be empty}
-	[SchemeInfoSel]  = { col_fg, col_bg,  col_bg  }, // infobar middle  selected {text,background,not used but cannot be empty}
-	[SchemeInfoNorm]  = { col_fg, col_bg,  col_bg  }, // infobar middle  unselected {text,background,not used but cannot be empty}
+static const char *colors[][3] = {
+	/*               fg          bg      border   */
+	[SchemeNorm] = { col_fg,     col_bg, col_border }, /* the whole bar, the other windows' borders */
+	[SchemeSel]  = { col_accent, col_bg, col_accent }, /* the focused window's border, the selected tag's underline */
 };
 
 /* scratchpads: a floating window a key shows and hides again, started the
@@ -47,7 +43,6 @@ static const Rule rules[] = {
 	 *	WM_NAME(STRING) = title
 	 */
 	/* class     instance  title           tags mask  isfloating  monitor */
-	{ "feh",     NULL,     NULL,           0,         1,          -1 },
 	{ NULL,      "spterm", NULL,           SPTAG(0),  1,          -1 },
 	{ NULL,      "spnotes", NULL,          SPTAG(1),  1,          -1 },
 	{ NULL,      "fdwm-theme", NULL,       0,         1,          -1 }, /* fdwm-theme-menu's st */
@@ -84,7 +79,6 @@ static const Layout layouts[] = {
 #define SHOT(what) SHCMD ("\"$HOME/.local/bin/fdwm-shot\" " what)
 
 /* commands */
-static char dmenumon[2] = "0";
 static const char *dmenucmd[] = { "dmenu_run", NULL };
 static const char *termcmd[] = { "st", NULL };
 static const char *lockcmd[] = { "slock", NULL };
