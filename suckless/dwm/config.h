@@ -19,6 +19,23 @@ static const char *colors[][4] = {
 	[SchemeInfoNorm]  = { col_fg, col_bg,  col_bg  }, // infobar middle  unselected {text,background,not used but cannot be empty}
 };
 
+/* scratchpads: a floating window a key shows and hides again, started the
+ * first time it's wanted. Each has its own tag, SPTAG(n), which a rule
+ * below gives the window by the instance name st -n sets. */
+typedef struct {
+	const char *name;
+	const void *cmd;
+} Sp;
+static const float spfact = 0.6; /* their size: this share of the screen, across and down */
+static const char *sptermcmd[] = { "st", "-n", "spterm", NULL };
+static const char *spnotescmd[] = { "/bin/sh", "-c",
+	"exec st -n spnotes -e nvim \"$HOME/notes.md\"", NULL };
+static Sp scratchpads[] = {
+	/* name          cmd  */
+	{ "spterm",      sptermcmd },   /* Alt+`: a terminal */
+	{ "spnotes",     spnotescmd },  /* Alt+N: Neovim on ~/notes.md */
+};
+
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9"};
 
@@ -29,6 +46,8 @@ static const Rule rules[] = {
 	 */
 	/* class     instance  title           tags mask  isfloating  monitor */
 	{ "feh",     NULL,     NULL,           0,         1,          -1 },
+	{ NULL,      "spterm", NULL,           SPTAG(0),  1,          -1 },
+	{ NULL,      "spnotes", NULL,          SPTAG(1),  1,          -1 },
  };
 
 /* layout(s) */
@@ -89,8 +108,8 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_space,  setlayout,      {0} },
 	{ MODKEY|ShiftMask,             XK_space,  togglefloating, {0} },
 	{ MODKEY|ShiftMask,             XK_f,      togglefullscr,  {0} },
-	{ MODKEY,                       XK_0,      view,           {.ui = ~0 } },
-	{ MODKEY|ShiftMask,             XK_0,      tag,            {.ui = ~0 } },
+	{ MODKEY,                       XK_0,      view,           {.ui = ~SPTAGMASK } },
+	{ MODKEY|ShiftMask,             XK_0,      tag,            {.ui = ~SPTAGMASK } },
 	TAGKEYS(                        XK_1,                      0)
 	TAGKEYS(                        XK_2,                      1)
 	TAGKEYS(                        XK_3,                      2)
@@ -105,6 +124,8 @@ static const Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_r,      resetmfact,     {0} },
 	{ MODKEY|ShiftMask,             XK_l,      spawn,          {.v = lockcmd } },
 	{ MODKEY|ShiftMask,             XK_e,      spawn,          {.v = menucmd } },
+	{ MODKEY,                       XK_grave,  togglescratch,  {.ui = 0 } },
+	{ MODKEY,                       XK_n,      togglescratch,  {.ui = 1 } },
 	{ 0,                            XF86XK_MonBrightnessUp,    spawn,          SHCMD ("brightnessctl set +10%" BARREFRESH)},
 	{ 0,                            XF86XK_MonBrightnessDown,  spawn,          SHCMD ("brightnessctl set 10%-" BARREFRESH)},
 	{ 0,                            XF86XK_AudioLowerVolume,   spawn,          SHCMD ("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-" BARREFRESH)},

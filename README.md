@@ -27,6 +27,15 @@ Then reboot and log in on tty1: dwm starts. (Earlier versions logged tty1 in aut
 
 `Print` lets you drag out a region, outlined in the palette's lavender (`Escape` or a right click cancels); `Shift + Print` takes the whole screen. Either way `fdwm-shot` (in `dotfiles/.local/bin`, installed to `~/.local/bin`) saves a PNG named for the time in `~/Pictures/Screenshots` and copies it to the clipboard, so you can paste it straight away. maim takes the screenshot and xclip copies it.
 
+## Scratchpads
+
+Two floating windows that one key shows and hides again, over whatever tag you're on:
+
+- `` Alt + ` ``: a terminal (st)
+- `Alt + N`: your notes, Neovim on `~/notes.md`, which is created the first time you save
+
+The first press starts it, centered and at 60% of the screen across and down, and gives it the focus. The next press hides it and the one after brings the same window back, still centered, with whatever you left in it. Closing the window (quitting the shell, or `:q`) means the next press starts a fresh one. `Alt + 0`, which shows every tag, leaves the scratchpads out. They come from the scratchpads patch (see "Patches"): each is a tag of its own that a rule in `config.h` gives the st started with its instance name (`st -n spterm`, `st -n spnotes`), so another command or size is a change to `scratchpads[]`, `spfact` and `rules` there.
+
 ## The power menu
 
 `Alt + Shift + E` opens `fdwm-menu` (in `dotfiles/.local/bin`, installed to `~/.local/bin`), a dmenu list of lock, suspend, restart dwm, log out, reboot and power off; type a few letters or use the arrow keys, then Return. Log out, reboot and power off ask `no` / `yes` first, and `Escape` leaves either list without doing anything. Lock runs slock, suspend locks too (xss-lock), restart dwm is `Alt + Shift + W` and log out is `Alt + Shift + Q`.
@@ -75,7 +84,7 @@ fdwm-theme mocha
 
 Every push runs CI on a Fedora 44 container (`.github/workflows/ci.yml`), so a change is compiled and tested before it reaches your laptop. It installs `packages.txt`, builds dwm, st, dmenu and slock with every warning an error, runs ShellCheck on every script, runs the tests in `tests/`, and loads the Neovim config headless with every plugin.
 
-The tests run `install.sh`, `update.sh`, the GRUB step and the dotfiles against stubbed commands and throwaway directories, so they never touch your system. `tests/test_palette_refactor.sh` shows that moving the colors into `palette` changed none of them, and `tests/test_hardcoded_colors.sh` fails if any other file spells out a color (as hex, decimal or a terminal escape). Run them yourself with:
+The tests run `install.sh`, `update.sh`, the GRUB step and the dotfiles against stubbed commands and throwaway directories, so they never touch your system. `tests/test_palette_refactor.sh` shows that moving the colors into `palette` changed none of them, and `tests/test_hardcoded_colors.sh` fails if any other file spells out a color (as hex, decimal or a terminal escape). `tests/test_scratchpad.sh` runs the built dwm on a virtual X screen (Xvfb) and presses the scratchpad keys. Run them yourself with:
 
 ```shell
 tests/run.sh
@@ -171,6 +180,7 @@ cp dotfiles/.bashrc.d/claude.sh ~/.bashrc.d/
 | `Alt + Q` / `Alt + Shift + Q` | Close the window / quit dwm |
 | `Alt + Shift + E` | Power menu: lock, suspend, restart dwm, log out, reboot or power off (see "The power menu") |
 | `Alt + Shift + L` | Lock the screen (slock; type your password and press Return) |
+| `` Alt + ` `` / `Alt + N` | Show or hide the terminal / notes scratchpad (see "Scratchpads") |
 | `Print` / `Shift + Print` | Screenshot of a region / the whole screen, saved and copied (see "Screenshots") |
 
 ### 6. Neovim and GRUB theme
@@ -210,11 +220,13 @@ The source in `suckless/` already includes every patch, so there is nothing to a
 
 The order:
 
-- dwm (39)
+- dwm (41)
   - 01–14: the upstream patches activetagindicatorbar, actualfullscreen, alwayscenter, attachbottom, centretitle, colorbar, dragmfact, noborderflicker, preserveonrestart, resizehere, restartsig, tiledmove, togglefloatingcenter and uselessgap, as they apply to 6.5. The three that needed fixing by hand (attachbottom, colorbar, resizehere) say how.
   - 15: FDWM's `config.h`.
   - 16: `import-edits`, the hand edits made when the patched dwm was first imported, before the repo had history.
   - 17–39: FDWM's changes since, one per commit: the floating window sizes (#2, #3), swapclients in tiledmove (#4), the preserveonrestart fix for `rules` (#6), the drw.c sync (#15), the Makefile and cleanup changes, the slock, bar-refresh, screenshot and power-menu keys, and the palette.
+  - 40: the upstream scratchpads patch, merged by hand, with FDWM's two scratchpads.
+  - 41: FDWM's scratchpad size and centering (60% of the screen, on the window's real size).
 - st (10): the upstream patches anysize, scrollback and scrollback-mouse; `config.h`; `upstream-csi-colon`, a fix from st's development version after 0.9.2; `import-edits`; then FDWM's changes: scrollback-mouse-altscreen (the wheel scrolls pagers on the alternate screen, #7), the Makefile changes and the palette.
 - dmenu (10): `config.h`; `upstream-drw-utf8`, drw.c from dmenu's development version after 5.3; `import-edits`; then FDWM's changes: one monitor, the version fixed to 5.3, the Makefile changes, and the palette.
 - slock (4): `config.h` (Catppuccin colors, dropping privileges to Fedora's `nobody` group) and the Makefile, as slock was built from source; the softer colors (base while locked, surface1 while you type, red only after a wrong password); and the palette.

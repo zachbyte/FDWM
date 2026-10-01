@@ -126,7 +126,7 @@ Toggles to the previously selected tags.
 Apply nth tag to focused window.
 .TP
 .B Mod1\-Shift\-0
-Apply all tags to focused window.
+Apply all tags to focused window (not the scratchpads' tags).
 .TP
 .B Mod1\-Control\-Shift\-[1..n]
 Add/remove nth tag to/from focused window.
@@ -135,7 +135,7 @@ Add/remove nth tag to/from focused window.
 View all windows with nth tag.
 .TP
 .B Mod1\-0
-View all windows with any tag.
+View all windows with any tag, except the scratchpads.
 .TP
 .B Mod1\-Control\-[1..n]
 Add/remove all windows with nth tag to/from the view.
@@ -156,6 +156,16 @@ Open the power menu,
 .BR fdwm-menu ,
 in dmenu: lock, suspend, restart dwm, log out, reboot or power off. Log out,
 reboot and power off ask again first.
+.TP
+.B Mod1\-grave
+Show or hide the terminal scratchpad: a floating
+.BR st (1)
+in the middle of the screen, over whatever tag you view. The first press
+starts it; closing it and pressing again starts a new one.
+.TP
+.B Mod1\-n
+Show or hide the notes scratchpad: Neovim on ~/notes.md, in a floating st
+like the terminal scratchpad.
 .TP
 .B XF86MonBrightnessUp, XF86MonBrightnessDown
 Raise or lower the screen brightness by 10% with

@@ -21,8 +21,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install packages.txt, ShellCheck and runuser
-        run: dnf -y install $(sed 's/#.*//' packages.txt) ShellCheck util-linux
+      # and a virtual X screen with xdotool, on which tests/test_scratchpad.sh
+      # drives the built dwm
+      - name: Install packages.txt, ShellCheck, runuser and Xvfb
+        run: dnf -y install $(sed 's/#.*//' packages.txt) ShellCheck util-linux xorg-x11-server-Xvfb xdotool xprop
 
       # downloads the upstream releases pinned in patches/upstream
       - name: Rebuild dwm, st, dmenu and slock from upstream and patches/

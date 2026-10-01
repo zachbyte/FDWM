@@ -54,7 +54,10 @@
 #define MOUSEMASK               (BUTTONMASK|PointerMotionMask)
 #define WIDTH(X)                ((X)->w + 2 * (X)->bw + gappx)
 #define HEIGHT(X)               ((X)->h + 2 * (X)->bw + gappx)
-#define TAGMASK                 ((1 << LENGTH(tags)) - 1)
+#define NUMTAGS                 (LENGTH(tags) + LENGTH(scratchpads))
+#define TAGMASK                 ((1 << NUMTAGS) - 1)
+#define SPTAG(i)                ((1 << LENGTH(tags)) << (i))
+#define SPTAGMASK               (((1 << LENGTH(scratchpads)) - 1) << LENGTH(tags))
 #define TEXTW(X)                (drw_fontset_getwidth(drw, (X)) + lrpad)
 
 /* enums */
@@ -194,6 +197,7 @@ static void resizeclient(Client *c, int x, int y, int w, int h);
 static void resizemouse(const Arg *arg);
 static void restack(Monitor *m);
 static void run(void);
+static void scratchgeom(Client *c);
 static void scan(void);
 static int sendevent(Client *c, Atom proto);
 static void sendmon(Client *c, Monitor *m);
@@ -215,6 +219,7 @@ static void tile(Monitor *m);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
 static void togglefullscr(const Arg *arg);
+static void togglescratch(const Arg *arg);
 static void toggletag(const Arg *arg);
 static void toggleview(const Arg *arg);
 static void unfocus(Client *c, int setfocus);
@@ -278,7 +283,7 @@ static Window root, wmcheckwin;
 #include "config.h"
 
 /* compile-time check if all tags fit into an unsigned int bit array. */
-struct NumTags { char limitexceeded[LENGTH(tags) > 31 ? -1 : 1]; };
+struct NumTags { char limitexceeded[NUMTAGS > 31 ? -1 : 1]; };
 
 /* size of a window floated by togglefloating() */
 #define FLOAT_WIDTH  800
@@ -318,7 +323,7 @@ applyrules(Client *c)
 		XFree(ch.res_class);
 	if (ch.res_name)
 		XFree(ch.res_name);
-	c->tags = c->tags & TAGMASK ? c->tags & TAGMASK : c->mon->tagset[c->mon->seltags];
+	c->tags = c->tags & TAGMASK ? c->tags & TAGMASK : (c->mon->tagset[c->mon->seltags] & ~SPTAGMASK);
 }
 
 int
@@ -1107,7 +1112,9 @@ manage(Window w, XWindowAttributes *wa)
 	c->mon->sel = c;
 	arrange(c->mon);
 
-	if (c->isfloating) { /* alwayscenter: keep the requested size */
+	if (c->isfloating && (c->tags & SPTAGMASK)) /* a scratchpad */
+		scratchgeom(c);
+	else if (c->isfloating) { /* alwayscenter: keep the requested size */
 		c->x = MAX(c->mon->wx, c->mon->mx + (c->mon->mw - c->w - 2 * c->bw) / 2);
 		c->y = MAX(c->mon->wy, c->mon->my + (c->mon->mh - c->h - 2 * c->bw) / 2);
 	}
@@ -1466,6 +1473,17 @@ run(void)
 			handler[ev.type](&ev); /* call handler */
 }
 
+/* a floating scratchpad's geometry: spfact of its monitor, centered */
+void
+scratchgeom(Client *c)
+{
+	c->w = c->mon->ww * spfact;
+	c->h = c->mon->wh * spfact;
+	/* (not WIDTH() and HEIGHT(), which uselessgap widens by gappx) */
+	c->x = c->mon->wx + (c->mon->ww - c->w - 2 * c->bw) / 2;
+	c->y = c->mon->wy + (c->mon->wh - c->h - 2 * c->bw) / 2;
+}
+
 void
 scan(void)
 {
@@ -1714,6 +1732,13 @@ showhide(Client *c)
 	if (!c)
 		return;
 	if (ISVISIBLE(c)) {
+		/* a floating scratchpad back at its size, centered, even if it was
+		 * resized; resizeclient() because scratchgeom() has already set
+		 * the size resize() would compare with */
+		if ((c->tags & SPTAGMASK) && c->isfloating) {
+			scratchgeom(c);
+			resizeclient(c, c->x, c->y, c->w, c->h);
+		}
 		/* show clients top down */
 		XMoveWindow(dpy, c->win, c->x, c->y);
 		if ((!c->mon->lt[c->mon->sellt]->arrange || c->isfloating) && !c->isfullscreen)
@@ -1864,6 +1889,32 @@ togglefullscr(const Arg *arg)
 {
 	if(selmon->sel)
 		setfullscreen(selmon->sel, !selmon->sel->isfullscreen);
+}
+
+void
+togglescratch(const Arg *arg)
+{
+	Client *c;
+	unsigned int found = 0;
+	unsigned int scratchtag = SPTAG(arg->ui);
+	Arg sparg = {.v = scratchpads[arg->ui].cmd};
+
+	for (c = selmon->clients; c && !(found = c->tags & scratchtag); c = c->next);
+	if (found) {
+		unsigned int newtagset = selmon->tagset[selmon->seltags] ^ scratchtag;
+		if (newtagset) {
+			selmon->tagset[selmon->seltags] = newtagset;
+			focus(NULL);
+			arrange(selmon);
+		}
+		if (ISVISIBLE(c)) {
+			focus(c);
+			restack(selmon);
+		}
+	} else {
+		selmon->tagset[selmon->seltags] |= scratchtag;
+		spawn(&sparg);
+	}
 }
 
 void
