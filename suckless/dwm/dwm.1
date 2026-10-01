@@ -26,6 +26,11 @@ Each tag also keeps its own layout, master area size, number of master
 windows and whether the bar shows, and so does the view of all tags; the
 scratchpads have none of their own. They start as configured and last until
 dwm restarts.
+Other programs, such as a pager or a bar of their own, see the tags as EWMH
+desktops, one per tag and named after it: the current desktop is the lowest
+tag in view, and a window's desktop is its lowest tag, or all of them when it
+has every tag. They can switch tags and move windows that way too; the
+scratchpads are on no desktop.
 .P
 Each screen contains a small status bar which displays all available tags, the
 layout, the title of the focused window (centered), and the text read from the

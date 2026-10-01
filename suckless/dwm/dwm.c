@@ -65,7 +65,9 @@ enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
 enum { SchemeNorm, SchemeSel }; /* color schemes */
 enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
-       NetWMWindowTypeDialog, NetClientList, NetClientInfo, NetLast }; /* EWMH atoms */
+       NetWMWindowTypeDialog, NetClientList, NetClientInfo,
+       NetNumberOfDesktops, NetCurrentDesktop, NetDesktopNames,
+       NetDesktopViewport, NetWMDesktop, NetLast }; /* EWMH atoms */
 enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms */
 enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
@@ -209,6 +211,8 @@ static int sendevent(Client *c, Atom proto);
 static void sendmon(Client *c, Monitor *m);
 static void setclientstate(Client *c, long state);
 static void setclienttagprop(Client *c);
+static void setcurrentdesktop(void);
+static void setdesktops(void);
 static void setfocus(Client *c);
 static void setfullscreen(Client *c, int fullscreen);
 static void setlayout(const Arg *arg);
@@ -560,7 +564,14 @@ clientmessage(XEvent *e)
 {
 	XClientMessageEvent *cme = &e->xclient;
 	Client *c = wintoclient(cme->window);
+	unsigned int d = cme->data.l[0];
 
+	/* a pager or a bar asking for another tag in view (desktop D) */
+	if (cme->window == root && cme->message_type == netatom[NetCurrentDesktop]) {
+		if (d < LENGTH(tags))
+			view(&(Arg){.ui = 1 << d});
+		return;
+	}
 	if (!c)
 		return;
 	if (cme->message_type == netatom[NetWMState]) {
@@ -571,6 +582,20 @@ clientmessage(XEvent *e)
 	} else if (cme->message_type == netatom[NetActiveWindow]) {
 		if (c != selmon->sel && !c->isurgent)
 			seturgent(c, 1);
+	} else if (cme->message_type == netatom[NetWMDesktop]) {
+		/* moving a window to tag D, or to all nine (0xFFFFFFFF); a
+		 * scratchpad stays one */
+		if (c->tags & SPTAGMASK)
+			return;
+		if (d < LENGTH(tags))
+			c->tags = 1 << d;
+		else if (d == 0xFFFFFFFF)
+			c->tags = TAGMASK & ~SPTAGMASK;
+		else
+			return;
+		setclienttagprop(c);
+		focus(NULL);
+		arrange(c->mon);
 	}
 }
 
@@ -1791,6 +1816,11 @@ setup(void)
 	netatom[NetWMWindowTypeDialog] = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DIALOG", False);
 	netatom[NetClientList] = XInternAtom(dpy, "_NET_CLIENT_LIST", False);
 	netatom[NetClientInfo] = XInternAtom(dpy, "_NET_CLIENT_INFO", False);
+	netatom[NetNumberOfDesktops] = XInternAtom(dpy, "_NET_NUMBER_OF_DESKTOPS", False);
+	netatom[NetCurrentDesktop] = XInternAtom(dpy, "_NET_CURRENT_DESKTOP", False);
+	netatom[NetDesktopNames] = XInternAtom(dpy, "_NET_DESKTOP_NAMES", False);
+	netatom[NetDesktopViewport] = XInternAtom(dpy, "_NET_DESKTOP_VIEWPORT", False);
+	netatom[NetWMDesktop] = XInternAtom(dpy, "_NET_WM_DESKTOP", False);
 	/* init cursors */
 	cursor[CurNormal] = drw_cur_create(drw, XC_left_ptr);
 	cursor[CurResize] = drw_cur_create(drw, XC_sizing);
@@ -1815,6 +1845,8 @@ setup(void)
 		PropModeReplace, (unsigned char *) netatom, NetLast);
 	XDeleteProperty(dpy, root, netatom[NetClientList]);
 	XDeleteProperty(dpy, root, netatom[NetClientInfo]);
+	setdesktops();
+	setcurrentdesktop();
 	/* select events */
 	wa.cursor = cursor[CurNormal]->cursor;
 	wa.event_mask = SubstructureRedirectMask|SubstructureNotifyMask
@@ -1902,8 +1934,66 @@ void
 setclienttagprop(Client *c)
 {
 	long data[] = { (long) c->tags, (long) c->mon->num };
+	long desktop = 0;
+	unsigned int t = c->tags & ~SPTAGMASK;
+
 	XChangeProperty(dpy, c->win, netatom[NetClientInfo], XA_CARDINAL, 32,
 			PropModeReplace, (unsigned char *) data, 2);
+	/* _NET_WM_DESKTOP: the window's lowest tag, 0xFFFFFFFF on all nine; a
+	 * scratchpad, on none of them, has none */
+	if (!t) {
+		XDeleteProperty(dpy, c->win, netatom[NetWMDesktop]);
+		return;
+	}
+	if (t == (TAGMASK & ~SPTAGMASK))
+		desktop = 0xFFFFFFFF;
+	else
+		while (!(t & 1 << desktop))
+			desktop++;
+	XChangeProperty(dpy, c->win, netatom[NetWMDesktop], XA_CARDINAL, 32,
+			PropModeReplace, (unsigned char *) &desktop, 1);
+}
+
+/* setcurrentdesktop: _NET_CURRENT_DESKTOP, the lowest tag in view (the
+ * scratchpads' tags left out); a view of nothing but a scratchpad keeps the
+ * one before */
+void
+setcurrentdesktop(void)
+{
+	unsigned int t = selmon->tagset[selmon->seltags] & TAGMASK & ~SPTAGMASK;
+	long desktop = 0;
+
+	if (!t)
+		return;
+	while (!(t & 1 << desktop))
+		desktop++;
+	XChangeProperty(dpy, root, netatom[NetCurrentDesktop], XA_CARDINAL, 32,
+			PropModeReplace, (unsigned char *) &desktop, 1);
+}
+
+/* setdesktops: the EWMH desktops, one per tag, named after it; the
+ * scratchpads' tags aren't desktops */
+void
+setdesktops(void)
+{
+	long n = LENGTH(tags), viewport[2 * LENGTH(tags)] = {0};
+	char names[256], *p = names;
+	size_t i, len;
+
+	XChangeProperty(dpy, root, netatom[NetNumberOfDesktops], XA_CARDINAL, 32,
+			PropModeReplace, (unsigned char *) &n, 1);
+	XChangeProperty(dpy, root, netatom[NetDesktopViewport], XA_CARDINAL, 32,
+			PropModeReplace, (unsigned char *) viewport, 2 * LENGTH(tags));
+	for (i = 0; i < LENGTH(tags); i++) {
+		len = strlen(tags[i]) + 1;
+		if (p + len > names + sizeof names)
+			break;
+		memcpy(p, tags[i], len);
+		p += len;
+	}
+	XChangeProperty(dpy, root, netatom[NetDesktopNames],
+			XInternAtom(dpy, "UTF8_STRING", False), 8, PropModeReplace,
+			(unsigned char *) names, p - names);
 }
 
 /* tiledmove: swap two clients' places in the client list, so each window
@@ -2062,6 +2152,7 @@ toggleview(const Arg *arg)
 			selmon->pertag->curtag = slot;
 			restorepertag();
 		}
+		setcurrentdesktop();
 		focus(NULL);
 		arrange(selmon);
 	}
@@ -2375,6 +2466,7 @@ view(const Arg *arg)
 		selmon->pertag->curtag = t;
 	}
 	restorepertag();
+	setcurrentdesktop();
 	focus(NULL);
 	arrange(selmon);
 }
