@@ -272,3 +272,13 @@ How dwm behaves with these:
 - Floating windows stay within their size hints (minimum, maximum, aspect ratio) when resized with the mouse, and can't be dragged completely off screen.
 - tiledmove: dragging a tiled window with `Alt + left mouse button` over another swaps their places in the stack; each window keeps its own size hints and tags.
 - preserveonrestart: windows that are open when dwm restarts (`Alt + Shift + W`) keep their tags; a new window gets the tags from its match in `rules` in `config.h`, or else the tags you're viewing.
+
+## Roadmap
+
+Not started yet, roughly in this order:
+
+- movestack, then pertag: `Alt + Shift + J` / `K` to move the focused window down or up the stack; then each tag remembering its own layout and master area, leaving the scratchpads' tags out.
+- Window swallowing for st: a graphical program started from st (a video, an image) takes the terminal's place until it closes.
+- EWMH desktop atoms (`_NET_CURRENT_DESKTOP` and the rest), which let other programs see the tags. Only an external bar needs them, so only if Quickshell comes back.
+
+Quickshell, a Qt/QML toolkit for bars and widgets, is deferred: dwm's bar, `fdwm-bar` and dmenu already cover what FDWM needs, and Quickshell would add a resident Qt process, QML to maintain, and dwm patches (EWMH tags, dock windows) just to work with dwm on X11. Wanting a system tray or clickable widgets (sliders, a calendar, notification history) would change that.
