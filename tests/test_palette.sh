@@ -41,7 +41,8 @@ check_flavor() {
 mkdir -p "$T/home/.config/fdwm"
 # every flavor after the first (mocha), from its own column
 col=3
-for flavor in $(awk '$1 == "name" { for (i = 3; i <= NF; i++) print $i; exit }' "$T/repo/palette"); do
+mapfile -t others < <(awk '$1 == "name" { for (i = 3; i <= NF; i++) print $i; exit }' "$T/repo/palette")
+for flavor in "${others[@]}"; do
     echo "$flavor" >"$T/home/.config/fdwm/flavor"
     check_flavor "$flavor" $col
     col=$((col + 1))
