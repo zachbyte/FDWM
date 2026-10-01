@@ -4,7 +4,7 @@ A minimal dwm, st, dmenu and slock setup for Fedora.
 
 ## Quick install
 
-The commands below clone the repo (step 1), then `install.sh` runs steps 2 to 7 for you (only installing packages that are missing); run it as your normal user. Any existing `~/.xinitrc`, `~/.local/bin/fdwm-bar`, `~/.local/bin/fdwm-shot`, `~/.local/bin/fdwm-menu`, `~/.bashrc`, `~/.bashrc.d/claude.sh`, `~/.config/nvim` or `~/.config/dunst/dunstrc` that differs is moved to a `.bak.<time>` copy first.
+The commands below clone the repo (step 1), then `install.sh` runs steps 2 to 7 for you (only installing packages that are missing); run it as your normal user. Any existing `~/.xinitrc`, `~/.local/bin/fdwm-bar`, `~/.local/bin/fdwm-shot`, `~/.local/bin/fdwm-menu`, `~/.local/bin/fdwm-theme-menu`, `~/.bashrc`, `~/.bashrc.d/claude.sh`, `~/.config/nvim` or `~/.config/dunst/dunstrc` that differs is moved to a `.bak.<time>` copy first.
 
 ```shell
 sudo dnf install -y git
@@ -62,11 +62,11 @@ notify-send "Hello" "from dunst"
 
 ## Colors
 
-Every color is written down once, in `palette`: one column per flavor, each color as `rrggbb` under Catppuccin's names (`base`, `text`, `blue` and so on), which every flavor fills with its own colors; which of them the bar's text (`ui_text`), the accent (`ui_accent`: the selected tag's underline, the focused window's border, dmenu's selection, dunst's frame and the screenshot outline) and the other windows' borders (`ui_border`) are; and which ones the terminal uses for its 16 colors, text, background and cursor. The flavors, all dark:
+Every color is written down once, in `palette`: one column per flavor, each color as `rrggbb` under Catppuccin's names (`base`, `text`, `blue` and so on), which every flavor fills with its own colors; which of them the bar's text (`ui_text`), the accent (`ui_accent`: the selected tag's underline, the focused window's border, dmenu's selection, dunst's frame and the screenshot outline) and the other windows' borders (`ui_border`) are, and the bash prompt's branch (`prompt_branch`) and directory (`prompt_dir`); and which ones the terminal uses for its 16 colors, text, background and cursor. The flavors, all dark:
 
 - `mocha`: Catppuccin Mocha, lavender on dark blue-gray. The default.
 - `tokyonight`: Tokyo Night in its night style, Tokyo Night's text and blue accent on deep navy, with its own terminal colors.
-- `thinkpad`: made to sit with a ThinkPad X1 Carbon: the soft black of its case behind everything, so the screen runs into the bezel, charcoal like its keys, silver like its lettering for text, and the TrackPoint's red as the one accent: the selected tag's underline, the focused window's border, dmenu's selection, notification frames, the screenshot outline, the terminal cursor and a wrong password on the lock screen. Code is in muted colors, with IBM's blue for functions.
+- `thinkpad`: made to sit with a ThinkPad X1 Carbon: the soft black of its case behind everything, so the screen runs into the bezel, charcoal like its keys, silver like its lettering for text, and the TrackPoint's red as the one accent: the selected tag's underline, the focused window's border, dmenu's selection, notification frames, the screenshot outline, the terminal cursor, the prompt's directory and a wrong password on the lock screen. Code is in muted colors, with IBM's blue for functions.
 
 `fdwm-theme generate`, which `install.sh` runs before building, writes the rest from it, in the flavor saved in `~/.config/fdwm/flavor` (Mocha until there is one):
 
@@ -85,7 +85,9 @@ fdwm-theme tokyonight
 fdwm-theme mocha
 ```
 
-`fdwm-theme` (which `install.sh` links into `~/.local/bin`) saves the flavor and runs `install.sh`, which regenerates the colors and rebuilds dwm, st, dmenu, slock, the GRUB theme and the ttys' boot colors, so it asks for your password. Then it repaints the desktop, recolors every open st window, has dunst reload its colors and restarts dwm, keeping your windows where they are. dmenu and slock show the new flavor the next time they open, Neovim when it next starts, and the ttys and GRUB from the next boot. `install.sh` and `update.sh` keep the saved flavor, and `fdwm-theme` alone says which one is in use. A saved flavor that is no longer in the palette (Latte, which FDWM had before) is Mocha from the next `install.sh` on.
+Or press `Alt + Shift + T`: `fdwm-theme-menu` (in `dotfiles/.local/bin`, installed to `~/.local/bin`) lists the flavors in dmenu, with the one in use in the prompt, and switches to the one you pick in a small floating st, where it asks for your password and stays open until you press Return. `Escape`, or the flavor already in use, changes nothing.
+
+`fdwm-theme` (which `install.sh` links into `~/.local/bin`) saves the flavor and runs `install.sh`, which regenerates the colors and rebuilds dwm, st, dmenu, slock, the GRUB theme and the ttys' boot colors, so it asks for your password. Then it repaints the desktop, recolors every open st window, has dunst reload its colors and restarts dwm, keeping your windows where they are. dmenu and slock show the new flavor the next time they open, the prompt in open shells from their next prompt (they rebuild it from `colors.sh` each time), Neovim when it next starts, and the ttys and GRUB from the next boot. `install.sh` and `update.sh` keep the saved flavor, and `fdwm-theme` alone says which one is in use. A saved flavor that is no longer in the palette (Latte, which FDWM had before) is Mocha from the next `install.sh` on.
 
 ## Tests
 
@@ -154,6 +156,7 @@ install -Dm755 dotfiles/.local/bin/fdwm-shot ~/.local/bin/fdwm-shot
 install -Dm755 dotfiles/.local/bin/fdwm-bar ~/.local/bin/fdwm-bar
 install -Dm644 dotfiles/.config/dunst/dunstrc ~/.config/dunst/dunstrc
 install -Dm755 dotfiles/.local/bin/fdwm-menu ~/.local/bin/fdwm-menu
+install -Dm755 dotfiles/.local/bin/fdwm-theme-menu ~/.local/bin/fdwm-theme-menu
 ```
 
 Add the autostart from `dotfiles/.bash_profile` to your own `~/.bash_profile`, so logging in on tty1 starts dwm.
@@ -170,7 +173,7 @@ printf '[Login]\nIdleAction=suspend\nIdleActionSec=5min\nHandleLidSwitch=suspend
 sudo systemctl kill -s HUP systemd-logind
 ```
 
-`dotfiles/.bashrc` sets the prompt (git branch and directory), history, aliases and git shortcuts, gives the ttys the same colors as st and dwm once you log in, and loads every file in `~/.bashrc.d`. `dotfiles/.bashrc.d/claude.sh` adds `cl` for Claude Code.
+`dotfiles/.bashrc` sets the prompt (the git branch, then the directory, in the flavor's `prompt_branch` and `prompt_dir`), history, aliases and git shortcuts, gives the ttys the same colors as st and dwm once you log in, and loads every file in `~/.bashrc.d`. `dotfiles/.bashrc.d/claude.sh` adds `cl` for Claude Code.
 
 ```shell
 cp dotfiles/.bashrc ~/.bashrc
@@ -186,6 +189,7 @@ cp dotfiles/.bashrc.d/claude.sh ~/.bashrc.d/
 | `Alt + Return` | Move the focused window into the master area |
 | `Alt + Q` / `Alt + Shift + Q` | Close the window / quit dwm |
 | `Alt + Shift + E` | Power menu: lock, suspend, restart dwm, log out, reboot or power off (see "The power menu") |
+| `Alt + Shift + T` | Theme menu: switch to mocha, tokyonight or thinkpad (see "Colors") |
 | `Alt + Shift + L` | Lock the screen (slock; type your password and press Return) |
 | `` Alt + ` `` / `Alt + N` | Show or hide the terminal / notes scratchpad (see "Scratchpads") |
 | `Print` / `Shift + Print` | Screenshot of a region / the whole screen, saved and copied (see "Screenshots") |
@@ -227,7 +231,7 @@ The source in `suckless/` already includes every patch, so there is nothing to a
 
 The order:
 
-- dwm (42)
+- dwm (43)
   - 01–14: the upstream patches activetagindicatorbar, actualfullscreen, alwayscenter, attachbottom, centretitle, colorbar, dragmfact, noborderflicker, preserveonrestart, resizehere, restartsig, tiledmove, togglefloatingcenter and uselessgap, as they apply to 6.5. The three that needed fixing by hand (attachbottom, colorbar, resizehere) say how.
   - 15: FDWM's `config.h`.
   - 16: `import-edits`, the hand edits made when the patched dwm was first imported, before the repo had history.
@@ -235,6 +239,7 @@ The order:
   - 40: the upstream scratchpads patch, merged by hand, with FDWM's two scratchpads.
   - 41: FDWM's scratchpad size and centering (60% of the screen, on the window's real size).
   - 42: the bar's text, the accent (the selected tag's underline and the focused window's border) and the other windows' borders, each from its own palette entry.
+  - 43: the theme menu's key, `Alt + Shift + T`, and the rule that floats its st.
 - st (10): the upstream patches anysize, scrollback and scrollback-mouse; `config.h`; `upstream-csi-colon`, a fix from st's development version after 0.9.2; `import-edits`; then FDWM's changes: scrollback-mouse-altscreen (the wheel scrolls pagers on the alternate screen, #7), the Makefile changes and the palette.
 - dmenu (11): `config.h`; `upstream-drw-utf8`, drw.c from dmenu's development version after 5.3; `import-edits`; then FDWM's changes: one monitor, the version fixed to 5.3, the Makefile changes, the palette, and its text and selection from the same palette entries as dwm's.
 - slock (4): `config.h` (Catppuccin colors, dropping privileges to Fedora's `nobody` group) and the Makefile, as slock was built from source; the softer colors (base while locked, surface1 while you type, red only after a wrong password); and the palette.

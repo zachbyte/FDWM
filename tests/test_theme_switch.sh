@@ -62,6 +62,11 @@ expect "an unknown flavor: fails" 1 "$rc"
 expect_match "an unknown flavor: names the ones there are" "no flavor called nosuch \(the palette has: mocha tokyonight thinkpad\)" "$out"
 expect "an unknown flavor: nothing saved or run" "no:" "$([[ -e $flavor_file ]] && echo yes || echo no):$(cat "$LOG")"
 
+theme list
+expect "list: the palette's flavors, one per line" "$(printf 'mocha\ntokyonight\nthinkpad')" "$out"
+theme current
+expect "current, none saved: mocha" mocha "$out"
+
 DUNST=1 theme tokyonight
 expect "tokyonight: exits 0" 0 "$rc"
 expect "tokyonight: saved" tokyonight "$(cat "$flavor_file")"
@@ -78,6 +83,8 @@ expect "tokyonight: the second st window too" "$(cat "$FDWM_DEV/pts/3")" "$(cat 
 expect "tokyonight: a terminal that isn't st's is left alone" 0 "$(wc -c <"$FDWM_DEV/pts/9" | tr -d ' ')"
 expect_match "tokyonight: says so" "Recolored 2 open st window" "$out"
 tokyonight_seq=$(cat "$FDWM_DEV/pts/3")
+theme current
+expect "current: the one switched to" tokyonight "$out"
 
 theme mocha
 expect "back to mocha: saved" mocha "$(cat "$flavor_file")"

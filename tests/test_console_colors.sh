@@ -35,7 +35,7 @@ mkdir "$T/fresh"
 expect "no colors.sh yet: prints nothing" "" "$(entries "$T/fresh" linux)"
 
 # the kernel's vt.default_red/grn/blu: the same colors, in decimal
-args=$(bash "$ROOT/fdwm-theme" kernel-args)
+args=$(HOME=$T/home bash "$T/repo/fdwm-theme" kernel-args)
 for i in 0 1 2; do
     name=$(cut -d' ' -f$((i + 1)) <<<"red grn blu")
     want="vt.default_$name=$(while read -r e; do printf '%d,' "0x${e:2+2*i:2}"; done <<<"$linux" | sed 's/,$//')"
@@ -55,7 +55,7 @@ case "$1" in
 esac'
 PATH="$T/bin:$PATH"
 block=$(sed -n '/Catppuccin on the ttys from the moment/,/^    fi$/p' "$ROOT/install.sh")
-run() { : >"$LOG"; (cd "$ROOT" && set -Eeuo pipefail && eval "$block") >/dev/null; }
+run() { : >"$LOG"; (cd "$ROOT" && export HOME=$T/home && set -Eeuo pipefail && eval "$block") >/dev/null; }
 
 run
 expect "two kernels without colors: one grubby update" 1 "$(wc -l <"$LOG" | tr -d ' ')"

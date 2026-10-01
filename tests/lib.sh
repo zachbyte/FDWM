@@ -24,10 +24,12 @@ expect_no_match() {
     if grep -qE -- "$2" <<<"$3"; then fail "$1 (unexpected '$2' in: $3)"; else pass "$1"; fi
 }
 
-# sandbox: a fresh temp dir in $T, removed when the test exits
+# sandbox: a fresh temp dir in $T, removed when the test exits; and no
+# XDG_CONFIG_HOME, so pointing HOME into $T moves ~/.config there too
 sandbox() {
     T=$(mktemp -d)
     trap 'rm -rf "$T"' EXIT
+    unset XDG_CONFIG_HOME
 }
 
 # stub NAME BODY: put a /bin/sh command NAME running BODY in $T/bin, which

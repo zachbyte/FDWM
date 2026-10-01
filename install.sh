@@ -104,6 +104,8 @@ if [[ $(readlink "$theme_link" || true) != "$PWD/fdwm-theme" ]]; then
 fi
 # the power menu dwm's Alt+Shift+E opens
 install_dotfile .local/bin/fdwm-menu
+# the theme menu dwm's Alt+Shift+T opens
+install_dotfile .local/bin/fdwm-theme-menu
 
 echo "==> Setting up ~/.bashrc"
 install_dotfile .bashrc

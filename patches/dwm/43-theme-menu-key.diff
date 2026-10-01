@@ -1,0 +1,51 @@
+FDWM's own: Alt+Shift+T opens fdwm-theme-menu, which picks the flavor in
+dmenu and switches to it in an st named fdwm-theme, which a rule floats
+(and alwayscenter centers). The man page says so.
+
+diff --git a/config.h b/config.h
+index 45c2db4..ec17eaf 100644
+--- a/config.h
++++ b/config.h
+@@ -50,6 +50,7 @@ static const Rule rules[] = {
+ 	{ "feh",     NULL,     NULL,           0,         1,          -1 },
+ 	{ NULL,      "spterm", NULL,           SPTAG(0),  1,          -1 },
+ 	{ NULL,      "spnotes", NULL,          SPTAG(1),  1,          -1 },
++	{ NULL,      "fdwm-theme", NULL,       0,         1,          -1 }, /* fdwm-theme-menu's st */
+  };
+ 
+ /* layout(s) */
+@@ -89,6 +90,8 @@ static const char *termcmd[] = { "st", NULL };
+ static const char *lockcmd[] = { "slock", NULL };
+ /* lock, suspend, restart dwm, log out, reboot, power off (fdwm-menu) */
+ static const char *menucmd[] = { "/bin/sh", "-c", "exec \"$HOME/.local/bin/fdwm-menu\"", NULL };
++/* pick the flavor in dmenu, switched in a floating st (fdwm-theme-menu) */
++static const char *themecmd[] = { "/bin/sh", "-c", "exec \"$HOME/.local/bin/fdwm-theme-menu\"", NULL };
+ 
+ static const Key keys[] = {
+ 	/* modifier                     key        function        argument */
+@@ -126,6 +129,7 @@ static const Key keys[] = {
+ 	{ MODKEY|ShiftMask,             XK_r,      resetmfact,     {0} },
+ 	{ MODKEY|ShiftMask,             XK_l,      spawn,          {.v = lockcmd } },
+ 	{ MODKEY|ShiftMask,             XK_e,      spawn,          {.v = menucmd } },
++	{ MODKEY|ShiftMask,             XK_t,      spawn,          {.v = themecmd } },
+ 	{ MODKEY,                       XK_grave,  togglescratch,  {.ui = 0 } },
+ 	{ MODKEY,                       XK_n,      togglescratch,  {.ui = 1 } },
+ 	{ 0,                            XF86XK_MonBrightnessUp,    spawn,          SHCMD ("brightnessctl set +10%" BARREFRESH)},
+diff --git a/dwm.1 b/dwm.1
+index 42f8d9a..b8eda57 100644
+--- a/dwm.1
++++ b/dwm.1
+@@ -157,6 +157,13 @@ Open the power menu,
+ in dmenu: lock, suspend, restart dwm, log out, reboot or power off. Log out,
+ reboot and power off ask again first.
+ .TP
++.B Mod1\-Shift\-t
++Open the theme menu,
++.BR fdwm-theme-menu ,
++in dmenu: pick a flavor and it switches to it in a small floating
++.BR st (1),
++which asks for your password to rebuild.
++.TP
+ .B Mod1\-grave
+ Show or hide the terminal scratchpad: a floating
+ .BR st (1)
