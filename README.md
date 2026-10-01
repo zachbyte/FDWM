@@ -42,7 +42,9 @@ The first press starts it, centered and at 60% of the screen across and down, an
 
 ## The bar
 
-`fdwm-bar` (in `dotfiles/.local/bin`, installed to `~/.local/bin`) writes dwm's status text: volume (a muted icon when muted), screen brightness, battery and the clock. It redraws every minute, and at once when you press the volume, mute or brightness keys, which run `fdwm-bar refresh`. Anything the machine doesn't have, like a battery or a backlight on a desktop, is left out.
+On the left, dwm draws the tags. The one you're viewing is underlined in the accent (the palette's `ui_accent`), and a tag holding windows has a small square in its top left corner, in the bar's text color (`ui_text`): filled if the focused window is on it, empty otherwise. The scratchpads don't count.
+
+On the right, `fdwm-bar` (in `dotfiles/.local/bin`, installed to `~/.local/bin`) writes dwm's status text: volume (a muted icon when muted), screen brightness, battery and the clock. It redraws every minute, and at once when you press the volume, mute or brightness keys, which run `fdwm-bar refresh`. Anything the machine doesn't have, like a battery or a backlight on a desktop, is left out.
 
 When the battery is discharging and reaches 10%, the bar shows `LOW BATTERY, PLUG IN` and dunst pops up a critical notification that stays until you click it; at 3% the laptop suspends. Each happens once per discharge and re-arms when you plug in, which also replaces the notification with a short `Charging` one. Both are hooks at the top of the script (`on_low_battery` and `on_battery_back`); without a notification daemon the bar still warns.
 
@@ -93,7 +95,7 @@ Or press `Alt + Shift + T`: `fdwm-theme-menu` (in `dotfiles/.local/bin`, install
 
 Every push runs CI on a Fedora 44 container (`.github/workflows/ci.yml`), so a change is compiled and tested before it reaches your laptop. It installs `packages.txt`, builds dwm, st, dmenu and slock with every warning an error, runs ShellCheck on every script, runs the tests in `tests/`, and loads the Neovim config headless with every plugin.
 
-The tests run `install.sh`, `update.sh`, the GRUB step and the dotfiles against stubbed commands and throwaway directories, so they never touch your system. `tests/test_palette_refactor.sh` shows that moving the colors into `palette` changed none of them, and `tests/test_hardcoded_colors.sh` fails if any other file spells out a color (as hex, decimal or a terminal escape). `tests/test_scratchpad.sh` runs the built dwm on a virtual X screen (Xvfb) and presses the scratchpad keys. Run them yourself with:
+The tests run `install.sh`, `update.sh`, the GRUB step and the dotfiles against stubbed commands and throwaway directories, so they never touch your system. `tests/test_palette_refactor.sh` shows that moving the colors into `palette` changed none of them, and `tests/test_hardcoded_colors.sh` fails if any other file spells out a color (as hex, decimal or a terminal escape). `tests/test_scratchpad.sh` runs the built dwm on a virtual X screen (Xvfb) and presses the scratchpad keys. `tests/test_tag_marker.sh` builds dwm in the ThinkPad flavor, where the bar's text and the accent differ, and reads the bar's pixels on a virtual screen to check each tag's square and the underline. Run them yourself with:
 
 ```shell
 tests/run.sh
@@ -231,7 +233,7 @@ The source in `suckless/` already includes every patch, so there is nothing to a
 
 The order:
 
-- dwm (44)
+- dwm (45)
   - 01–14: the upstream patches activetagindicatorbar, actualfullscreen, alwayscenter, attachbottom, centretitle, colorbar, dragmfact, noborderflicker, preserveonrestart, resizehere, restartsig, tiledmove, togglefloatingcenter and uselessgap, as they apply to 6.5. The three that needed fixing by hand (attachbottom, colorbar, resizehere) say how.
   - 15: FDWM's `config.h`.
   - 16: `import-edits`, the hand edits made when the patched dwm was first imported, before the repo had history.
@@ -241,6 +243,7 @@ The order:
   - 42: the bar's text, the accent (the selected tag's underline and the focused window's border) and the other windows' borders, each from its own palette entry.
   - 43: the theme menu's key, `Alt + Shift + T`, and the rule that floats its st.
   - 44: cleanup: colorbar's extra color schemes, which all drew in the same colors as the normal one (the bar looks the same without them), `dmenumon`, unused since dmenu stopped being given a monitor, and the rule for feh, which FDWM doesn't install.
+  - 45: a small square on each tag holding windows, in the bar's text color, filled on the focused window's tags: upstream dwm's marker, which activetagindicatorbar had turned into the underline and `import-edits` had taken out.
 - st (10): the upstream patches anysize, scrollback and scrollback-mouse; `config.h`; `upstream-csi-colon`, a fix from st's development version after 0.9.2; `import-edits`; then FDWM's changes: scrollback-mouse-altscreen (the wheel scrolls pagers on the alternate screen, #7), the Makefile changes and the palette.
 - dmenu (11): `config.h`; `upstream-drw-utf8`, drw.c from dmenu's development version after 5.3; `import-edits`; then FDWM's changes: one monitor, the version fixed to 5.3, the Makefile changes, the palette, and its text and selection from the same palette entries as dwm's.
 - slock (4): `config.h` (Catppuccin colors, dropping privileges to Fedora's `nobody` group) and the Makefile, as slock was built from source; the softer colors (base while locked, surface1 while you type, red only after a wrong password); and the palette.

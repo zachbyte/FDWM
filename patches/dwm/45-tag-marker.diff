@@ -1,0 +1,65 @@
+FDWM's own: a small square in the top left corner of each tag holding
+windows, in SchemeNorm's col_fg (the palette's ui_text), filled while the
+focused window is on that tag and empty otherwise; a tag holding an urgent
+window draws it inverted, like its label. It is upstream dwm's occupied-tag
+marker, the same drw_rect() call: activetagindicatorbar had turned it into
+an underline under every occupied tag, and import-edits had kept the
+underline for the selected tag only, in the accent, which stays. Scratchpads
+are on tags of their own past the nine, so they mark none. The man page
+says so.
+
+diff --git a/dwm.1 b/dwm.1
+index b8eda57..9249f91 100644
+--- a/dwm.1
++++ b/dwm.1
+@@ -28,7 +28,9 @@ layout, the title of the focused window (centered), and the text read from the
+ root window name property, if the screen is focused. A floating window is
+ indicated with an empty square and a fixed-size floating window is indicated
+ with a filled square before the windows title. The selected tags are
+-underlined, and a tag holding an urgent window is drawn in inverted colors.
++underlined, a tag holding windows has a small square in its top left corner,
++filled if the focused window is one of them, and a tag holding an urgent
++window is drawn in inverted colors.
+ .P
+ dwm draws a small border around windows to indicate the focus state.
+ .SH OPTIONS
+diff --git a/dwm.c b/dwm.c
+index 946845e..a410dd1 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -711,7 +711,7 @@ drawbar(Monitor *m)
+ 	int tlpad;
+ 	int boxs = drw->fonts->h / 9;
+ 	int boxw = drw->fonts->h / 6 + 2;
+-	unsigned int i, urg = 0;
++	unsigned int i, occ = 0, urg = 0;
+ 	Client *c;
+ 
+ 	if (!m->showbar)
+@@ -724,9 +724,11 @@ drawbar(Monitor *m)
+ 		drw_text(drw, m->ww - tw, 0, tw, bh, 0, stext, 0);
+ 	}
+ 
+-	for (c = m->clients; c; c = c->next)
++	for (c = m->clients; c; c = c->next) {
++		occ |= c->tags;
+ 		if (c->isurgent)
+ 			urg |= c->tags;
++	}
+ 
+ 	x = 0;
+ 	for (i = 0; i < LENGTH(tags); i++) {
+@@ -734,6 +736,13 @@ drawbar(Monitor *m)
+ 		drw_setscheme(drw, scheme[SchemeNorm]);
+ 		drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
+ 
++		// A small square in the top left corner of a tag holding windows,
++		// in the text's color: filled if the focused window is one of them
++		if (occ & 1 << i)
++			drw_rect(drw, x + boxs, boxs, boxw, boxw,
++				m == selmon && selmon->sel && selmon->sel->tags & 1 << i,
++				urg & 1 << i);
++
+ 		// Only draw underline for the selected tag, in the accent
+ 		if (m->tagset[m->seltags] & 1 << i) {
+ 			drw_setscheme(drw, scheme[SchemeSel]);

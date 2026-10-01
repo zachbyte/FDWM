@@ -711,7 +711,7 @@ drawbar(Monitor *m)
 	int tlpad;
 	int boxs = drw->fonts->h / 9;
 	int boxw = drw->fonts->h / 6 + 2;
-	unsigned int i, urg = 0;
+	unsigned int i, occ = 0, urg = 0;
 	Client *c;
 
 	if (!m->showbar)
@@ -724,15 +724,24 @@ drawbar(Monitor *m)
 		drw_text(drw, m->ww - tw, 0, tw, bh, 0, stext, 0);
 	}
 
-	for (c = m->clients; c; c = c->next)
+	for (c = m->clients; c; c = c->next) {
+		occ |= c->tags;
 		if (c->isurgent)
 			urg |= c->tags;
+	}
 
 	x = 0;
 	for (i = 0; i < LENGTH(tags); i++) {
 		w = TEXTW(tags[i]);
 		drw_setscheme(drw, scheme[SchemeNorm]);
 		drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
+
+		// A small square in the top left corner of a tag holding windows,
+		// in the text's color: filled if the focused window is one of them
+		if (occ & 1 << i)
+			drw_rect(drw, x + boxs, boxs, boxw, boxw,
+				m == selmon && selmon->sel && selmon->sel->tags & 1 << i,
+				urg & 1 << i);
 
 		// Only draw underline for the selected tag, in the accent
 		if (m->tagset[m->seltags] & 1 << i) {
