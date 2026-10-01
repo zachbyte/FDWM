@@ -34,6 +34,8 @@ vim.api.nvim_create_autocmd("VimEnter", {
 			end
 			io.stderr:write(("%d plugins loaded, %d error(s)\n"):format(#require("lazy").plugins(), #errors))
 			io.stderr:write(("colorscheme %s\n"):format(vim.g.colors_name))
+			local normal = vim.api.nvim_get_hl(0, { name = "Normal" })
+			io.stderr:write(("normal #%06x on #%06x\n"):format(normal.fg or 0, normal.bg or 0))
 			vim.cmd(#errors > 0 and "cquit 1" or "qall!")
 		end)
 	end,
