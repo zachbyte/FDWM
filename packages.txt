@@ -22,6 +22,9 @@ dunst libnotify
 # sound, and the volume, brightness and media keys; pactl (pulseaudio-utils)
 # tells fdwm-bar when the volume changes
 pipewire wireplumber pipewire-pulseaudio pulseaudio-utils brightnessctl playerctl
+# udevadm (systemd-udev), which tells fdwm-bar when a charger is plugged in
+# or out
+systemd-udev
 
 # screenshots (fdwm-shot): maim takes them, xclip copies them
 maim xclip
