@@ -22,6 +22,10 @@ Windows are grouped by tags. Each window can be tagged with one or multiple
 tags. Selecting certain tags displays all windows with these tags. A new window
 gets the tags named by its rule in config.h, or else the tags currently viewed;
 windows that are open when dwm restarts keep their tags.
+Each tag also keeps its own layout, master area size, number of master
+windows and whether the bar shows, and so does the view of all tags; the
+scratchpads have none of their own. They start as configured and last until
+dwm restarts.
 .P
 Each screen contains a small status bar which displays all available tags, the
 layout, the title of the focused window (centered), and the text read from the
@@ -92,6 +96,14 @@ Focus next window.
 .TP
 .B Mod1\-k
 Focus previous window.
+.TP
+.B Mod1\-Shift\-j
+Move the focused window down the stack: it swaps places with the next tiled
+window, and from the bottom with the master.
+.TP
+.B Mod1\-Shift\-k
+Move the focused window up the stack: it swaps places with the previous tiled
+window, and from the master with the bottom one.
 .TP
 .B Mod1\-i
 Increase number of windows in master area.

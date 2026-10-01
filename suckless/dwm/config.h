@@ -99,6 +99,8 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_b,      togglebar,      {0} }, /* windows: show or hide the bar */
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } }, /* windows: focus the next window */
 	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } }, /* windows: focus the previous window */
+	{ MODKEY|ShiftMask,             XK_j,      movestack,      {.i = +1 } }, /* windows: move the focused window down the stack */
+	{ MODKEY|ShiftMask,             XK_k,      movestack,      {.i = -1 } }, /* windows: move the focused window up the stack */
 	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } }, /* layouts: one more window in the master area */
 	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } }, /* layouts: one fewer window in the master area */
 	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} }, /* layouts: shrink the master area */

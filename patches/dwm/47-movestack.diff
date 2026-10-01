@@ -1,0 +1,87 @@
+FDWM's own, after upstream's movestack patch
+(https://dwm.suckless.org/patches/movestack/): movestack() swaps the focused
+tiled window with the next tiled one (Alt+Shift+J) or the previous one
+(Alt+Shift+K), wrapping around at either end, through swapclients() (from
+tiledmove, #4) rather than the patch's own list surgery. Unlike the patch,
+it does nothing without a focused window or with a floating one, such as a
+scratchpad. The keys have their descriptions for fdwm-keys, and the man
+page says so.
+
+diff --git a/config.h b/config.h
+index e1beb85..eabfa9c 100644
+--- a/config.h
++++ b/config.h
+@@ -99,6 +99,8 @@ static const Key keys[] = {
+ 	{ MODKEY,                       XK_b,      togglebar,      {0} }, /* windows: show or hide the bar */
+ 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } }, /* windows: focus the next window */
+ 	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } }, /* windows: focus the previous window */
++	{ MODKEY|ShiftMask,             XK_j,      movestack,      {.i = +1 } }, /* windows: move the focused window down the stack */
++	{ MODKEY|ShiftMask,             XK_k,      movestack,      {.i = -1 } }, /* windows: move the focused window up the stack */
+ 	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } }, /* layouts: one more window in the master area */
+ 	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } }, /* layouts: one fewer window in the master area */
+ 	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} }, /* layouts: shrink the master area */
+diff --git a/dwm.1 b/dwm.1
+index f75b80b..bb7a3ff 100644
+--- a/dwm.1
++++ b/dwm.1
+@@ -93,6 +93,14 @@ Focus next window.
+ .B Mod1\-k
+ Focus previous window.
+ .TP
++.B Mod1\-Shift\-j
++Move the focused window down the stack: it swaps places with the next tiled
++window, and from the bottom with the master.
++.TP
++.B Mod1\-Shift\-k
++Move the focused window up the stack: it swaps places with the previous tiled
++window, and from the master with the bottom one.
++.TP
+ .B Mod1\-i
+ Increase number of windows in master area.
+ .TP
+diff --git a/dwm.c b/dwm.c
+index a410dd1..91ac871 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -187,6 +187,7 @@ static void maprequest(XEvent *e);
+ static void monocle(Monitor *m);
+ static void motionnotify(XEvent *e);
+ static void movemouse(const Arg *arg);
++static void movestack(const Arg *arg);
+ static Client *nexttiled(Client *c);
+ static void pop(Client *c);
+ static void propertynotify(XEvent *e);
+@@ -1191,6 +1192,33 @@ motionnotify(XEvent *e)
+ 	mon = m;
+ }
+ 
++/* movestack (after upstream's movestack patch): swap the focused tiled
++ * window with the next tiled one (arg->i > 0) or the previous one, wrapping
++ * around at either end; the focus stays on it. A floating window (a
++ * scratchpad, say) isn't in the stack, so it stays where it is. */
++void
++movestack(const Arg *arg)
++{
++	Client *c, *sel = selmon->sel, *t = NULL;
++
++	if (!sel || sel->isfloating)
++		return;
++	if (arg->i > 0) {
++		if (!(t = nexttiled(sel->next)))
++			t = nexttiled(selmon->clients);
++	} else {
++		for (c = nexttiled(selmon->clients); c && c != sel; c = nexttiled(c->next))
++			t = c;
++		if (!t)
++			for (c = nexttiled(sel->next); c; c = nexttiled(c->next))
++				t = c;
++	}
++	if (t && t != sel) {
++		swapclients(sel, t);
++		arrange(selmon);
++	}
++}
++
+ void
+ movemouse(const Arg *arg)
+ {
