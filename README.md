@@ -258,7 +258,7 @@ The source in `suckless/` already includes every patch, so there is nothing to a
 
 The order:
 
-- dwm (49)
+- dwm (50)
   - 01–14: the upstream patches activetagindicatorbar, actualfullscreen, alwayscenter, attachbottom, centretitle, colorbar, dragmfact, noborderflicker, preserveonrestart, resizehere, restartsig, tiledmove, togglefloatingcenter and uselessgap, as they apply to 6.5. The three that needed fixing by hand (attachbottom, colorbar, resizehere) say how.
   - 15: FDWM's `config.h`.
   - 16: `import-edits`, the hand edits made when the patched dwm was first imported, before the repo had history.
@@ -273,6 +273,7 @@ The order:
   - 47: movestack, after the upstream patch of that name (https://dwm.suckless.org/patches/movestack/) but written on swapclients(): `Alt + Shift + J` / `K` swap the focused window with the next / previous tiled one, wrapping at the ends; a floating window stays put.
   - 48: pertag, after the upstream patch of that name (https://dwm.suckless.org/patches/pertag/): each tag's own layout, master area and bar, saved whenever one changes (`setlayout`, `setmfact`, `resetmfact`, `incnmaster`, `togglebar` and dragmfact's drag in `resizemouse`) and restored by `view` and `toggleview`; the scratchpads' tags never pick the slot.
   - 49: window swallowing, after bakkeby's version of the upstream swallow patch (https://dwm.suckless.org/patches/swallow/), which puts the program in the terminal's place in the lists rather than swapping their windows: `isterminal` and `noswallow` in `rules`, the process found through the X-Resource extension (xcb-res, so `libxcb-devel` in `packages.txt`) and its parents through `/proc`, Linux only. FDWM's own: st's rule comes first so the scratchpads' and the theme menu's rules turn it off again, a swallowed program isn't recentered by alwayscenter, and `scan()` manages the terminals before the other windows so a restart swallows again.
+  - 50: the tags as EWMH desktops, after the upstream ewmhtags patch (https://dwm.suckless.org/patches/ewmhtags/): nine desktops named after the tags, the current one (the lowest tag in view), each window's (`_NET_WM_DESKTOP`), and requests to switch or move from a pager or `xdotool`; the scratchpads' tags aren't desktops.
 - st (10): the upstream patches anysize, scrollback and scrollback-mouse; `config.h`; `upstream-csi-colon`, a fix from st's development version after 0.9.2; `import-edits`; then FDWM's changes: scrollback-mouse-altscreen (the wheel scrolls pagers on the alternate screen, #7), the Makefile changes and the palette.
 - dmenu (11): `config.h`; `upstream-drw-utf8`, drw.c from dmenu's development version after 5.3; `import-edits`; then FDWM's changes: one monitor, the version fixed to 5.3, the Makefile changes, the palette, and its text and selection from the same palette entries as dwm's.
 - slock (4): `config.h` (Catppuccin colors, dropping privileges to Fedora's `nobody` group) and the Makefile, as slock was built from source; the softer colors (base while locked, surface1 while you type, red only after a wrong password); and the palette.
