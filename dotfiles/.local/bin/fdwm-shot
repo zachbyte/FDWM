@@ -6,8 +6,8 @@
 #                     cancels
 #   fdwm-shot screen  the whole screen (Shift+Print)
 #
-# The region's outline is the palette's lavender, like dwm's borders, from
-# the colors.sh fdwm-theme writes.
+# The region's outline is the palette's accent (ui_accent), like the focused
+# window's border, from the colors.sh fdwm-theme writes.
 
 colors=${XDG_CONFIG_HOME:-$HOME/.config}/fdwm/colors.sh
 # shellcheck source=/dev/null
@@ -25,7 +25,7 @@ outline() {
 case ${1:-} in
 region)
     set -- -s -b 2
-    [ -n "${fdwm_lavender:-}" ] && set -- "$@" -c "$(outline "${fdwm_lavender#\#}")"
+    [ -n "${fdwm_ui_accent:-}" ] && set -- "$@" -c "$(outline "${fdwm_ui_accent#\#}")"
     ;;
 screen)
     set --

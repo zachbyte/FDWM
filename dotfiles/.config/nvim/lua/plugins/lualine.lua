@@ -3,7 +3,7 @@ return {
 	config = function()
 		require("lualine").setup({
 			options = {
-				theme = "catppuccin-" .. require("config.flavor"),
+				theme = "catppuccin-mocha", -- in the palette's colors (plugins/catppuccin.lua)
 			},
 		})
 	end,

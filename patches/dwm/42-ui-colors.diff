@@ -1,0 +1,42 @@
+FDWM's own: dwm's colors from the palette's ui_text, ui_accent and
+ui_border, so a flavor can give the bar's text, the accent and the other
+windows' borders a color each. The selected tag's underline is drawn in the
+accent (SchemeSel) rather than the tags' text color. In Mocha all three
+are lavender, as before.
+
+diff --git a/config.h b/config.h
+index dce6473..45c2db4 100644
+--- a/config.h
++++ b/config.h
+@@ -8,11 +8,13 @@ static const int topbar             = 1;        /* 0 means bottom bar */
+ static const char *fonts[]          = { "JetBrainsMono Nerd Font:size=10" };
+ #include "../colors.h" /* COL_*: the palette's colors, written by fdwm-theme */
+ static const char col_bg[] = COL_BASE;
+-static const char col_fg[] = COL_LAVENDER;
++static const char col_fg[] = COL_UI_TEXT;
++static const char col_accent[] = COL_UI_ACCENT;
++static const char col_border[] = COL_UI_BORDER;
+ static const char *colors[][4] = {
+     /*               fg         bg         border   */
+-    [SchemeNorm] = { col_fg, col_bg, col_fg },
+-    [SchemeSel]  = { col_fg, col_fg, col_fg },
++    [SchemeNorm] = { col_fg, col_bg, col_border },
++    [SchemeSel]  = { col_accent, col_bg, col_accent }, // the focused window's border, the selected tag's underline
+ 	[SchemeStatus]  = { col_fg, col_bg,  col_bg  }, // Statusbar right {text,background,not used but cannot be empty}
+ 	[SchemeTagsNorm]  = { col_fg, col_bg,  col_bg  }, // Tagbar left unselected {text,background,not used but cannot be empty}
+ 	[SchemeInfoSel]  = { col_fg, col_bg,  col_bg  }, // infobar middle  selected {text,background,not used but cannot be empty}
+diff --git a/dwm.c b/dwm.c
+index 9984468..7d831de 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -734,8 +734,9 @@ drawbar(Monitor *m)
+ 		drw_setscheme(drw, scheme[SchemeTagsNorm]);  // Normal scheme for all tags
+ 		drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
+ 
+-		// Only draw underline for the selected tag
++		// Only draw underline for the selected tag, in the accent
+ 		if (m->tagset[m->seltags] & 1 << i) {
++			drw_setscheme(drw, scheme[SchemeSel]);
+ 			drw_rect(drw, x + boxw, bh - 2, w - (2 * boxw + 1), 2, 1, urg & 1 << i);
+ 		}
+ 

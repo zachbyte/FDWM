@@ -2,7 +2,7 @@
 # shellcheck disable=SC2016  # stub bodies expand later, not here
 # shellcheck disable=SC2154  # fdwm_* come from the generated colors.sh
 # fdwm-shot with maim, xclip, notify-send and xdg-user-dir stubbed: a region
-# outlined in the palette's lavender, the whole screen, both saved and
+# outlined in the palette's accent, the whole screen, both saved and
 # copied, and a cancelled region leaving nothing behind.
 # shellcheck source=tests/lib.sh
 source "$(dirname "$0")/lib.sh"
@@ -32,10 +32,10 @@ run region
 expect "region: exits 0" 0 "$rc"
 expect_match "region: saved in the pictures folder's Screenshots" "^$HOME/Bilder/Screenshots/$name$" "$out"
 expect "region: the file is there" yes "$([[ -s $out ]] && echo yes)"
-lavender=$(awk -v r=$((16#${fdwm_lavender:1:2})) -v g=$((16#${fdwm_lavender:3:2})) -v b=$((16#${fdwm_lavender:5:2})) \
+accent=$(awk -v r=$((16#${fdwm_ui_accent:1:2})) -v g=$((16#${fdwm_ui_accent:3:2})) -v b=$((16#${fdwm_ui_accent:5:2})) \
     'BEGIN { printf "%.3f,%.3f,%.3f,1", r / 255, g / 255, b / 255 }')
-expect "region: a selection outlined in the palette's lavender, 2 px, no pointer" \
-    "maim -u -s -b 2 -c $lavender $out" "$(grep '^maim' "$LOG")"
+expect "region: a selection outlined in the palette's accent, 2 px, no pointer" \
+    "maim -u -s -b 2 -c $accent $out" "$(grep '^maim' "$LOG")"
 expect "region: copied as a PNG" "xclip -selection clipboard -t image/png -i $out" "$(grep '^xclip' "$LOG")"
 expect_match "region: says so" "^notify-send -a fdwm-shot .*Screenshot Copied, and saved to $out" "$(grep '^notify-send' "$LOG")"
 

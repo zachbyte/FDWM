@@ -33,7 +33,7 @@ export NO_DUNST=$T/no-dunst
 PATH="$T/bin:$PATH"
 
 # print: the line itself
-clock='󰃭  [0-9]{4}-[0-9]{2}-[0-9]{2}    [0-9]{2}:[0-9]{2} [AP]M$'
+clock='󰃭  [0-9]{4}-[0-9]{2}-[0-9]{2}      [0-9]{2}:[0-9]{2} [AP]M$'
 expect_match "shows volume, brightness, battery and the clock" "^󰖀  45%    󰃠  80%    󰂁  85%    $clock" "$("$bar" print)"
 echo "Volume: 0.80 [MUTED]" >"$VOL"
 expect_match "muted: shows the mute icon" "^󰝟  80%    " "$("$bar" print)"
