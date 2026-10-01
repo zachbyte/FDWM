@@ -6,7 +6,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-./fdwm-theme generate  # colors.h, as install.sh does first
+# colors.h, as install.sh does first (in Mocha), with a throwaway home for the
+# colors.sh and dunst colors it also writes, so yours are left alone
+home=$(mktemp -d)
+trap 'rm -rf "$home"' EXIT
+env -u XDG_CONFIG_HOME HOME="$home" ./fdwm-theme generate
 
 export WERROR_CC=${CC:-cc}
 for tool in dwm st dmenu slock; do
