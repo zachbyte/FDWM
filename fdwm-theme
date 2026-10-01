@@ -244,7 +244,7 @@ switch() {
     fi
     # dwm restarts on its new build (restartsig), windows and tags kept
     pkill -HUP -u "$(id -u)" -x dwm || true
-    echo "==> Switched to $flavor. Neovim takes it from its next start, the ttys and GRUB from the next boot."
+    echo "==> Switched to $flavor. Open shells take it at their next prompt, Neovim at its next start, the ttys and GRUB from the next boot."
 }
 
 case ${1:-} in

@@ -48,6 +48,10 @@ ui_text       lavender  subtext1    subtext1
 ui_accent     lavender  blue        red
 ui_border     lavender  surface2    surface1
 
+# The bash prompt's: the git branch, then the directory and the $.
+prompt_branch red       red         subtext0
+prompt_dir    blue      blue        red
+
 # The terminal's 16 colors (0-7 normal, 8-15 bright: black, red, green,
 # yellow, blue, magenta, cyan, white), text, background and cursor: st uses
 # all of them, and the ttys the 16, except that there 0 is the background

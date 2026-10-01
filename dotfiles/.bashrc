@@ -14,7 +14,7 @@ fdwm_colors=${XDG_CONFIG_HOME:-$HOME/.config}/fdwm/colors.sh
 [ -r "$fdwm_colors" ] && . "$fdwm_colors"
 unset fdwm_colors
 
-# on a Linux console (the ttys), use the same Catppuccin colors as st and
+# on a Linux console (the ttys), use the same colors as st and
 # dwm: \e]P<n><rrggbb> sets palette entry n; 0 is the background and 7 the
 # default text, so they get dwm's background and st's text
 if [ "$TERM" = linux ] && [ -n "${fdwm_console:-}" ]; then
@@ -36,14 +36,28 @@ parse_git_branch() {
     printf '%s ' "$b"
 }
 
-# prompt: the git branch in the palette's red (a pink in Mocha), the
-# directory in its blue; fdwm_fg COLOR is the escape for text in #rrggbb,
-# as a 24-bit color: \e[38;2;<red>;<green>;<blue>m
+# prompt: the git branch, then the directory and the $, in the flavor's
+# prompt colors (prompt_branch, prompt_dir). They are 24-bit colors, which
+# fdwm-theme's recoloring of st doesn't reach, so fdwm_prompt rebuilds the
+# prompt from colors.sh before each one (in PROMPT_COMMAND below): a shell
+# that's already open follows a switch from its next prompt.
+# fdwm_fg VAR COLOR sets VAR to the escape for text in #rrggbb,
+# \e[38;2;<red>;<green>;<blue>m, or to nothing without a color.
 fdwm_fg() {
-    [ -n "$1" ] && printf '\\[\\e[38;2;%d;%d;%dm\\]' "0x${1:1:2}" "0x${1:3:2}" "0x${1:5:2}"
+    printf -v "$1" '%s' ''
+    if [ -n "$2" ]; then
+        printf -v "$1" '\\[\\e[38;2;%d;%d;%dm\\]' "0x${2:1:2}" "0x${2:3:2}" "0x${2:5:2}"
+    fi
 }
-PS1="$(fdwm_fg "${fdwm_red:-}")"'$(parse_git_branch)'"$(fdwm_fg "${fdwm_blue:-}")"'\w $ \[\e[0m\]'
-unset -f fdwm_fg
+fdwm_prompt() {
+    local colors=${XDG_CONFIG_HOME:-$HOME/.config}/fdwm/colors.sh branch dir
+    # shellcheck source=/dev/null
+    [ -r "$colors" ] && . "$colors"
+    fdwm_fg branch "${fdwm_prompt_branch:-}"
+    fdwm_fg dir "${fdwm_prompt_dir:-}"
+    PS1="$branch"'$(parse_git_branch)'"$dir"'\w $ \[\e[0m\]'
+}
+fdwm_prompt
 
 # essential stuff
 stty -ixon # disable ctrl+s and ctrl+q
@@ -52,10 +66,11 @@ HISTSIZE=-1
 HISTFILESIZE=-1
 HISTCONTROL=ignoredups
 shopt -s histappend
-# write each command to the history file right away and pick up other terminals' commands
-# (as the first element of an array, which bash 5.1+ runs in turn, so whatever
+# rebuild the prompt in the current flavor's colors (see above), then write
+# each command to the history file right away and pick up other terminals' commands
+# (as the first elements of an array, which bash 5.1+ runs in turn, so whatever
 # PROMPT_COMMAND already held, string or array, still runs after it)
-PROMPT_COMMAND=("history -a; history -n" "${PROMPT_COMMAND[@]}")
+PROMPT_COMMAND=(fdwm_prompt "history -a; history -n" "${PROMPT_COMMAND[@]}")
 
 # essentials
 alias grep='grep --color=auto'

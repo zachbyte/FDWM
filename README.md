@@ -62,11 +62,11 @@ notify-send "Hello" "from dunst"
 
 ## Colors
 
-Every color is written down once, in `palette`: one column per flavor, each color as `rrggbb` under Catppuccin's names (`base`, `text`, `blue` and so on), which every flavor fills with its own colors; which of them the bar's text (`ui_text`), the accent (`ui_accent`: the selected tag's underline, the focused window's border, dmenu's selection, dunst's frame and the screenshot outline) and the other windows' borders (`ui_border`) are; and which ones the terminal uses for its 16 colors, text, background and cursor. The flavors, all dark:
+Every color is written down once, in `palette`: one column per flavor, each color as `rrggbb` under Catppuccin's names (`base`, `text`, `blue` and so on), which every flavor fills with its own colors; which of them the bar's text (`ui_text`), the accent (`ui_accent`: the selected tag's underline, the focused window's border, dmenu's selection, dunst's frame and the screenshot outline) and the other windows' borders (`ui_border`) are, and the bash prompt's branch (`prompt_branch`) and directory (`prompt_dir`); and which ones the terminal uses for its 16 colors, text, background and cursor. The flavors, all dark:
 
 - `mocha`: Catppuccin Mocha, lavender on dark blue-gray. The default.
 - `tokyonight`: Tokyo Night in its night style, Tokyo Night's text and blue accent on deep navy, with its own terminal colors.
-- `thinkpad`: made to sit with a ThinkPad X1 Carbon: the soft black of its case behind everything, so the screen runs into the bezel, charcoal like its keys, silver like its lettering for text, and the TrackPoint's red as the one accent: the selected tag's underline, the focused window's border, dmenu's selection, notification frames, the screenshot outline, the terminal cursor and a wrong password on the lock screen. Code is in muted colors, with IBM's blue for functions.
+- `thinkpad`: made to sit with a ThinkPad X1 Carbon: the soft black of its case behind everything, so the screen runs into the bezel, charcoal like its keys, silver like its lettering for text, and the TrackPoint's red as the one accent: the selected tag's underline, the focused window's border, dmenu's selection, notification frames, the screenshot outline, the terminal cursor, the prompt's directory and a wrong password on the lock screen. Code is in muted colors, with IBM's blue for functions.
 
 `fdwm-theme generate`, which `install.sh` runs before building, writes the rest from it, in the flavor saved in `~/.config/fdwm/flavor` (Mocha until there is one):
 
@@ -87,7 +87,7 @@ fdwm-theme mocha
 
 Or press `Alt + Shift + T`: `fdwm-theme-menu` (in `dotfiles/.local/bin`, installed to `~/.local/bin`) lists the flavors in dmenu, with the one in use in the prompt, and switches to the one you pick in a small floating st, where it asks for your password and stays open until you press Return. `Escape`, or the flavor already in use, changes nothing.
 
-`fdwm-theme` (which `install.sh` links into `~/.local/bin`) saves the flavor and runs `install.sh`, which regenerates the colors and rebuilds dwm, st, dmenu, slock, the GRUB theme and the ttys' boot colors, so it asks for your password. Then it repaints the desktop, recolors every open st window, has dunst reload its colors and restarts dwm, keeping your windows where they are. dmenu and slock show the new flavor the next time they open, Neovim when it next starts, and the ttys and GRUB from the next boot. `install.sh` and `update.sh` keep the saved flavor, and `fdwm-theme` alone says which one is in use. A saved flavor that is no longer in the palette (Latte, which FDWM had before) is Mocha from the next `install.sh` on.
+`fdwm-theme` (which `install.sh` links into `~/.local/bin`) saves the flavor and runs `install.sh`, which regenerates the colors and rebuilds dwm, st, dmenu, slock, the GRUB theme and the ttys' boot colors, so it asks for your password. Then it repaints the desktop, recolors every open st window, has dunst reload its colors and restarts dwm, keeping your windows where they are. dmenu and slock show the new flavor the next time they open, the prompt in open shells from their next prompt (they rebuild it from `colors.sh` each time), Neovim when it next starts, and the ttys and GRUB from the next boot. `install.sh` and `update.sh` keep the saved flavor, and `fdwm-theme` alone says which one is in use. A saved flavor that is no longer in the palette (Latte, which FDWM had before) is Mocha from the next `install.sh` on.
 
 ## Tests
 
@@ -173,7 +173,7 @@ printf '[Login]\nIdleAction=suspend\nIdleActionSec=5min\nHandleLidSwitch=suspend
 sudo systemctl kill -s HUP systemd-logind
 ```
 
-`dotfiles/.bashrc` sets the prompt (git branch and directory), history, aliases and git shortcuts, gives the ttys the same colors as st and dwm once you log in, and loads every file in `~/.bashrc.d`. `dotfiles/.bashrc.d/claude.sh` adds `cl` for Claude Code.
+`dotfiles/.bashrc` sets the prompt (the git branch, then the directory, in the flavor's `prompt_branch` and `prompt_dir`), history, aliases and git shortcuts, gives the ttys the same colors as st and dwm once you log in, and loads every file in `~/.bashrc.d`. `dotfiles/.bashrc.d/claude.sh` adds `cl` for Claude Code.
 
 ```shell
 cp dotfiles/.bashrc ~/.bashrc
