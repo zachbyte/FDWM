@@ -90,7 +90,7 @@ battery() {
 draw() {
     battery
     line=
-    for part in "$(volume)" "$(brightness)" "$bat" "$(date '+󰃭  %Y-%m-%d    %I:%M %p')"; do
+    for part in "$(volume)" "$(brightness)" "$bat" "$(date '+󰃭  %Y-%m-%d      %I:%M %p')"; do
         [ -n "$part" ] && line="$line${line:+    }$part"
     done
 }
