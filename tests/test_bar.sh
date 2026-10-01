@@ -161,18 +161,42 @@ else
 fi
 expect_match "the redraw shows the battery charging" "    󰂄  85%    " "$(last)"
 
-# leftovers: the bar, its watchers' loops (which run as the bar too) or the
-# stubbed pactl and udevadm, if any are still running; "no pgrep" without
-# pgrep, so that the checks below fail rather than count nothing
+# leftovers: the bar, its two watchers ("fdwm-bar watch ...") and their
+# loops (which run as the watchers too), and the stubbed pactl and udevadm,
+# if any are still running; "no pgrep" without pgrep, so that the checks
+# below fail rather than count nothing
 leftovers() {
     command -v pgrep >/dev/null || { echo "no pgrep"; return; }
-    { pgrep -f " $bar\$" || true; pgrep -f "$T/bin/(pactl|udevadm)" || true; } | wc -l | tr -d ' '
+    { pgrep -f " $bar( |\$)" || true; pgrep -f "$T/bin/(pactl|udevadm)" || true; } | wc -l | tr -d ' '
 }
 # shellcheck disable=SC2329  # called through until_
 none_left() { [[ $(leftovers) == 0 ]]; }
 # shellcheck disable=SC2329  # called through until_
-all_running() { [[ $(leftovers) == 5 ]]; }
-expect "running: the bar, two watchers and their loops" 5 "$(leftovers)"
+all_running() { [[ $(leftovers) == 7 ]]; }
+expect "running: the bar, two watchers, their loops, pactl and udevadm" 7 "$(leftovers)"
+
+# PipeWire restarting: pactl ends, and the watcher starts a new one (after
+# 2 s), which still redraws the bar
+pactl_pid() { pgrep -f "$T/bin/pactl" | head -n1; }
+first=$(pactl_pid)
+kill "$first"
+# shellcheck disable=SC2329  # called through until_
+new_pactl() { local p; p=$(pactl_pid); [[ -n $p && $p != "$first" ]]; }
+if until_ 60 new_pactl; then
+    pass "pactl ended: a new one within 6 s"
+else
+    fail "pactl ended: no new one within 6 s"
+fi
+until_ 30 all_running
+expect "and nothing else started twice" 7 "$(leftovers)"
+away_from_minute
+echo "Volume: 0.40" >"$VOL"
+if event_and_wait "$PACTL_EVENTS" "Event 'change' on sink #57"; then
+    pass "the new pactl's events redraw the bar"
+else
+    fail "the new pactl's events don't redraw the bar"
+fi
+expect_match "and show the new volume" "^󰖀  40%    " "$(last)"
 
 kill "$barpid"
 wait "$barpid" 2>/dev/null
@@ -189,8 +213,8 @@ wait "$barpid" 2>/dev/null
 until_ 20 none_left
 expect "hung up (HUP, as at logout): no watcher left" 0 "$(leftovers)"
 
-# killed outright, so its exit can't run: each loop stops its command at the
-# next event
+# killed outright, so its exit can't run: each watcher, finding the bar gone
+# at its command's next event, stops it and itself
 "$bar" &
 barpid=$!
 until_ 30 all_running

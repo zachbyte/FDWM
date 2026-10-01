@@ -99,26 +99,43 @@ sound() { case $1 in *" on sink #"* | *" on server"*) ;; *) return 1 ;; esac; }
 # also starts with UDEV)
 power() { case $1 in UDEV*"(power_supply)") ;; *) return 1 ;; esac; }
 
-# watch FILTER COMMAND...: run COMMAND in the background and redraw the bar
-# at once (USR1, as "fdwm-bar refresh" does) at each line it prints that
-# FILTER accepts. Skipped if COMMAND isn't installed. COMMAND and the loop
-# reading it are children of the bar, which kills them when it exits. If the
-# bar is killed outright (kill -9), the loop stops COMMAND at its next event:
-# COMMAND's first line is its pid (sh -c prints it, then execs COMMAND).
+# watch BAR FILTER COMMAND...: one watcher, which the bar starts in the
+# background as "fdwm-bar watch": run COMMAND and redraw the bar (USR1, as
+# "fdwm-bar refresh" does) at each line it prints that FILTER accepts. When
+# COMMAND ends (PipeWire restarted, or isn't up yet), start it again after
+# a pause: 2 s, doubling up to a minute while it keeps ending within 10 s of
+# starting. COMMAND and the loop reading it are the watcher's children, and
+# go with it: when the bar exits it stops the watcher (TERM), which stops
+# them; if the bar is killed outright (kill -9), the watcher finds it gone at
+# COMMAND's next event and stops too.
 watch() {
-    filter=$1
-    shift
-    command -v "$1" >/dev/null 2>&1 || return 0
-    # shellcheck disable=SC2016  # $$ and $@ are the inner shell's
-    sh -c 'echo $$; exec "$@"' sh "$@" 2>/dev/null | {
-        read -r pid
-        while read -r event; do
-            "$filter" "$event" || continue
-            kill -USR1 $$ 2>/dev/null && continue
-            kill "$pid" 2>/dev/null  # the bar is gone
-            exit 0
-        done
-    } &
+    bar=$1 filter=$2
+    shift 2
+    trap 'pkill -P $$ 2>/dev/null; exit 0' HUP INT TERM
+    delay=2
+    while kill -0 "$bar" 2>/dev/null; do
+        started=$(date +%s)
+        # COMMAND's first line is its pid (sh -c prints it, then execs
+        # COMMAND), so that the loop can stop it if the bar is gone: the wait
+        # below is for both, and COMMAND may ignore the closed pipe (SIGPIPE)
+        # shellcheck disable=SC2016  # $$ and $@ are the inner shell's
+        sh -c 'echo $$; exec "$@"' sh "$@" 2>/dev/null | {
+            read -r pid
+            while read -r event; do
+                "$filter" "$event" || continue
+                kill -USR1 "$bar" 2>/dev/null && continue
+                kill "$pid" 2>/dev/null
+                exit 0
+            done
+        } &
+        # (in the background and waited for, so that TERM is handled at once)
+        wait $!
+        kill -0 "$bar" 2>/dev/null || exit 0
+        [ $(($(date +%s) - started)) -ge 10 ] && delay=2
+        sleep "$delay" &
+        wait $!
+        delay=$((delay * 2 > 60 ? 60 : delay * 2))
+    done
 }
 
 # Sets $line: the parts that exist, four spaces apart
@@ -141,6 +158,11 @@ print)
     printf '%s\n' "$line"
     exit 0
     ;;
+watch)  # (the bar's own watchers, see watch)
+    shift
+    watch "$@"
+    exit 0
+    ;;
 "") ;;
 *)
     echo "usage: fdwm-bar [refresh | print]" >&2
@@ -151,13 +173,18 @@ esac
 warned='' suspended='' again='' sleeper=''
 echo $$ >"$pidfile"
 # on exit (logging out, or killed with TERM, HUP or INT), take the children
-# along: the watchers, and the sleep below
+# along: the watchers (which take theirs), and the sleep below
 trap 'rm -f "$pidfile"; pkill -P $$ 2>/dev/null' EXIT
 trap 'exit 0' HUP INT TERM
 trap 'again=1' USR1
-# (after the USR1 trap, so that a watcher's first redraw can't kill the bar)
-watch sound pactl subscribe
-watch power udevadm monitor --udev --subsystem-match=power_supply
+# the watchers (after the USR1 trap, so that a first redraw can't kill the
+# bar), each skipped if its command isn't installed
+if command -v pactl >/dev/null 2>&1; then
+    "$0" watch $$ sound pactl subscribe &
+fi
+if command -v udevadm >/dev/null 2>&1; then
+    "$0" watch $$ power udevadm monitor --udev --subsystem-match=power_supply &
+fi
 while :; do
     again=
     draw
