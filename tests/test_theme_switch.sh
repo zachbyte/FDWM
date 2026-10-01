@@ -55,11 +55,11 @@ flavor_file=$HOME/.config/fdwm/flavor
 
 theme
 expect "no flavor: exits 0" 0 "$rc"
-expect_match "no flavor: says mocha, and what else there is" "^mocha \(the palette has: mocha tokyonight;" "$out"
+expect_match "no flavor: says mocha, and what else there is" "^mocha \(the palette has: mocha tokyonight thinkpad;" "$out"
 
 theme nosuch
 expect "an unknown flavor: fails" 1 "$rc"
-expect_match "an unknown flavor: names the ones there are" "no flavor called nosuch \(the palette has: mocha tokyonight\)" "$out"
+expect_match "an unknown flavor: names the ones there are" "no flavor called nosuch \(the palette has: mocha tokyonight thinkpad\)" "$out"
 expect "an unknown flavor: nothing saved or run" "no:" "$([[ -e $flavor_file ]] && echo yes || echo no):$(cat "$LOG")"
 
 DUNST=1 theme tokyonight

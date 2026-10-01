@@ -66,6 +66,7 @@ Every color is written down once, in `palette`: one column per flavor, each colo
 
 - `mocha`: Catppuccin Mocha, lavender on dark blue-gray. The default.
 - `tokyonight`: Tokyo Night in its night style, Tokyo Night's text and blue accent on deep navy, with its own terminal colors.
+- `thinkpad`: made to sit with a ThinkPad X1 Carbon: the soft black of its case behind everything, so the screen runs into the bezel, charcoal like its keys, silver like its lettering for text, and the TrackPoint's red as the one accent: the selected tag's underline, the focused window's border, dmenu's selection, notification frames, the screenshot outline, the terminal cursor and a wrong password on the lock screen. Code is in muted colors, with IBM's blue for functions.
 
 `fdwm-theme generate`, which `install.sh` runs before building, writes the rest from it, in the flavor saved in `~/.config/fdwm/flavor` (Mocha until there is one):
 
@@ -79,6 +80,7 @@ Every color is written down once, in `palette`: one column per flavor, each colo
 To switch flavors:
 
 ```shell
+fdwm-theme thinkpad
 fdwm-theme tokyonight
 fdwm-theme mocha
 ```

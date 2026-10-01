@@ -3,12 +3,12 @@
 # the flavor saved in ~/.config/fdwm/flavor (Mocha until there is one).
 #
 #   fdwm-theme               say which flavor is in use, and which there are
-#   fdwm-theme FLAVOR        switch to FLAVOR (mocha, tokyonight): save it, run
-#                            install.sh (which generates the colors and
-#                            rebuilds dwm, st, dmenu and slock, the GRUB
-#                            theme and the ttys' colors), then recolor the
-#                            desktop and the open st windows, reload dunst
-#                            and restart dwm
+#   fdwm-theme FLAVOR        switch to FLAVOR (mocha, tokyonight, thinkpad):
+#                            save it, run install.sh (which generates the
+#                            colors and rebuilds dwm, st, dmenu and slock,
+#                            the GRUB theme and the ttys' colors), then
+#                            recolor the desktop and the open st windows,
+#                            reload dunst and restart dwm
 #   fdwm-theme generate      write the files below from the palette
 #   fdwm-theme kernel-args   print the vt.default_* boot options that give
 #                            the ttys the palette from boot (install.sh
