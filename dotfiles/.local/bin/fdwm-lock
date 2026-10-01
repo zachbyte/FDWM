@@ -8,22 +8,28 @@
 # This is here and not logind's IdleAction because dwm starts from a tty
 # (startx), and logind judges a tty session's use by the tty itself, which X
 # never touches: to logind the laptop was always idle, so it suspended (and
-# xss-lock locked) every 5 minutes however busy you were. X's idle time,
-# which xprintidle reads, counts the keyboard, mouse and touchpad.
+# xss-lock locked) every 5 minutes however busy you were.
+#
+# "No input" is read from the screen: .xinitrc has X turn it off after 5
+# minutes without input, and any key, the mouse or the touchpad turns it
+# back on. So 20 checks 15 seconds apart that all find it off are 5 minutes
+# untouched. No checks run while the laptop sleeps, so after it wakes it
+# takes 5 more untouched minutes to suspend again.
 
-# watch PID: suspend while PID (slock) runs and input stays away
+# off: true while X has the screen turned off (DPMS standby, suspend or off)
+off() {
+    xset q 2>/dev/null | grep -qE 'Monitor is (Standby|Suspend|Off)'
+}
+
+# watch PID: suspend while PID (slock) runs and the screen stays off
 watch() {
-    next=600000  # ms without input before suspending
-    last=0
+    checks=0
     while kill -0 "$1" 2>/dev/null; do
         sleep 15
-        idle=$(xprintidle 2>/dev/null) || continue
-        # less than last time: a key or the mouse since, so start over
-        [ "$idle" -lt "$last" ] && next=600000
-        last=$idle
-        if [ "$idle" -ge "$next" ] && kill -0 "$1" 2>/dev/null; then
+        if off; then checks=$((checks + 1)); else checks=0; fi
+        if [ "$checks" -ge 20 ] && kill -0 "$1" 2>/dev/null; then
             systemctl suspend
-            next=$((idle + 300000))
+            checks=0
         fi
     done
 }
