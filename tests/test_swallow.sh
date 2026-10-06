@@ -8,8 +8,10 @@
 # where its terminal was and has the focus, the terminal off the screen;
 # closing it brings the terminal back; a floating one (a fixed size) opens
 # on its own; started from a scratchpad it opens on its own too; a restart
-# (Alt+Shift+W) keeps it in the terminal's place; and dwm carries on when
-# the terminal goes away under it.
+# (Alt+Shift+W) keeps it in the terminal's place; dwm carries on when the
+# terminal goes away under it; and a program moved to another tag takes its
+# hidden terminal along, as their EWMH desktops say, through a restart and
+# until it closes and the terminal comes back there.
 # shellcheck source=tests/lib.sh
 source "$(dirname "$0")/lib.sh"
 sandbox
@@ -159,5 +161,31 @@ key alt+q
 until_ 5 gone child3 || fail "Alt+Q didn't close the program"
 sleep 0.5
 expect "closed, with no terminal to bring back: dwm still runs" yes "$(kill -0 "$dwm" 2>/dev/null && wm_running && echo yes)"
+
+# the program moved to tag 4: its hidden terminal goes along, their
+# _NET_WM_DESKTOP (EWMH) both 3, a restart keeps them there, and closed, the
+# program leaves the terminal there
+desktop() { xprop -id "$(win "$1")" _NET_WM_DESKTOP 2>/dev/null | sed -n 's/^[^=]* = //p'; }
+desktop_is() { [[ $(desktop "$1") == "$2" ]]; }
+term term4 'xwin child4; exec sleep 600'
+until_ 15 has_window child4 || fail "xwin didn't start from st"
+until_ 5 offscreen term4
+expect "the program is on its terminal's desktop, 0" 0 "$(until_ 5 desktop_is child4 0; desktop child4)"
+focus child4
+key alt+shift+4
+expect "Alt+Shift+4 moves it to desktop 3" 3 "$(until_ 5 desktop_is child4 3; desktop child4)"
+expect "and its hidden terminal too" 3 "$(until_ 5 desktop_is term4 3; desktop term4)"
+key alt+shift+w
+sleep 1
+until_ 10 wm_running || fail "dwm didn't restart: $(cat "$T/dwm.log")"
+expect "after a restart, the program is still on desktop 3" 3 "$(until_ 5 desktop_is child4 3; desktop child4)"
+expect "and still has its terminal, hidden, there too" "yes 3" "$(until_ 5 offscreen term4 && echo yes) $(desktop term4)"
+key alt+4
+until_ 5 shown child4
+focus child4
+key alt+q
+until_ 5 gone child4 || fail "Alt+Q didn't close the program"
+expect "closed: the terminal is back on tag 4" yes "$(until_ 5 shown term4 && echo yes)"
+expect "and its desktop is 3" 3 "$(until_ 5 desktop_is term4 3; desktop term4)"
 
 finish
