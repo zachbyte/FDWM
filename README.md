@@ -311,9 +311,6 @@ Done:
 - movestack: `Alt + Shift + J` / `K` move the focused window down or up the stack (patch 47).
 - pertag: each tag remembers its own layout, master area and bar, the scratchpads' tags left out (patch 48).
 - Window swallowing for st: a graphical program started from st (a video, an image) takes the terminal's place until it closes (patch 49, see "Window swallowing").
+- EWMH desktops: other programs (a pager, an external bar, `xdotool set_desktop`) see the tags as desktops and which window is on which, and can switch tags and move windows (patch 50).
 
-Not started yet:
-
-- EWMH desktop atoms (`_NET_CURRENT_DESKTOP` and the rest), which let other programs see the tags. Only an external bar needs them, so only if Quickshell comes back.
-
-Quickshell, a Qt/QML toolkit for bars and widgets, is deferred: dwm's bar, `fdwm-bar` and dmenu already cover what FDWM needs, and Quickshell would add a resident Qt process, QML to maintain, and dwm patches (EWMH tags, dock windows) just to work with dwm on X11. Wanting a system tray or clickable widgets (sliders, a calendar, notification history) would change that.
+Quickshell, a Qt/QML toolkit for bars and widgets, is deferred: dwm's bar, `fdwm-bar` and dmenu already cover what FDWM needs, and Quickshell would add a resident Qt process, QML to maintain, and a dwm patch for dock windows (the EWMH desktops it would also need are in already) just to work with dwm on X11. Wanting a system tray or clickable widgets (sliders, a calendar, notification history) would change that.

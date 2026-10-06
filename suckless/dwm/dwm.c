@@ -2051,17 +2051,25 @@ setclienttagprop(Client *c)
 			PropModeReplace, (unsigned char *) data, 2);
 	/* _NET_WM_DESKTOP: the window's lowest tag, 0xFFFFFFFF on all nine; a
 	 * scratchpad, on none of them, has none */
-	if (!t) {
+	if (!t)
 		XDeleteProperty(dpy, c->win, netatom[NetWMDesktop]);
-		return;
+	else {
+		if (t == (TAGMASK & ~SPTAGMASK))
+			desktop = 0xFFFFFFFF;
+		else
+			while (!(t & 1 << desktop))
+				desktop++;
+		XChangeProperty(dpy, c->win, netatom[NetWMDesktop], XA_CARDINAL, 32,
+				PropModeReplace, (unsigned char *) &desktop, 1);
 	}
-	if (t == (TAGMASK & ~SPTAGMASK))
-		desktop = 0xFFFFFFFF;
-	else
-		while (!(t & 1 << desktop))
-			desktop++;
-	XChangeProperty(dpy, c->win, netatom[NetWMDesktop], XA_CARDINAL, 32,
-			PropModeReplace, (unsigned char *) &desktop, 1);
+	/* the terminal c has swallowed gets c's tags back when c closes: it has
+	 * them from now on, so a pager sees it where c is, and a restart
+	 * swallows again there */
+	if (c->swallowing) {
+		c->swallowing->tags = c->tags;
+		c->swallowing->mon = c->mon;
+		setclienttagprop(c->swallowing);
+	}
 }
 
 /* setcurrentdesktop: _NET_CURRENT_DESKTOP, the lowest tag in view (the
@@ -2407,7 +2415,6 @@ void
 unswallow(Client *c)
 {
 	replaceclient(c, c->swallowing);
-	setclienttagprop(c->swallowing); /* the tags c had, which it now has */
 	c->swallowing = NULL;
 }
 
