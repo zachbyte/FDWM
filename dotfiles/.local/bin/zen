@@ -1,0 +1,4 @@
+#!/bin/sh
+# zen: Zen Browser, which install.sh installs from Flathub, under a name
+# dmenu (Alt+R) and a terminal find
+exec flatpak run app.zen_browser.zen "$@"

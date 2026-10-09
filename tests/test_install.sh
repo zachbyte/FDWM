@@ -12,6 +12,10 @@ stub sudo 'echo "SUDO $*" >>"$LOG"; case "$1" in tee) cat >/dev/null ;; esac; ex
 stub make 'echo "MAKE $*" >>"$LOG"'
 stub fc-list 'exit 0'
 stub nvim 'exit 0'
+# flatpak and gsettings only log; flatpak info fails unless $ZEN is set (Zen
+# Browser already installed)
+stub flatpak 'echo "FLATPAK $*" >>"$LOG"; [ "$1" != info ] || [ -n "$ZEN" ]'
+stub gsettings 'echo "GSETTINGS $*" >>"$LOG"'
 # rpm -q --whatprovides: fails for every name in $MISSING and exits with the
 # number of failures, like the real one
 stub rpm '
@@ -37,7 +41,7 @@ npackages=$(sed 's/#.*//' "$ROOT/packages.txt" | wc -w | tr -d ' ')
 # run: a fresh home and log, then install.sh; sets $out and $rc
 run() {
     rm -rf "${T:?}/home" && mkdir -p "$T/home" && : >"$LOG"
-    out=$(cd "$T/repo" && HOME="$T/home" MISSING=${MISSING:-} bash ./install.sh 2>&1)
+    out=$(cd "$T/repo" && HOME="$T/home" MISSING=${MISSING:-} ZEN=${ZEN:-} bash ./install.sh 2>&1)
     rc=$?
 }
 
@@ -68,7 +72,21 @@ expect "installs ~/.local/bin/fdwm-menu, executable" yes "$([[ -x $T/home/.local
 expect "installs ~/.local/bin/fdwm-theme-menu, executable" yes "$([[ -x $T/home/.local/bin/fdwm-theme-menu ]] && echo yes)"
 expect "installs ~/.local/bin/fdwm-keys, executable" yes "$([[ -x $T/home/.local/bin/fdwm-keys ]] && echo yes)"
 expect "lists dwm's keys in ~/.config/fdwm/keys, from config.h" "$(awk -f "$ROOT/keys.awk" "$ROOT/suckless/dwm/config.h")" "$(cat "$T/home/.config/fdwm/keys" 2>/dev/null)"
+expect "installs Zen Browser from Flathub, for you alone" \
+    "$(printf '%s\n' 'FLATPAK info --user app.zen_browser.zen' \
+        'FLATPAK remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo' \
+        'FLATPAK install --user --noninteractive flathub app.zen_browser.zen')" "$(grep '^FLATPAK' "$LOG")"
+expect "installs ~/.local/bin/zen, executable" yes "$([[ -x $T/home/.local/bin/zen ]] && echo yes)"
+for f in .config/gtk-3.0/settings.ini .config/gtk-4.0/settings.ini; do
+    expect_match "dark mode: ~/$f prefers dark" "^gtk-application-prefer-dark-theme=true$" "$(cat "$T/home/$f" 2>/dev/null)"
+done
+expect_match "dark mode: the gtk portal answers Flatpak apps" "^default=gtk$" "$(cat "$T/home/.config/xdg-desktop-portal/portals.conf" 2>/dev/null)"
+expect "dark mode: gsettings' color-scheme, for the portal" \
+    "GSETTINGS set org.gnome.desktop.interface color-scheme prefer-dark" "$(grep '^GSETTINGS' "$LOG")"
 expect_match "sets up suspend" "==> Setting up suspend" "$out"
+
+ZEN=1 run
+expect "Zen Browser already installed: only checked" "FLATPAK info --user app.zen_browser.zen" "$(grep '^FLATPAK' "$LOG")"
 expect_match "suspends on lid close, not on logind's idle" "SUDO tee /etc/systemd/logind.conf.d/fdwm-lid.conf" "$(cat "$LOG")"
 
 MISSING=nnn run

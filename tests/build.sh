@@ -6,7 +6,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-# colors.h, as install.sh does first (in Mocha), with a throwaway home for the
+# colors.h, as install.sh does first (in thinkpad), with a throwaway home for the
 # colors.sh and dunst colors it also writes, so yours are left alone
 home=$(mktemp -d)
 trap 'rm -rf "$home"' EXIT

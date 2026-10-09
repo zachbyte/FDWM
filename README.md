@@ -4,7 +4,7 @@ A minimal dwm, st, dmenu and slock setup for Fedora.
 
 ## Quick install
 
-The commands below clone the repo (step 1), then `install.sh` runs steps 2 to 7 for you (only installing packages that are missing); run it as your normal user. Any existing `~/.xinitrc`, `~/.local/bin/fdwm-bar`, `~/.local/bin/fdwm-shot`, `~/.local/bin/fdwm-menu`, `~/.local/bin/fdwm-theme-menu`, `~/.bashrc`, `~/.bashrc.d/claude.sh`, `~/.config/nvim` or `~/.config/dunst/dunstrc` that differs is moved to a `.bak.<time>` copy first.
+The commands below clone the repo (step 1), then `install.sh` runs steps 2 to 7 for you (only installing packages that are missing); run it as your normal user. Any existing `~/.xinitrc`, `~/.local/bin/fdwm-bar`, `~/.local/bin/fdwm-shot`, `~/.local/bin/fdwm-menu`, `~/.local/bin/fdwm-theme-menu`, `~/.local/bin/zen`, `~/.bashrc`, `~/.bashrc.d/claude.sh`, `~/.config/nvim`, `~/.config/dunst/dunstrc`, `~/.config/gtk-3.0/settings.ini`, `~/.config/gtk-4.0/settings.ini` or `~/.config/xdg-desktop-portal/portals.conf` that differs is moved to a `.bak.<time>` copy first.
 
 ```shell
 sudo dnf install -y git
@@ -83,13 +83,11 @@ notify-send "Hello" "from dunst"
 
 ## Colors
 
-Every color is written down once, in `palette`: one column per flavor, each color as `rrggbb` under Catppuccin's names (`base`, `text`, `blue` and so on), which every flavor fills with its own colors; which of them the bar's text (`ui_text`), the accent (`ui_accent`: the selected tag's underline, the focused window's border, dmenu's selection, dunst's frame and the screenshot outline) and the other windows' borders (`ui_border`) are, and the bash prompt's branch (`prompt_branch`) and directory (`prompt_dir`); and which ones the terminal uses for its 16 colors, text, background and cursor. The flavors, all dark:
+Every color is written down once, in `palette`: one column per flavor, each color as `rrggbb` under Catppuccin's names (`base`, `text`, `blue` and so on), which every flavor fills with its own colors; which of them the bar's text (`ui_text`), the accent (`ui_accent`: the selected tag's underline, the focused window's border, dmenu's selection, dunst's frame and the screenshot outline) and the other windows' borders (`ui_border`) are, and the bash prompt's branch (`prompt_branch`) and directory (`prompt_dir`); and which ones the terminal uses for its 16 colors, text, background and cursor. There is one flavor, dark like everything else (see "Dark mode" below):
 
-- `mocha`: Catppuccin Mocha, lavender on dark blue-gray. The default.
-- `tokyonight`: Tokyo Night in its night style, Tokyo Night's text and blue accent on deep navy, with its own terminal colors.
 - `thinkpad`: made to sit with a ThinkPad X1 Carbon: the soft black of its case behind everything, so the screen runs into the bezel, charcoal like its keys, silver like its lettering for text, and the TrackPoint's red as the one accent: the selected tag's underline, the focused window's border, dmenu's selection, notification frames, the screenshot outline, the terminal cursor, the prompt's directory and a wrong password on the lock screen. Code is in muted colors, with IBM's blue for functions.
 
-`fdwm-theme generate`, which `install.sh` runs before building, writes the rest from it, in the flavor saved in `~/.config/fdwm/flavor` (Mocha until there is one):
+`fdwm-theme generate`, which `install.sh` runs before building, writes the rest from it, in the flavor saved in `~/.config/fdwm/flavor` (the palette's first column, `thinkpad`, until there is one):
 
 - `suckless/colors.h`, which the `config.h` of dwm, st, dmenu and slock include (`COL_BASE`, `COL_LAVENDER` and so on)
 - `grub/theme/theme.txt`, the GRUB theme's colors, from `grub/theme.txt.in`, and `grub/theme/select_c.png`, the bar behind the selected boot entry (one pixel, which GRUB stretches)
@@ -98,17 +96,29 @@ Every color is written down once, in `palette`: one column per flavor, each colo
 
 `fdwm-theme kernel-args` prints the kernel options that color the ttys from boot. The generated files say so at the top, and git ignores the ones in the repo. To change a color, edit `palette` and run `./install.sh`.
 
-To switch flavors:
+A new flavor is another column in `palette`. To switch flavors:
 
 ```shell
 fdwm-theme thinkpad
-fdwm-theme tokyonight
-fdwm-theme mocha
 ```
 
 Or press `Alt + Shift + T`: `fdwm-theme-menu` (in `dotfiles/.local/bin`, installed to `~/.local/bin`) lists the flavors in dmenu, with the one in use in the prompt, and switches to the one you pick in a small floating st, where it asks for your password and stays open until you press Return. `Escape`, or the flavor already in use, changes nothing.
 
-`fdwm-theme` (which `install.sh` links into `~/.local/bin`) saves the flavor and runs `install.sh --colors`, which does only what a change of colors needs: it regenerates the colors, rebuilds dwm, st, dmenu and slock, and installs each of them, the GRUB theme and the ttys' boot colors only if it changed, so it asks for your password only when something needs installing. It leaves packages, the font, your dotfiles, suspend and the GRUB settings alone, and never runs `grub2-mkconfig` (`install.sh` alone does all of that). To tell what changed without your password, `install.sh` writes down the GRUB theme and boot colors it last installed in `~/.local/state/fdwm`. Then `fdwm-theme` repaints the desktop, recolors every open st window, has dunst reload its colors (or restarts it, if it won't) and restarts dwm, keeping your windows where they are: nothing there needs restarting by hand. dmenu and slock show the new flavor the next time they open, the prompt in open shells from their next prompt (they rebuild it from `colors.sh` each time), Neovim when it next starts, and the ttys and GRUB from the next boot. `install.sh` and `update.sh` keep the saved flavor, and `fdwm-theme` alone says which one is in use. A saved flavor that is no longer in the palette (Latte, which FDWM had before) is Mocha from the next `install.sh` on.
+`fdwm-theme` (which `install.sh` links into `~/.local/bin`) saves the flavor and runs `install.sh --colors`, which does only what a change of colors needs: it regenerates the colors, rebuilds dwm, st, dmenu and slock, and installs each of them, the GRUB theme and the ttys' boot colors only if it changed, so it asks for your password only when something needs installing. It leaves packages, the font, your dotfiles, suspend and the GRUB settings alone, and never runs `grub2-mkconfig` (`install.sh` alone does all of that). To tell what changed without your password, `install.sh` writes down the GRUB theme and boot colors it last installed in `~/.local/state/fdwm`. Then `fdwm-theme` repaints the desktop, recolors every open st window, has dunst reload its colors (or restarts it, if it won't) and restarts dwm, keeping your windows where they are: nothing there needs restarting by hand. dmenu and slock show the new flavor the next time they open, the prompt in open shells from their next prompt (they rebuild it from `colors.sh` each time), Neovim when it next starts, and the ttys and GRUB from the next boot. `install.sh` and `update.sh` keep the saved flavor, and `fdwm-theme` alone says which one is in use. A saved flavor that is no longer in the palette (Latte, Mocha and Tokyo Night, which FDWM had before) is `thinkpad` from the next `install.sh` on.
+
+## Dark mode
+
+Apps that can be light or dark are told to be dark, so Zen Browser, Thunar and the sites you visit (those that follow your system's preference) match the desktop. There are two ways an app asks, and `install.sh` answers both:
+
+- GTK apps such as Thunar read `~/.config/gtk-3.0/settings.ini` (and `gtk-4.0`), which prefer the dark variant of their theme.
+- Flatpak apps such as Zen ask the settings portal. `xdg-desktop-portal-gtk` answers, reading the color scheme from gsettings, which `install.sh` sets to `prefer-dark`; `~/.config/xdg-desktop-portal/portals.conf` picks it under dwm, which names no desktop for the portal to go by.
+
+An app that is already open takes it the next time it starts. To check what the portal tells apps (`1` is dark):
+
+```shell
+gdbus call --session --dest org.freedesktop.portal.Desktop --object-path /org/freedesktop/portal/desktop \
+    --method org.freedesktop.portal.Settings.ReadOne org.freedesktop.appearance color-scheme
+```
 
 ## Tests
 
@@ -136,7 +146,7 @@ cd FDWM
 
 ### 2. Install dependencies
 
-`packages.txt` lists every package FDWM uses, grouped by what needs it: building dwm, st, dmenu and slock; X and the session `.xinitrc` starts; sound and the media keys; nnn; and Neovim with what its plugins need.
+`packages.txt` lists every package FDWM uses, grouped by what needs it: building dwm, st, dmenu and slock; X and the session `.xinitrc` starts; sound and the media keys; nnn; Thunar; flatpak, for Zen Browser; what dark mode needs; and Neovim with what its plugins need.
 
 ```shell
 sudo dnf install $(sed 's/#.*//' packages.txt)
@@ -215,7 +225,7 @@ cp dotfiles/.bashrc.d/claude.sh ~/.bashrc.d/
 | `Alt + Shift + J` / `K` | Move the focused window down / up the stack |
 | `Alt + Q` / `Alt + Shift + Q` | Close the window / quit dwm |
 | `Alt + Shift + E` | Power menu: lock, suspend, restart dwm, log out, reboot or power off (see "The power menu") |
-| `Alt + Shift + T` | Theme menu: switch to mocha, tokyonight or thinkpad (see "Colors") |
+| `Alt + Shift + T` | Theme menu: switch to another flavor in `palette` (see "Colors") |
 | `Alt + /` | Every key and mouse button, described (see "The keys") |
 | `Alt + Shift + L` | Lock the screen (slock; type your password and press Return) |
 | `` Alt + ` `` / `Alt + N` | Show or hide the terminal / notes scratchpad (see "Scratchpads") |
@@ -248,9 +258,26 @@ sudo grub2-mkconfig -o /boot/grub2/grub.cfg
 
 The `grubby` line gives the ttys the palette's colors from boot, login prompt included (`fdwm-theme kernel-args` prints the red, green and blue of the same 16 colors `.bashrc` uses, as `vt.default_*` options).
 
-### 7. File manager
+### 7. File managers, Zen Browser and dark mode
 
-`nnn`, installed in step 2, is a terminal file manager: run `nnn`, press `?` for its keys, and text files open in Neovim.
+`nnn`, installed in step 2, is a terminal file manager: run `nnn`, press `?` for its keys, and text files open in Neovim. Thunar, also from step 2, is the graphical one: run `thunar` (`Alt + R` finds it).
+
+Fedora doesn't package Zen Browser, so it comes from Flathub, installed for you alone (no sudo), with a `zen` command that `Alt + R` finds:
+
+```shell
+flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+flatpak install --user --noninteractive flathub app.zen_browser.zen
+install -Dm755 dotfiles/.local/bin/zen ~/.local/bin/zen
+```
+
+Then dark mode (see "Dark mode" above):
+
+```shell
+for f in gtk-3.0/settings.ini gtk-4.0/settings.ini xdg-desktop-portal/portals.conf; do
+    install -Dm644 dotfiles/.config/$f ~/.config/$f
+done
+gsettings set org.gnome.desktop.interface color-scheme prefer-dark
+```
 
 ## Patches
 

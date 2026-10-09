@@ -10,6 +10,8 @@ source "$(dirname "$0")/lib.sh"
 sandbox
 git_sandboxed
 theme_repo "$T/theme"
+# a second flavor, other, to switch to (the real palette has thinkpad alone)
+other_flavor "$T/theme"
 export XDG_CONFIG_HOME=$T/home/.config
 # gen FLAVOR: colors.sh in FLAVOR, as fdwm-theme writes it
 gen() {
@@ -33,17 +35,17 @@ colors() {
     expect_match "$1: the branch in its prompt_branch" "^\\\\\\[\\\\e\\[$(rgb "$fdwm_prompt_branch")"'\\\]\$\(parse_git_branch\)' "$PS1"
     expect_match "$1: the directory in its prompt_dir" "$(rgb "$fdwm_prompt_dir")"'\\\]\\w' "$PS1"
 }
-gen mocha
+gen thinkpad
 eval "$prompt_block"
-colors mocha
+colors thinkpad
 expect_no_match "no other colors (such as the 256-color pink it had)" '38;5;' "$PS1"
-mocha_ps1=$PS1
+thinkpad_ps1=$PS1
 # a switch while the shell is open: the next prompt (PROMPT_COMMAND runs
 # fdwm_prompt first) has the new colors
-gen thinkpad
+gen other
 fdwm_prompt
-colors "switched to thinkpad, same shell"
-expect "switched to thinkpad, same shell: not mocha's prompt" yes "$([[ $PS1 != "$mocha_ps1" ]] && echo yes)"
+colors "switched to other, same shell"
+expect "switched to other, same shell: not thinkpad's prompt" yes "$([[ $PS1 != "$thinkpad_ps1" ]] && echo yes)"
 expect "PROMPT_COMMAND runs fdwm_prompt first" 1 \
     "$(grep -c '^PROMPT_COMMAND=(fdwm_prompt ' "$ROOT/dotfiles/.bashrc")"
 

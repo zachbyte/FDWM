@@ -253,6 +253,29 @@ else
     echo "Skipped: the neovim config needs Neovim 0.12 or newer (Fedora 44 or newer)"
 fi
 
+# Fedora doesn't package Zen Browser, so it comes from Flathub, installed for
+# you alone (--user: no sudo); flatpak update keeps it current. ~/.local/bin/zen
+# runs it, so dmenu finds it as zen.
+echo "==> Installing Zen Browser"
+zen=app.zen_browser.zen
+if flatpak info --user "$zen" >/dev/null 2>&1; then
+    echo "Already installed"
+else
+    flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+    flatpak install --user --noninteractive flathub "$zen"
+fi
+install_dotfile .local/bin/zen
+
+# Dark mode, for every app that asks: GTK apps (Thunar) read settings.ini,
+# Flatpak apps (Zen) the settings portal, which xdg-desktop-portal-gtk
+# answers from gsettings' color-scheme (portals.conf picks it under dwm).
+echo "==> Setting up dark mode"
+install_dotfile .config/gtk-3.0/settings.ini
+install_dotfile .config/gtk-4.0/settings.ini
+install_dotfile .config/xdg-desktop-portal/portals.conf
+gsettings set org.gnome.desktop.interface color-scheme prefer-dark
+echo "Dark mode on; apps already open take it when they next start"
+
 # Fedora already gives every user a ~/.bash_profile, so add the autostart to it
 # instead of replacing it.
 echo "==> Setting up ~/.bash_profile"

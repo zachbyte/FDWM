@@ -13,6 +13,8 @@
 source "$(dirname "$0")/lib.sh"
 sandbox
 theme_repo "$T/repo"
+# the real palette has thinkpad alone: a second flavor to switch to
+other_flavor "$T/repo"
 cat >"$T/repo/install.sh" <<'EOF'
 #!/usr/bin/env bash
 set -e
@@ -59,58 +61,58 @@ flavor_file=$HOME/.config/fdwm/flavor
 
 theme
 expect "no flavor: exits 0" 0 "$rc"
-expect_match "no flavor: says mocha, and what else there is" "^mocha \(the palette has: mocha tokyonight thinkpad;" "$out"
+expect_match "no flavor: says thinkpad, and what else there is" "^thinkpad \(the palette has: thinkpad other;" "$out"
 
 theme nosuch
 expect "an unknown flavor: fails" 1 "$rc"
-expect_match "an unknown flavor: names the ones there are" "no flavor called nosuch \(the palette has: mocha tokyonight thinkpad\)" "$out"
+expect_match "an unknown flavor: names the ones there are" "no flavor called nosuch \(the palette has: thinkpad other\)" "$out"
 expect "an unknown flavor: nothing saved or run" "no:" "$([[ -e $flavor_file ]] && echo yes || echo no):$(cat "$LOG")"
 
 theme list
-expect "list: the palette's flavors, one per line" "$(printf 'mocha\ntokyonight\nthinkpad')" "$out"
+expect "list: the palette's flavors, one per line" "$(printf 'thinkpad\nother')" "$out"
 theme current
-expect "current, none saved: mocha" mocha "$out"
+expect "current, none saved: thinkpad" thinkpad "$out"
 
-DUNST=1 theme tokyonight
-expect "tokyonight: exits 0" 0 "$rc"
-expect "tokyonight: saved" tokyonight "$(cat "$flavor_file")"
+DUNST=1 theme other
+expect "other: exits 0" 0 "$rc"
+expect "other: saved" other "$(cat "$flavor_file")"
 # shellcheck source=/dev/null
 . "$HOME/.config/fdwm/colors.sh"
-expect "tokyonight: install.sh ran and generated tokyonight" "tokyonight" "$fdwm_flavor"
-expect "tokyonight: install.sh, the desktop, dunst, then dwm" \
+expect "other: install.sh ran and generated other" "other" "$fdwm_flavor"
+expect "other: install.sh, the desktop, dunst, then dwm" \
     "$(printf 'INSTALL --colors\nxsetroot -solid %s\ndunstctl reload\npkill -HUP -u %s -x dwm' "$fdwm_base" "$(id -u)")" "$(cat "$LOG")"
 want=$(for i in {0..15}; do v=fdwm_term$i; printf '\e]4;%d;%s\a' "$i" "${!v}"; done
     printf '\e]10;%s\a\e]11;%s\a\e]12;%s\a' "$fdwm_term_fg" "$fdwm_term_bg" "$fdwm_term_cursor")
-expect "tokyonight: each st window gets the 16 colors, text, background and cursor" \
+expect "other: each st window gets the 16 colors, text, background and cursor" \
     "$(od -An -c <<<"$want")" "$(od -An -c <<<"$(cat "$FDWM_DEV/pts/3")")"
-expect "tokyonight: the second st window too" "$(cat "$FDWM_DEV/pts/3")" "$(cat "$FDWM_DEV/pts/4")"
-expect "tokyonight: a terminal that isn't st's is left alone" 0 "$(wc -c <"$FDWM_DEV/pts/9" | tr -d ' ')"
-expect_match "tokyonight: says so" "Recolored 2 open st window" "$out"
-tokyonight_seq=$(cat "$FDWM_DEV/pts/3")
+expect "other: the second st window too" "$(cat "$FDWM_DEV/pts/3")" "$(cat "$FDWM_DEV/pts/4")"
+expect "other: a terminal that isn't st's is left alone" 0 "$(wc -c <"$FDWM_DEV/pts/9" | tr -d ' ')"
+expect_match "other: says so" "Recolored 2 open st window" "$out"
+other_seq=$(cat "$FDWM_DEV/pts/3")
 theme current
-expect "current: the one switched to" tokyonight "$out"
+expect "current: the one switched to" other "$out"
 
-theme mocha
-expect "back to mocha: saved" mocha "$(cat "$flavor_file")"
+theme thinkpad
+expect "back to thinkpad: saved" thinkpad "$(cat "$flavor_file")"
 # shellcheck source=/dev/null
 . "$HOME/.config/fdwm/colors.sh"
-expect "back to mocha: generated" mocha "$fdwm_flavor"
-expect_match "back to mocha: the st windows get mocha's background" "]11;$fdwm_term_bg" "$(cat "$FDWM_DEV/pts/4")"
-expect "back to mocha: not what tokyonight sent" yes "$([[ $(cat "$FDWM_DEV/pts/4") != "$tokyonight_seq" ]] && echo yes)"
+expect "back to thinkpad: generated" thinkpad "$fdwm_flavor"
+expect_match "back to thinkpad: the st windows get thinkpad's background" "]11;$fdwm_term_bg" "$(cat "$FDWM_DEV/pts/4")"
+expect "back to thinkpad: not what other sent" yes "$([[ $(cat "$FDWM_DEV/pts/4") != "$other_seq" ]] && echo yes)"
 expect "dunst not running: not reloaded" "" "$(grep dunstctl "$LOG")"
-DUNST=1 DUNSTCTL_FAILS=1 theme tokyonight
+DUNST=1 DUNSTCTL_FAILS=1 theme other
 expect "dunst won't reload: restarted instead" \
     "$(printf 'dunstctl reload\npkill -u %s -x dunst\nsetsid -f dunst' "$(id -u)")" "$(grep -E '^(dunstctl|pkill -u [0-9]+ -x dunst|setsid)' "$LOG")"
 
-DISPLAY='' theme tokyonight
+DISPLAY='' theme other
 expect "outside X: exits 0" 0 "$rc"
 expect "outside X: only install.sh runs" "INSTALL --colors" "$(cat "$LOG")"
 expect "outside X: no terminal written to" 0 "$(cat "$FDWM_DEV"/pts/* | wc -c | tr -d ' ')"
-expect_match "outside X: says when it shows" "tokyonight from the next time X starts" "$out"
+expect_match "outside X: says when it shows" "other from the next time X starts" "$out"
 
-FAIL_INSTALL=1 theme mocha
+FAIL_INSTALL=1 theme thinkpad
 expect "install.sh fails: fails too" 1 "$rc"
-expect_match "install.sh fails: says what to do" "install.sh --colors failed; mocha is saved, so run fdwm-theme mocha again" "$out"
+expect_match "install.sh fails: says what to do" "install.sh --colors failed; thinkpad is saved, so run fdwm-theme thinkpad again" "$out"
 expect "install.sh fails: nothing restarted or recolored" "INSTALL --colors" "$(cat "$LOG")"
 
 theme --help
@@ -123,6 +125,7 @@ expect "an option: usage, exit 2" 2 "$rc"
 # run uses only logs.
 real=$T/real
 theme_repo "$real"
+other_flavor "$real"
 cp "$ROOT/install.sh" "$ROOT/packages.txt" "$ROOT/keys.awk" "$real/"
 cp -r "$ROOT/dotfiles" "$real/"
 mkdir -p "$real/suckless/"{dwm,st,dmenu,slock}
@@ -153,7 +156,7 @@ realtheme() {
 others() { grep -vE '^(MAKE (build|install) [a-z]+|SUDO make -C suckless/[a-z]+ install)$' "$LOG" || true; }
 tools=$(printf '%s\n' dwm st dmenu slock)
 
-realtheme tokyonight
+realtheme other
 expect "--colors, first switch: exits 0" 0 "$rc"
 expect_no_match "--colors, first switch: no ERR trap messages" "failed on line" "$out"
 expect "--colors: builds the four tools" "$tools" "$(sed -n 's/^MAKE build //p' "$LOG")"
@@ -162,15 +165,15 @@ expect "--colors: nothing else (no packages, font, dotfiles, logind, GRUB settin
 expect "--colors: no dotfile installed" "" "$(cd "$T/home2" && find . -path ./.config/fdwm -prune -o -path ./.config/dunst -prune -o -path ./.local/state -prune -o -type f -print)"
 expect "--colors: the list of keys written" yes "$([[ -s $T/home2/.config/fdwm/keys ]] && echo yes)"
 expect "--colors: dunst's colors generated" yes "$([[ -s $T/home2/.config/dunst/dunstrc.d/50-fdwm-colors.conf ]] && echo yes)"
-expect "--colors: the tools installed are tokyonight's" "$(cksum <"$real/suckless/colors.h")" "$(cat "$PREFIX_DIR/bin/dwm")"
+expect "--colors: the tools installed are other's" "$(cksum <"$real/suckless/colors.h")" "$(cat "$PREFIX_DIR/bin/dwm")"
 
-realtheme tokyonight
+realtheme other
 expect "--colors, the same flavor again: exits 0" 0 "$rc"
 expect "--colors, nothing changed: builds the four tools" "$tools" "$(sed -n 's/^MAKE build //p' "$LOG")"
 expect "--colors, nothing changed: no sudo at all" "" "$(grep '^SUDO' "$LOG")"
 expect_match "--colors, nothing changed: says so" "The same as the installed dwm; left as it is" "$out"
 
-realtheme mocha
+realtheme thinkpad
 expect "--colors, another flavor: installs each tool again" "$tools" "$(sed -n 's/^MAKE install //p' "$LOG")"
 expect "--colors, another flavor: still nothing else" "" "$(others)"
 
