@@ -67,6 +67,8 @@ On the right, `fdwm-bar` (in `dotfiles/.local/bin`, installed to `~/.local/bin`)
 
 When the battery is discharging and reaches 10%, the bar shows `LOW BATTERY, PLUG IN` and dunst pops up a critical notification that stays until you click it; at 3% the laptop suspends. Each happens once per discharge and re-arms when you plug in, which also replaces the notification with a short `Charging` one. Both are hooks at the top of the script (`on_low_battery` and `on_battery_back`); without a notification daemon the bar still warns.
 
+TLP looks after battery life: on battery it sets the CPU, Wi-Fi, USB, PCIe and disks to save power, and puts them back on the charger. `install.sh` turns it on, with the CPU and the platform leaning all the way to saving power on battery (`/etc/tlp.d/01-fdwm.conf`), and removes tuned, tuned-ppd and power-profiles-daemon, which would fight it. `sudo tlp-stat -s` shows whether it's running and on which power source. Your own settings go in a later file, such as `/etc/tlp.d/02-mine.conf`; for example, `STOP_CHARGE_THRESH_BAT0=80` and `START_CHARGE_THRESH_BAT0=75` keep a ThinkPad that's mostly plugged in from charging past 80%, which wears the battery less (`sudo tlp fullcharge` charges to 100% once, before a trip), and `CPU_BOOST_ON_BAT=0` saves more at the cost of speed. `sudo powertop` shows what's using power.
+
 To see the line it would draw, without warning or suspending:
 
 ```shell
@@ -144,7 +146,7 @@ cd FDWM
 
 ### 2. Install dependencies
 
-`packages.txt` lists every package FDWM uses, grouped by what needs it: building dwm, st, dmenu and slock; X and the session `.xinitrc` starts; sound and the media keys; nnn; Thunar; flatpak, for Zen Browser; what dark mode needs; and Neovim with what its plugins need.
+`packages.txt` lists every package FDWM uses, grouped by what needs it: building dwm, st, dmenu and slock; X and the session `.xinitrc` starts; sound and the media keys; TLP, for battery life; nnn; Thunar; flatpak, for Zen Browser; what dark mode needs; and Neovim with what its plugins need.
 
 ```shell
 sudo dnf install $(sed 's/#.*//' packages.txt)
@@ -203,6 +205,16 @@ sudo mkdir -p /etc/systemd/logind.conf.d
 sudo rm -f /etc/systemd/logind.conf.d/fdwm-idle.conf
 printf '[Login]\nHandleLidSwitch=suspend\nHandleLidSwitchExternalPower=suspend\n' | sudo tee /etc/systemd/logind.conf.d/fdwm-lid.conf
 sudo systemctl kill -s HUP systemd-logind
+```
+
+To turn on TLP for battery life (see "The bar" above), first remove whichever of the power managers that would fight it `rpm -q` shows installed (Fedora 41 and newer have tuned and tuned-ppd; FDWM's own install may have none):
+
+```shell
+rpm -q tuned-ppd tuned power-profiles-daemon
+sudo dnf remove tuned-ppd tuned    # only those rpm -q found
+sudo mkdir -p /etc/tlp.d
+printf 'CPU_ENERGY_PERF_POLICY_ON_BAT=power\nPLATFORM_PROFILE_ON_BAT=low-power\n' | sudo tee /etc/tlp.d/01-fdwm.conf
+sudo systemctl enable --now tlp.service
 ```
 
 `dotfiles/.bashrc` sets the prompt (the git branch, then the directory, in the flavor's `prompt_branch` and `prompt_dir`), history, aliases and git shortcuts, gives the ttys the same colors as st and dwm once you log in, and loads every file in `~/.bashrc.d`. `dotfiles/.bashrc.d/claude.sh` adds `cl` for Claude Code.

@@ -28,6 +28,11 @@ pipewire wireplumber pipewire-pulseaudio pulseaudio-utils brightnessctl playerct
 # or out
 systemd-udev
 
+# battery life: TLP sets the CPU, Wi-Fi, USB, PCIe and disks to save power
+# on battery and back on the charger (install.sh removes tuned, tuned-ppd and
+# power-profiles-daemon first, which would fight it)
+tlp
+
 # screenshots (fdwm-shot): maim takes them, xclip copies them
 maim xclip
 
