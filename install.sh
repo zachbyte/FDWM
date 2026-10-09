@@ -237,8 +237,9 @@ fi
 install_dotfile .local/bin/fdwm-lock
 # the power menu dwm's Alt+Shift+E opens
 install_dotfile .local/bin/fdwm-menu
-# the theme menu dwm's Alt+Shift+T opens
-install_dotfile .local/bin/fdwm-theme-menu
+# the theme menu dwm's Alt+Shift+T opened, gone with that key now that the
+# palette has one flavor (fdwm-theme FLAVOR still switches)
+rm -f ~/.local/bin/fdwm-theme-menu
 # the list of keys dwm's Alt+/ opens
 install_dotfile .local/bin/fdwm-keys
 

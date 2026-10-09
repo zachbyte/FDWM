@@ -45,12 +45,11 @@ static const Rule rules[] = {
 	 */
 	/* a window started from a terminal (isterminal) takes its place until
 	 * it closes, unless it floats or has noswallow. The later rules unset
-	 * isterminal for the scratchpads' and fdwm-theme-menu's st. */
+	 * isterminal for the scratchpads' st. */
 	/* class         instance      title           tags mask  isfloating  isterminal  noswallow  monitor */
 	{ "st-256color", NULL,         NULL,           0,         0,          1,          0,         -1 }, /* st */
 	{ NULL,          "spterm",     NULL,           SPTAG(0),  1,          0,          0,         -1 },
 	{ NULL,          "spnotes",    NULL,           SPTAG(1),  1,          0,          0,         -1 },
-	{ NULL,          "fdwm-theme", NULL,           0,         1,          0,          0,         -1 }, /* fdwm-theme-menu's st */
 	{ NULL,          NULL,         "Event Tester", 0,         0,          0,          1,         -1 }, /* xev */
  };
 
@@ -93,8 +92,6 @@ static const char *termcmd[] = { "st", NULL };
 static const char *lockcmd[] = { "slock", NULL };
 /* lock, suspend, restart dwm, log out, reboot, power off (fdwm-menu) */
 static const char *menucmd[] = { "/bin/sh", "-c", "exec \"$HOME/.local/bin/fdwm-menu\"", NULL };
-/* pick the flavor in dmenu, switched in a floating st (fdwm-theme-menu) */
-static const char *themecmd[] = { "/bin/sh", "-c", "exec \"$HOME/.local/bin/fdwm-theme-menu\"", NULL };
 /* every key and mouse button here, described, in dmenu (fdwm-keys) */
 static const char *keyscmd[] = { "/bin/sh", "-c", "exec \"$HOME/.local/bin/fdwm-keys\"", NULL };
 
@@ -136,7 +133,6 @@ static const Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_r,      resetmfact,     {0} }, /* layouts: reset the master area */
 	{ MODKEY|ShiftMask,             XK_l,      spawn,          {.v = lockcmd } }, /* system: lock the screen */
 	{ MODKEY|ShiftMask,             XK_e,      spawn,          {.v = menucmd } }, /* system: power menu */
-	{ MODKEY|ShiftMask,             XK_t,      spawn,          {.v = themecmd } }, /* system: theme menu */
 	{ MODKEY,                       XK_slash,  spawn,          {.v = keyscmd } }, /* system: these keys and buttons (fdwm-keys) */
 	{ MODKEY,                       XK_grave,  togglescratch,  {.ui = 0 } }, /* apps: show or hide the terminal scratchpad */
 	{ MODKEY,                       XK_n,      togglescratch,  {.ui = 1 } }, /* apps: show or hide the notes scratchpad */

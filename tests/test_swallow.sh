@@ -2,7 +2,7 @@
 # shellcheck disable=SC2329  # the functions run through until_
 # Window swallowing: a graphical program started from st takes the
 # terminal's place until it closes. First config.h: st is the terminal, and
-# the scratchpads' and fdwm-theme-menu's st are not. Then, where Xvfb,
+# the scratchpads' st are not. Then, where Xvfb,
 # xdotool and xprop are (CI installs them), the built dwm and st on a
 # virtual screen, with tests/xwin.c as the graphical program: it opens
 # where its terminal was and has the focus, the terminal off the screen;
@@ -19,10 +19,10 @@ config=$ROOT/suckless/dwm/config.h
 
 rules=$(sed -n '/^static const Rule rules\[\] = {/,/^ *};/p' "$config")
 expect_match "st (class st-256color) is a terminal" '^[[:space:]]*\{ "st-256color", +NULL, +NULL, +0, +0, +1, +0, +-1 \},' "$rules"
-for name in spterm spnotes fdwm-theme; do
+for name in spterm spnotes; do
     expect_match "$name, a later rule, isn't one" "^[[:space:]]*\{ NULL, +\"$name\", *NULL, +[^,]+, +1, +0, +0, +-1 \}," "$rules"
 done
-expect "st's rule comes before them" 1 "$(grep -E '"(st-256color|spterm|spnotes|fdwm-theme)",' <<<"$rules" | head -n1 | grep -c '"st-256color",')"
+expect "st's rule comes before them" 1 "$(grep -E '"(st-256color|spterm|spnotes)",' <<<"$rules" | head -n1 | grep -c '"st-256color",')"
 expect_match "a floating window doesn't swallow" '^static const int swallowfloating += 0;' "$(cat "$config")"
 
 missing=
