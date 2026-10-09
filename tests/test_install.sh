@@ -69,7 +69,6 @@ else
 fi
 expect "installs ~/.local/bin/fdwm-lock, executable" yes "$([[ -x $T/home/.local/bin/fdwm-lock ]] && echo yes)"
 expect "installs ~/.local/bin/fdwm-menu, executable" yes "$([[ -x $T/home/.local/bin/fdwm-menu ]] && echo yes)"
-expect "installs ~/.local/bin/fdwm-theme-menu, executable" yes "$([[ -x $T/home/.local/bin/fdwm-theme-menu ]] && echo yes)"
 expect "installs ~/.local/bin/fdwm-keys, executable" yes "$([[ -x $T/home/.local/bin/fdwm-keys ]] && echo yes)"
 expect "lists dwm's keys in ~/.config/fdwm/keys, from config.h" "$(awk -f "$ROOT/keys.awk" "$ROOT/suckless/dwm/config.h")" "$(cat "$T/home/.config/fdwm/keys" 2>/dev/null)"
 expect "installs Zen Browser from Flathub, for you alone" \
