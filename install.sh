@@ -144,6 +144,18 @@ fi
 
 mapfile -t packages < <(sed 's/#.*//' packages.txt | xargs -n1)
 
+# TLP (in packages.txt) manages power, so the other power managers go first:
+# Fedora's tuned and tuned-ppd (power-profiles-daemon before Fedora 41) would
+# fight it over the same settings, and dnf won't install it beside them.
+conflicts=()
+for p in tuned-ppd tuned power-profiles-daemon; do
+    rpm -q "$p" >/dev/null 2>&1 && conflicts+=("$p")
+done
+if (( ${#conflicts[@]} )); then
+    echo "==> Removing ${conflicts[*]}, which conflict with TLP"
+    sudo dnf remove -y "${conflicts[@]}"
+fi
+
 # rpm is quick; dnf only runs (and refreshes its metadata) when something is missing.
 # One rpm call answers the usual "everything is installed"; only when it fails
 # is each package checked on its own to find out which ones are missing.
@@ -321,6 +333,32 @@ if [[ -e $old_idle_conf || $(cat "$lid_conf" 2>/dev/null || true) != "$lid_want"
     # SIGHUP makes logind reload its settings; a restart would end your session
     sudo systemctl kill -s HUP systemd-logind
     echo "Installed $lid_conf"
+else
+    echo "Already set up"
+fi
+
+# TLP: on battery the CPU and the platform lean all the way to saving power
+# (TLP's defaults lean halfway); on the charger, TLP's defaults. Everything
+# else (Wi-Fi, USB, PCIe, disks) is TLP's defaults, which already do what
+# powertop --auto-tune would. Your own settings go in a later file in
+# /etc/tlp.d (02-mine.conf), which wins over this one.
+echo "==> Setting up power management (TLP)"
+tlp_conf=/etc/tlp.d/01-fdwm.conf
+tlp_want=$'# Written by FDWM\'s install.sh, which rewrites it; put your own settings in\n# a later file, such as 02-mine.conf.\nCPU_ENERGY_PERF_POLICY_ON_BAT=power\nPLATFORM_PROFILE_ON_BAT=low-power'
+tlp_changed=
+if [[ $(cat "$tlp_conf" 2>/dev/null || true) != "$tlp_want" ]]; then
+    sudo mkdir -p "${tlp_conf%/*}"
+    printf '%s\n' "$tlp_want" | sudo tee "$tlp_conf" >/dev/null
+    echo "Installed $tlp_conf"
+    tlp_changed=1
+fi
+if ! systemctl is-enabled --quiet tlp.service 2>/dev/null; then
+    # --now applies the settings at once, as every boot will
+    sudo systemctl enable --now tlp.service
+    echo "TLP is on, from now and every boot"
+elif [[ $tlp_changed ]]; then
+    sudo tlp start >/dev/null
+    echo "TLP reloaded its settings"
 else
     echo "Already set up"
 fi

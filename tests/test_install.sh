@@ -16,11 +16,17 @@ stub nvim 'exit 0'
 # Browser already installed)
 stub flatpak 'echo "FLATPAK $*" >>"$LOG"; [ "$1" != info ] || [ -n "$ZEN" ]'
 stub gsettings 'echo "GSETTINGS $*" >>"$LOG"'
+# systemctl is-enabled: true only if $TLP_ON is set
+stub systemctl '[ "$1" = is-enabled ] && [ -n "$TLP_ON" ]'
 # rpm -q --whatprovides: fails for every name in $MISSING and exits with the
 # number of failures, like the real one
 stub rpm '
 echo "RPM $*" >>"$LOG"
-[ "$1" = -q ] && [ "$2" = --whatprovides ] || exit 0
+# rpm -q NAME (no --whatprovides): installed only if NAME is in $INSTALLED
+if [ "$1" = -q ] && [ "$2" != --whatprovides ]; then
+	case " $INSTALLED " in *" $2 "*) exit 0 ;; *) exit 1 ;; esac
+fi
+[ "$1" = -q ] || exit 0
 shift 2; n=0
 for p in "$@"; do
 	case " $MISSING " in
@@ -41,7 +47,7 @@ npackages=$(sed 's/#.*//' "$ROOT/packages.txt" | wc -w | tr -d ' ')
 # run: a fresh home and log, then install.sh; sets $out and $rc
 run() {
     rm -rf "${T:?}/home" && mkdir -p "$T/home" && : >"$LOG"
-    out=$(cd "$T/repo" && HOME="$T/home" MISSING=${MISSING:-} ZEN=${ZEN:-} bash ./install.sh 2>&1)
+    out=$(cd "$T/repo" && HOME="$T/home" MISSING=${MISSING:-} ZEN=${ZEN:-} INSTALLED=${INSTALLED:-} TLP_ON=${TLP_ON:-} bash ./install.sh 2>&1)
     rc=$?
 }
 
@@ -54,7 +60,7 @@ expect "builds each tool as you, then installs it with sudo" \
     "$(grep -E '^(MAKE|SUDO make)' "$LOG")"
 expect "generates colors.h before building" yes "$([[ -s $T/repo/suckless/colors.h ]] && echo yes)"
 expect "generates ~/.config/fdwm/colors.sh" yes "$([[ -s $T/home/.config/fdwm/colors.sh ]] && echo yes)"
-expect "every package installed: one rpm call" 1 "$(grep -c '^RPM' "$LOG")"
+expect "every package installed: one rpm call" 1 "$(grep -c '^RPM -q --whatprovides' "$LOG")"
 expect_match "every package installed: says so" "All installed" "$out"
 expect "generates dunst's colors" yes "$([[ -s $T/home/.config/dunst/dunstrc.d/50-fdwm-colors.conf ]] && echo yes)"
 for f in .xinitrc .bashrc .bashrc.d/claude.sh .config/nvim/init.lua .config/dunst/dunstrc; do
@@ -85,6 +91,19 @@ expect "dark mode: gsettings' color-scheme, for the portal" \
     "GSETTINGS set org.gnome.desktop.interface color-scheme prefer-dark" "$(grep '^GSETTINGS' "$LOG")"
 expect_match "sets up suspend" "==> Setting up suspend" "$out"
 
+expect "no other power manager installed: nothing removed" "" "$(grep '^SUDO dnf remove' "$LOG")"
+expect "TLP: writes its settings" "SUDO tee /etc/tlp.d/01-fdwm.conf" "$(grep '^SUDO tee /etc/tlp' "$LOG")"
+expect "TLP: turns it on, now and at every boot" "SUDO systemctl enable --now tlp.service" "$(grep '^SUDO systemctl enable' "$LOG")"
+
+INSTALLED='tuned tuned-ppd' run
+expect "tuned and tuned-ppd installed: removed before installing packages" \
+    "SUDO dnf remove -y tuned-ppd tuned" "$(grep '^SUDO dnf' "$LOG" | head -1)"
+expect_no_match "tuned installed: power-profiles-daemon not removed too" "power-profiles-daemon" "$(grep '^SUDO dnf remove' "$LOG")"
+
+TLP_ON=1 run
+expect "TLP already on: not turned on again" "" "$(grep '^SUDO systemctl enable' "$LOG")"
+expect "TLP already on, settings changed: reloads them" "SUDO tlp start" "$(grep '^SUDO tlp' "$LOG")"
+
 ZEN=1 run
 expect "Zen Browser already installed: only checked" "FLATPAK info --user app.zen_browser.zen" "$(grep '^FLATPAK' "$LOG")"
 expect_match "suspends on lid close, not on logind's idle" "SUDO tee /etc/systemd/logind.conf.d/fdwm-lid.conf" "$(cat "$LOG")"
@@ -92,7 +111,7 @@ expect_match "suspends on lid close, not on logind's idle" "SUDO tee /etc/system
 MISSING=nnn run
 expect_match "one package missing: names it" "Installing: nnn$" "$out"
 expect "one package missing: installs just that one" "SUDO dnf install -y nnn" "$(grep '^SUDO dnf' "$LOG")"
-expect "one package missing: one rpm call, then one per package" $((npackages + 1)) "$(grep -c '^RPM' "$LOG")"
+expect "one package missing: one rpm call, then one per package" $((npackages + 1)) "$(grep -c '^RPM -q --whatprovides' "$LOG")"
 
 MISSING='/usr/bin/npm nnn' run
 expect "a path-style package missing: installed too" "SUDO dnf install -y nnn /usr/bin/npm" "$(grep '^SUDO dnf' "$LOG")"
