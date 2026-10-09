@@ -49,6 +49,27 @@ theme_repo() {
     cp -r "$ROOT/grub" "$ROOT/dunst" "$1/"
 }
 
+# other_flavor DIR: a second flavor, other, in DIR's palette (a copy of
+# theme_repo's), for tests of switching between flavors now that the real
+# palette has only thinkpad: the first flavor's colors with each blue
+# channel moved, so every color differs from it
+other_flavor() {
+    local line name first
+    while IFS= read -r line; do
+        read -r name first _ <<<"$line"
+        if [[ $line =~ ^[[:space:]]*(#|$) ]]; then
+            printf '%s\n' "$line"
+        elif [[ $name == name ]]; then
+            printf '%s  other\n' "$line"
+        elif [[ $first =~ ^[0-9a-f]{6}$ ]]; then
+            printf '%s  %s%02x\n' "$line" "${first:0:4}" $(((16#${first:4:2} + 32) % 256))
+        else
+            printf '%s  %s\n' "$line" "$first"
+        fi
+    done <"$1/palette" >"$1/palette.new"
+    mv "$1/palette.new" "$1/palette"
+}
+
 # git with no user or system config, so a test sees the same git everywhere
 git_sandboxed() {
     export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1

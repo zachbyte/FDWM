@@ -3,12 +3,17 @@
 # fdwm-theme generate: every palette entry in colors.h and colors.sh, names
 # looked up, in the flavor saved in ~/.config/fdwm/flavor; the GRUB theme
 # and its selection image; a saved flavor the palette no longer has, which
-# is mocha from then on; and a clear error for a palette, template or
-# flavor it can't use.
+# is the default (the first, thinkpad) from then on; and a clear error for a
+# palette or template it can't use. A second flavor, other, is added to the
+# sandbox's palette to tell the saved flavor from the default.
+#
+# The real palette has thinkpad alone, the other flavors taken out.
 # shellcheck source=tests/lib.sh
 source "$(dirname "$0")/lib.sh"
 sandbox
 theme_repo "$T/repo"
+expect "the palette's flavors: thinkpad alone" thinkpad "$(bash "$T/repo/fdwm-theme" list)"
+other_flavor "$T/repo"
 gen() { HOME=$T/home bash "$T/repo/fdwm-theme" generate 2>&1; }
 h=$T/repo/suckless/colors.h
 colors=$T/home/.config/fdwm/colors.sh
@@ -39,7 +44,7 @@ check_flavor() {
 }
 
 mkdir -p "$T/home/.config/fdwm"
-# every flavor after the first (mocha), from its own column
+# every flavor after the first (thinkpad), from its own column
 col=3
 mapfile -t others < <(awk '$1 == "name" { for (i = 3; i <= NF; i++) print $i; exit }' "$T/repo/palette")
 for flavor in "${others[@]}"; do
@@ -47,22 +52,24 @@ for flavor in "${others[@]}"; do
     check_flavor "$flavor" $col
     col=$((col + 1))
 done
-expect "checked a flavor besides mocha" yes "$( ((col > 3)) && echo yes)"
+expect "checked a flavor besides thinkpad" yes "$( ((col > 3)) && echo yes)"
 other_base=$fdwm_base
 rm "$T/home/.config/fdwm/flavor"
-check_flavor mocha 2
-expect "no flavor saved: mocha, not what was generated last" yes "$([[ $fdwm_base != "$other_base" ]] && echo yes)"
+check_flavor thinkpad 2
+expect "no flavor saved: thinkpad, not what was generated last" yes "$([[ $fdwm_base != "$other_base" ]] && echo yes)"
 
-# a saved flavor the palette no longer has (Latte, taken out): back to
-# mocha, saved, so install.sh still works
-echo latte >"$T/home/.config/fdwm/flavor"
-out=$(gen)
-expect "a flavor taken out of the palette: generate exits 0" 0 "$?"
-expect_match "a flavor taken out of the palette: says it's back to mocha" "the palette has no latte flavor any more; back to mocha" "$out"
-expect "a flavor taken out of the palette: mocha saved" mocha "$(cat "$T/home/.config/fdwm/flavor")"
-# shellcheck source=/dev/null
-. "$colors"
-expect "a flavor taken out of the palette: mocha generated" mocha "$fdwm_flavor"
+# a saved flavor the palette no longer has (mocha, which it had before):
+# back to thinkpad, saved, so install.sh still works
+for gone in mocha tokyonight; do
+    echo "$gone" >"$T/home/.config/fdwm/flavor"
+    out=$(gen)
+    expect "$gone, taken out of the palette: generate exits 0" 0 "$?"
+    expect_match "$gone, taken out of the palette: says it's back to thinkpad" "the palette has no $gone flavor any more; back to thinkpad" "$out"
+    expect "$gone, taken out of the palette: thinkpad saved" thinkpad "$(cat "$T/home/.config/fdwm/flavor")"
+    # shellcheck source=/dev/null
+    . "$colors"
+    expect "$gone, taken out of the palette: thinkpad generated" thinkpad "$fdwm_flavor"
+done
 rm "$T/home/.config/fdwm/flavor"
 
 # no near-white color in any flavor (every channel e0 or more, as in a light
@@ -147,8 +154,8 @@ echo "base          000000" >>"$T/repo/palette"
 refuse "an entry twice" "base is there twice"
 sed -i '/^term_cursor /d' "$T/repo/palette"
 refuse "an entry the terminal needs is missing" "term_cursor is missing"
-sed -i 's/^name .*/name          other/' "$T/repo/palette"
-refuse "no column for the flavor" "no mocha column"
+sed -i '/^name /d' "$T/repo/palette"
+refuse "no header line" "no header line \\(name, then the flavors\\)"
 cp "$T/repo/grub/theme.txt.in" "$T/template.good"
 echo 'color = "@nosuchcolor@"' >>"$T/repo/grub/theme.txt.in"
 refuse "a template color that isn't in the palette" "not in the palette: @nosuchcolor@"

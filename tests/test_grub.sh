@@ -16,6 +16,9 @@ mkdir -p "$SB/etc/default" "$SB/etc/kernel/install.d" \
 # the repo's grub/ and fdwm-theme, with the theme's colors generated as
 # install.sh does before this step
 theme_repo "$T/repo"
+# a second flavor, other, for --colors to switch to (the real palette has
+# thinkpad alone)
+other_flavor "$T/repo"
 HOME=$T/home bash "$T/repo/fdwm-theme" generate >/dev/null
 # installed by an earlier version, in the theme's old folder
 old_theme=$SB/boot/grub2/themes/catppuccin-mocha-grub
@@ -123,7 +126,7 @@ expect "--colors, the theme changed: console colors left alone" 0 "$(grep -c GRU
 colors_step "--colors, then nothing changed"
 expect "--colors, then nothing changed: no sudo" 0 "$(grep -c SUDO "$LOG")"
 mkdir -p "$T/home/.config/fdwm"
-echo tokyonight >"$T/home/.config/fdwm/flavor"
+echo other >"$T/home/.config/fdwm/flavor"
 HOME=$T/home bash "$T/repo/fdwm-theme" generate >/dev/null
 colors_step "--colors, another flavor"
 expect "--colors, another flavor: its theme in /boot" "" "$(diff -r "$T/repo/grub/theme" "$theme")"

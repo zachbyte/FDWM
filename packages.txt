@@ -34,6 +34,18 @@ maim xclip
 # nnn, the terminal file manager
 nnn
 
+# Thunar, the graphical file manager, with gvfs for its trash and drives
+Thunar gvfs
+
+# Zen Browser, which install.sh installs from Flathub with flatpak (Fedora
+# doesn't package it)
+flatpak
+
+# dark mode: GTK apps (Thunar) read it from ~/.config/gtk-3.0 and gtk-4.0;
+# Flatpak apps (Zen) ask the settings portal, which xdg-desktop-portal-gtk
+# answers from gsettings' color-scheme, kept in dconf
+xdg-desktop-portal xdg-desktop-portal-gtk gsettings-desktop-schemas dconf glib2
+
 # neovim, plus what its plugins and language servers need
 # (/usr/bin/npm is named by path because its package name differs between releases)
 neovim ripgrep unzip tree-sitter-cli /usr/bin/npm java-latest-openjdk-headless

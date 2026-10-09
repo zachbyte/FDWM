@@ -25,13 +25,14 @@ shift
 echo "st$args" >>"$LOG"
 echo | "$@"'
 PATH="$T/bin:$PATH"
-# fdwm-theme, where install.sh links it: mocha in use
+# fdwm-theme, where install.sh links it, with a second flavor, other (the
+# real palette has thinkpad alone): thinkpad in use
 mkdir -p "$HOME/.local/bin"
 cat >"$HOME/.local/bin/fdwm-theme" <<'EOF'
 #!/bin/sh
 case $1 in
-list) printf '%s\n' mocha tokyonight thinkpad ;;
-current) echo mocha ;;
+list) printf '%s\n' thinkpad other ;;
+current) echo thinkpad ;;
 *) echo "fdwm-theme $*" >>"$LOG"; echo "==> Switched to $1" ;;
 esac
 EOF
@@ -45,16 +46,16 @@ pick() {
     ran=$(grep -v '^dmenu' "$LOG")
 }
 
-pick thinkpad
+pick other
 expect "offers the flavors, the one in use in the prompt" \
-    "dmenu theme (mocha): mocha,tokyonight,thinkpad" "$(head -n1 "$LOG")"
+    "dmenu theme (thinkpad): thinkpad,other" "$(head -n1 "$LOG")"
 expect "a flavor: fdwm-theme switches to it in st, named for dwm's rule" \
-    "$(printf 'st -n fdwm-theme -t fdwm-theme thinkpad\nfdwm-theme thinkpad')" "$ran"
+    "$(printf 'st -n fdwm-theme -t fdwm-theme other\nfdwm-theme other')" "$ran"
 expect_match "a flavor: st shows how it went, then waits for Return" \
-    "==> Switched to thinkpad.*Press Return to close" "$(tr '\n' ' ' <<<"$out")"
+    "==> Switched to other.*Press Return to close" "$(tr '\n' ' ' <<<"$out")"
 expect "a flavor: exits 0" 0 "$rc"
 
-pick mocha
+pick thinkpad
 expect "the flavor in use: nothing" "0:" "$rc:$ran"
 pick ""
 expect "Escape: nothing, and exits 0" "0:" "$rc:$ran"

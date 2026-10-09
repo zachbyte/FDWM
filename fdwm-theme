@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # fdwm-theme: FDWM's colors, generated from the palette file next to it, in
-# the flavor saved in ~/.config/fdwm/flavor (Mocha until there is one).
+# the flavor saved in ~/.config/fdwm/flavor (the palette's first, thinkpad,
+# until there is one).
 #
 #   fdwm-theme               say which flavor is in use, and which there are
 #   fdwm-theme list          the flavors, one per line
 #   fdwm-theme current       the flavor in use
-#   fdwm-theme FLAVOR        switch to FLAVOR (mocha, tokyonight, thinkpad):
+#   fdwm-theme FLAVOR        switch to FLAVOR (one of fdwm-theme list):
 #                            save it, run install.sh --colors (which
 #                            generates the colors, rebuilds dwm, st, dmenu
 #                            and slock, and installs them, the GRUB theme
@@ -32,13 +33,15 @@ root=$(dirname "$(readlink -f "$0")")
 xdg=${XDG_CONFIG_HOME:-$HOME/.config}
 conf=$xdg/fdwm
 dev=${FDWM_DEV:-/dev}  # the tests point this at fake terminals
-flavor=mocha
-if [[ -r $conf/flavor ]]; then flavor=$(<"$conf/flavor"); fi
 
 die() { echo "fdwm-theme: $*" >&2; exit 1; }
 
 # the palette's flavors, one per line, from its header line
 flavors() { awk '$1 == "name" { for (i = 2; i <= NF; i++) print $i; exit }' "$root/palette"; }
+# the default: the palette's first flavor
+default=$(awk '$1 == "name" { print $2; exit }' "$root/palette")
+flavor=$default
+if [[ -r $conf/flavor ]]; then flavor=$(<"$conf/flavor"); fi
 
 # load: the palette's $flavor column into color[<name>]=rrggbb, and the names
 # in palette order into names; a name in place of a color is looked up
@@ -210,13 +213,14 @@ recolor_st() {
     echo "Recolored $n open st window(s)"
 }
 
-# saved: a saved flavor the palette no longer has (one taken out of it) is
-# Mocha from now on, saved, rather than failing every install.sh
+# saved: a saved flavor the palette no longer has (one taken out of it, as
+# mocha and tokyonight were) is the default from now on, saved, rather than
+# failing every install.sh
 saved() {
     # (grep reads it all rather than -q: see switch)
-    if [[ $flavor == mocha ]] || flavors | grep -xF -- "$flavor" >/dev/null; then return; fi
-    echo "fdwm-theme: the palette has no $flavor flavor any more; back to mocha" >&2
-    flavor=mocha
+    if [[ $flavor == "$default" ]] || flavors | grep -xF -- "$flavor" >/dev/null; then return; fi
+    echo "fdwm-theme: the palette has no $flavor flavor any more; back to $default" >&2
+    flavor=$default
     printf '%s\n' "$flavor" >"$conf/flavor"
 }
 
